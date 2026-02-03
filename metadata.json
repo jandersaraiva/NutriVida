@@ -1,0 +1,5 @@
+{
+  "name": "NutriVida",
+  "description": "Aplicativo de acompanhamento nutricional focado na evolução do paciente e comparação de métricas mês a mês.",
+  "requestFramePermissions": []
+}

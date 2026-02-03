@@ -1,0 +1,64 @@
+import React from 'react';
+import { ViewState } from '../types';
+import { LayoutDashboard, History, PlusCircle, User, Activity } from 'lucide-react';
+
+interface SidebarProps {
+  currentView: ViewState;
+  onViewChange: (view: ViewState) => void;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
+  const menuItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'history', label: 'Histórico', icon: History },
+    { id: 'add_entry', label: 'Nova Avaliação', icon: PlusCircle },
+    { id: 'profile', label: 'Perfil', icon: User },
+  ];
+
+  return (
+    <aside className="w-20 lg:w-64 bg-white border-r border-slate-200 flex flex-col justify-between transition-all duration-300 z-10 shadow-sm">
+      <div>
+        <div className="h-20 flex items-center justify-center lg:justify-start lg:px-6 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-emerald-600 rounded-lg text-white">
+              <Activity size={24} />
+            </div>
+            <span className="font-bold text-xl text-emerald-900 hidden lg:block">NutriVida</span>
+          </div>
+        </div>
+
+        <nav className="p-4 space-y-2">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = currentView === item.id;
+            
+            return (
+              <button
+                key={item.id}
+                onClick={() => onViewChange(item.id as ViewState)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+                  isActive 
+                    ? 'bg-emerald-50 text-emerald-700 font-medium shadow-sm ring-1 ring-emerald-100' 
+                    : 'text-slate-500 hover:bg-slate-50 hover:text-emerald-600'
+                }`}
+              >
+                <Icon size={22} className={isActive ? 'text-emerald-600' : 'text-slate-400 group-hover:text-emerald-500'} />
+                <span className="hidden lg:block">{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+
+      <div className="p-4 border-t border-slate-100 hidden lg:block">
+        <div className="bg-slate-900 rounded-xl p-4 text-white">
+          <p className="text-xs text-slate-400 mb-1">Próxima meta</p>
+          <p className="font-medium text-sm">Atingir 18% de Gordura Corporal</p>
+          <div className="w-full bg-slate-700 h-1.5 rounded-full mt-3 overflow-hidden">
+            <div className="bg-emerald-500 h-full w-3/4 rounded-full"></div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  );
+};
