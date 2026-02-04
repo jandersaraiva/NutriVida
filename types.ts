@@ -65,9 +65,18 @@ export interface Appointment {
   notes?: string;
 }
 
+export interface Nutritionist {
+  name: string;
+  crn: string;
+  email: string;
+  phone: string;
+  clinicName: string;
+  address: string;
+}
+
 // Simplified ViewState: The detailed views are now internal tabs of 'patient_details' (implicit)
-// Added 'home' for the main dashboard
-export type ViewState = 'home' | 'patients' | 'schedule' | 'add_entry' | 'select_patient_for_entry';
+// Added 'home' for the main dashboard and 'profile_settings'
+export type ViewState = 'home' | 'patients' | 'schedule' | 'add_entry' | 'select_patient_for_entry' | 'profile_settings';
 
 export type PatientTab = 'overview' | 'history' | 'diet' | 'profile';
 

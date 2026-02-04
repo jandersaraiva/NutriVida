@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Appointment, Patient } from '../types';
-import { Calendar, Clock, Plus, User, MapPin, X, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, Plus, User, MapPin, X, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ScheduleProps {
   patients: Patient[];
@@ -176,7 +176,7 @@ export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAd
                                             <h4 className="font-bold text-slate-800">{getPatientName(app.patientId)}</h4>
                                             <div className="flex items-center gap-3 text-sm text-slate-500 mt-0.5">
                                                 <span className="flex items-center gap-1">
-                                                    <CheckCircle2 size={14} className="text-emerald-500" />
+                                                    <CheckCircle size={14} className="text-emerald-500" />
                                                     {app.type}
                                                 </span>
                                                 {app.notes && (

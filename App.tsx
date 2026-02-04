@@ -8,7 +8,8 @@ import { PatientList } from './components/PatientList';
 import { Schedule } from './components/Schedule';
 import { PatientSelector } from './components/PatientSelector';
 import { DietPlan } from './components/DietPlan';
-import { CheckIn, ViewState, Patient, DietPlan as DietPlanType, PatientTab, Appointment } from './types';
+import { NutritionistProfile } from './components/NutritionistProfile';
+import { CheckIn, ViewState, Patient, DietPlan as DietPlanType, PatientTab, Appointment, Nutritionist } from './types';
 import { User, Activity, Utensils, FileText, LayoutDashboard } from 'lucide-react';
 
 // Seed Data for initial demo
@@ -157,9 +158,20 @@ const SEED_APPOINTMENTS: Appointment[] = [
   }
 ];
 
+const SEED_NUTRITIONIST: Nutritionist = {
+  name: 'Dr. João Nutri',
+  crn: 'CRN-3 45678',
+  email: 'contato@drjoao.com.br',
+  phone: '(11) 97777-7777',
+  clinicName: 'Clínica NutriVida',
+  address: 'Av. Paulista, 1000 - São Paulo, SP'
+};
+
 const App: React.FC = () => {
   const [patients, setPatients] = useState<Patient[]>(SEED_PATIENTS);
   const [appointments, setAppointments] = useState<Appointment[]>(SEED_APPOINTMENTS);
+  const [nutritionist, setNutritionist] = useState<Nutritionist>(SEED_NUTRITIONIST);
+  
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null); // Start with no patient
   const [currentView, setCurrentView] = useState<ViewState>('home'); // Default to dashboard
   const [activeTab, setActiveTab] = useState<PatientTab>('overview');
@@ -302,12 +314,14 @@ const App: React.FC = () => {
                 {currentView === 'schedule' && 'Agenda'}
                 {currentView === 'add_entry' && 'Nova Avaliação'}
                 {currentView === 'select_patient_for_entry' && 'Iniciar Avaliação'}
+                {currentView === 'profile_settings' && 'Meu Perfil'}
               </h1>
               <p className="text-slate-500 text-sm mt-1">
                 {currentView === 'patients' && !selectedPatientId && 'Gerencie o acompanhamento dos seus alunos'}
                 {currentView === 'patients' && selectedPatientId && 'Acompanhe a evolução e gerencie o plano'}
                 {currentView === 'schedule' && 'Visualize seus próximos atendimentos'}
                 {currentView === 'select_patient_for_entry' && 'Escolha um paciente'}
+                {currentView === 'profile_settings' && 'Gerencie seus dados e informações da clínica'}
               </p>
             </div>
             
@@ -334,6 +348,13 @@ const App: React.FC = () => {
               patients={patients} 
               appointments={appointments}
               onNavigateTo={(view) => setCurrentView(view as ViewState)}
+            />
+          )}
+
+          {currentView === 'profile_settings' && (
+            <NutritionistProfile 
+                data={nutritionist}
+                onSave={setNutritionist}
             />
           )}
 

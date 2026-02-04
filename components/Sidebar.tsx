@@ -1,6 +1,6 @@
 import React from 'react';
 import { ViewState } from '../types';
-import { PlusCircle, Activity, Users, CalendarDays, LayoutDashboard } from 'lucide-react';
+import { PlusCircle, Activity, Users, CalendarDays, LayoutDashboard, Settings } from 'lucide-react';
 
 interface SidebarProps {
   currentView: ViewState;
@@ -13,6 +13,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) =
     { id: 'patients', label: 'Pacientes', icon: Users },
     { id: 'schedule', label: 'Agenda', icon: CalendarDays },
     { id: 'select_patient_for_entry', label: 'Nova Avaliação', icon: PlusCircle },
+    { id: 'profile_settings', label: 'Meu Perfil', icon: Settings },
   ];
 
   return (
@@ -38,11 +39,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) =
             if (item.id === 'select_patient_for_entry' && currentView === 'add_entry') {
               isActive = true;
             }
-
-            // Special case: If we are viewing a specific patient details (implied by not matching others but logic handled in parent), 
-            // usually 'patients' is the parent section. 
-            // For Sidebar simplicity, if the user is deep in patient details, we can highlight 'Patients' or nothing.
-            // Let's rely on exact match or strict mapping.
 
             return (
               <button
