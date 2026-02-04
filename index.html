@@ -8,6 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
+        darkMode: 'class', // Habilita modo escuro via classe CSS
         theme: {
           extend: {
             colors: {
@@ -34,7 +35,7 @@
 }
 </script>
 </head>
-  <body class="bg-background text-slate-800 antialiased">
+  <body class="bg-background text-slate-800 antialiased dark:bg-slate-950 dark:text-slate-100">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>
