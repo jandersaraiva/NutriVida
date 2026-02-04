@@ -4,14 +4,15 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   AreaChart, Area, ComposedChart, Legend 
 } from 'recharts';
-import { TrendingDown, TrendingUp, Minus, ArrowRight, Scale, Activity, Ruler, Zap, Flame, PieChart } from 'lucide-react';
+import { TrendingDown, TrendingUp, Minus, ArrowRight, Scale, Activity, Ruler, Zap, Flame, PieChart, Cake } from 'lucide-react';
 
 interface DashboardProps {
   checkIns: CheckIn[];
   onAddEntry: () => void;
+  age: number; // Current calculated age of the patient
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, age }) => {
   // We assume checkIns is already sorted (newest first) for card display
   const current = checkIns[0];
   const previous = checkIns[1];
@@ -127,7 +128,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry }) =>
       </div>
 
       {/* Row 2: Secondary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+           <div>
+              <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">Idade</p>
+              <h3 className="text-2xl font-bold text-slate-800">{age}</h3>
+              <p className="text-xs text-slate-400">Anos</p>
+           </div>
+           <div className="p-3 rounded-full bg-indigo-50 text-indigo-600">
+              <Cake size={24} />
+           </div>
+        </div>
+
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
            <div>
               <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">Gordura Visceral</p>
@@ -141,7 +153,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry }) =>
 
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
            <div>
-              <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">Metabolismo Basal</p>
+              <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">Metabolismo</p>
               <h3 className="text-2xl font-bold text-slate-800">{current.bmr}</h3>
               <p className="text-xs text-slate-400">Kcal / dia</p>
            </div>
@@ -163,7 +175,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry }) =>
       </div>
 
       {/* Row 3: Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Chart 1: Weight & IMC */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
@@ -200,39 +212,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry }) =>
           </div>
         </div>
 
-        {/* Chart 2: Body Composition (%) */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
-              <Activity size={18} className="text-emerald-500" />
-              Composição Corporal (%)
-            </h3>
-          </div>
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                 <defs>
-                   <linearGradient id="colorMuscle" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                    </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="dateFormatted" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} domain={['dataMin - 5', 'dataMax + 5']} unit="%" />
-                <Tooltip 
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                    itemStyle={{ fontSize: '13px', fontWeight: 500 }}
-                />
-                <Legend iconType="circle" wrapperStyle={{paddingTop: '20px'}} />
-                <Area type="monotone" dataKey="muscleMass" name="Massa Muscular (%)" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorMuscle)" />
-                <Line type="monotone" dataKey="bodyFat" name="Gordura Corporal (%)" stroke="#f97316" strokeWidth={3} dot={{r: 4, fill: '#f97316', strokeWidth: 2, stroke:'#fff'}} />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Chart 3: Weight Composition (kg) */}
+        {/* Chart 2: Weight Composition (kg) */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">

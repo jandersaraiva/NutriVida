@@ -11,22 +11,65 @@ export interface CheckIn {
   visceralFat: number; // level
 }
 
+export interface FoodItem {
+  id: string;
+  name: string;
+  quantity: string;
+  calories?: number;
+}
+
+export interface Meal {
+  id: string;
+  name: string;
+  time: string; // HH:mm
+  items: FoodItem[];
+}
+
+export interface DietPlan {
+  id: string;
+  lastUpdated: string;
+  totalCalories?: number;
+  macros?: {
+    protein: number;
+    carbs: number;
+    fats: number;
+  };
+  meals: Meal[];
+  notes?: string;
+}
+
 export interface Patient {
   id: string;
   name: string;
   email: string;
   gender: 'Masculino' | 'Feminino';
-  age: number; // Added field
-  profession: string; // Added field
-  phone: string; // Added field
-  instagram: string; // Added field
+  age: number; 
+  profession: string;
+  phone: string;
+  instagram: string;
   birthDate: string;
   objective: string;
   avatarColor: string;
+  status: 'active' | 'trash';
   checkIns: CheckIn[];
+  diet?: DietPlan; // New field
 }
 
-export type ViewState = 'dashboard' | 'history' | 'add_entry' | 'profile' | 'patients';
+export interface Appointment {
+  id: string;
+  patientId: string;
+  date: string; // YYYY-MM-DD
+  time: string; // HH:mm
+  type: 'Consulta' | 'Retorno' | 'Avaliação';
+  status: 'Agendado' | 'Concluído' | 'Cancelado';
+  notes?: string;
+}
+
+// Simplified ViewState: The detailed views are now internal tabs of 'patient_details' (implicit)
+// Added 'home' for the main dashboard
+export type ViewState = 'home' | 'patients' | 'schedule' | 'add_entry' | 'select_patient_for_entry';
+
+export type PatientTab = 'overview' | 'history' | 'diet' | 'profile';
 
 export interface MetricConfig {
   key: keyof CheckIn;

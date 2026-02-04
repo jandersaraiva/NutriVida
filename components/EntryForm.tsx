@@ -57,7 +57,7 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
           step={step}
           value={value}
           onChange={handleChange}
-          className="w-full rounded-lg border-slate-200 border px-4 py-2.5 text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+          className="w-full bg-slate-50 rounded-lg border-slate-200 border px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
         />
         {unit && (
           <span className="absolute right-4 top-2.5 text-slate-400 text-sm pointer-events-none">

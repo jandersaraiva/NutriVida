@@ -1,6 +1,6 @@
 import React from 'react';
 import { ViewState } from '../types';
-import { LayoutDashboard, History, PlusCircle, User, Activity, Users } from 'lucide-react';
+import { PlusCircle, Activity, Users, CalendarDays, LayoutDashboard } from 'lucide-react';
 
 interface SidebarProps {
   currentView: ViewState;
@@ -9,11 +9,10 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
   const menuItems = [
+    { id: 'home', label: 'Visão Geral', icon: LayoutDashboard }, // New Dashboard
     { id: 'patients', label: 'Pacientes', icon: Users },
-    { id: 'dashboard', label: 'Visão Geral', icon: LayoutDashboard },
-    { id: 'history', label: 'Histórico', icon: History },
-    { id: 'add_entry', label: 'Nova Avaliação', icon: PlusCircle },
-    { id: 'profile', label: 'Perfil', icon: User },
+    { id: 'schedule', label: 'Agenda', icon: CalendarDays },
+    { id: 'select_patient_for_entry', label: 'Nova Avaliação', icon: PlusCircle },
   ];
 
   return (
@@ -31,10 +30,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) =
         <nav className="p-4 space-y-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            // Highlight dashboard if we are in sub-views of a patient context (history, add_entry, etc) while dashboard is active concept
-            // But strictly, let's follow the view state
-            const isActive = currentView === item.id;
             
+            // Highlight logic
+            let isActive = currentView === item.id;
+            
+            // Special case for 'select_patient_for_entry' which maps to 'add_entry' view
+            if (item.id === 'select_patient_for_entry' && currentView === 'add_entry') {
+              isActive = true;
+            }
+
+            // Special case: If we are viewing a specific patient details (implied by not matching others but logic handled in parent), 
+            // usually 'patients' is the parent section. 
+            // For Sidebar simplicity, if the user is deep in patient details, we can highlight 'Patients' or nothing.
+            // Let's rely on exact match or strict mapping.
+
             return (
               <button
                 key={item.id}
