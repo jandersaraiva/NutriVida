@@ -1,6 +1,6 @@
 import React from 'react';
 import { ViewState } from '../types';
-import { LayoutDashboard, History, PlusCircle, User, Activity } from 'lucide-react';
+import { LayoutDashboard, History, PlusCircle, User, Activity, Users } from 'lucide-react';
 
 interface SidebarProps {
   currentView: ViewState;
@@ -9,7 +9,8 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'patients', label: 'Pacientes', icon: Users },
+    { id: 'dashboard', label: 'Visão Geral', icon: LayoutDashboard },
     { id: 'history', label: 'Histórico', icon: History },
     { id: 'add_entry', label: 'Nova Avaliação', icon: PlusCircle },
     { id: 'profile', label: 'Perfil', icon: User },
@@ -30,6 +31,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) =
         <nav className="p-4 space-y-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
+            // Highlight dashboard if we are in sub-views of a patient context (history, add_entry, etc) while dashboard is active concept
+            // But strictly, let's follow the view state
             const isActive = currentView === item.id;
             
             return (
@@ -52,11 +55,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) =
 
       <div className="p-4 border-t border-slate-100 hidden lg:block">
         <div className="bg-slate-900 rounded-xl p-4 text-white">
-          <p className="text-xs text-slate-400 mb-1">Próxima meta</p>
-          <p className="font-medium text-sm">Atingir 18% de Gordura Corporal</p>
-          <div className="w-full bg-slate-700 h-1.5 rounded-full mt-3 overflow-hidden">
-            <div className="bg-emerald-500 h-full w-3/4 rounded-full"></div>
-          </div>
+          <p className="text-xs text-slate-400 mb-1">Versão Pro</p>
+          <p className="font-medium text-sm">Gestão completa de pacientes</p>
         </div>
       </div>
     </aside>

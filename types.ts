@@ -11,7 +11,22 @@ export interface CheckIn {
   visceralFat: number; // level
 }
 
-export type ViewState = 'dashboard' | 'history' | 'add_entry' | 'profile';
+export interface Patient {
+  id: string;
+  name: string;
+  email: string;
+  gender: 'Masculino' | 'Feminino';
+  age: number; // Added field
+  profession: string; // Added field
+  phone: string; // Added field
+  instagram: string; // Added field
+  birthDate: string;
+  objective: string;
+  avatarColor: string;
+  checkIns: CheckIn[];
+}
+
+export type ViewState = 'dashboard' | 'history' | 'add_entry' | 'profile' | 'patients';
 
 export interface MetricConfig {
   key: keyof CheckIn;
