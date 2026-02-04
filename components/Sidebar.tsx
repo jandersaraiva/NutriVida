@@ -1,15 +1,13 @@
 import React from 'react';
 import { ViewState } from '../types';
-import { PlusCircle, Activity, Users, CalendarDays, LayoutDashboard, Moon, Sun } from 'lucide-react';
+import { PlusCircle, Activity, Users, CalendarDays, LayoutDashboard } from 'lucide-react';
 
 interface SidebarProps {
   currentView: ViewState;
   onViewChange: (view: ViewState) => void;
-  theme: 'light' | 'dark';
-  toggleTheme: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, theme, toggleTheme }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
   const menuItems = [
     { id: 'home', label: 'Visão Geral', icon: LayoutDashboard }, // New Dashboard
     { id: 'patients', label: 'Pacientes', icon: Users },
@@ -18,14 +16,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, the
   ];
 
   return (
-    <aside className="w-20 lg:w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col justify-between transition-all duration-300 z-10 shadow-sm">
+    <aside className="w-20 lg:w-64 bg-white border-r border-slate-200 flex flex-col justify-between transition-all duration-300 z-10 shadow-sm">
       <div>
-        <div className="h-20 flex items-center justify-center lg:justify-start lg:px-6 border-b border-slate-100 dark:border-slate-800">
+        <div className="h-20 flex items-center justify-center lg:justify-start lg:px-6 border-b border-slate-100">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-emerald-600 rounded-lg text-white">
               <Activity size={24} />
             </div>
-            <span className="font-bold text-xl text-emerald-900 dark:text-emerald-400 hidden lg:block">NutriVida</span>
+            <span className="font-bold text-xl text-emerald-900 hidden lg:block">NutriVida</span>
           </div>
         </div>
 
@@ -41,17 +39,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, the
               isActive = true;
             }
 
+            // Special case: If we are viewing a specific patient details (implied by not matching others but logic handled in parent), 
+            // usually 'patients' is the parent section. 
+            // For Sidebar simplicity, if the user is deep in patient details, we can highlight 'Patients' or nothing.
+            // Let's rely on exact match or strict mapping.
+
             return (
               <button
                 key={item.id}
                 onClick={() => onViewChange(item.id as ViewState)}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
                   isActive 
-                    ? 'bg-emerald-50 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 font-medium shadow-sm ring-1 ring-emerald-100 dark:ring-emerald-900' 
-                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-emerald-600 dark:hover:text-emerald-400'
+                    ? 'bg-emerald-50 text-emerald-700 font-medium shadow-sm ring-1 ring-emerald-100' 
+                    : 'text-slate-500 hover:bg-slate-50 hover:text-emerald-600'
                 }`}
               >
-                <Icon size={22} className={isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500 group-hover:text-emerald-500'} />
+                <Icon size={22} className={isActive ? 'text-emerald-600' : 'text-slate-400 group-hover:text-emerald-500'} />
                 <span className="hidden lg:block">{item.label}</span>
               </button>
             );
@@ -59,26 +62,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, the
         </nav>
       </div>
 
-      <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-4">
-         {/* Theme Toggle */}
-         <button 
-            onClick={toggleTheme}
-            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
-         >
-            {theme === 'light' ? (
-                <>
-                    <Moon size={20} />
-                    <span className="hidden lg:block text-sm font-medium">Modo Escuro</span>
-                </>
-            ) : (
-                <>
-                    <Sun size={20} />
-                    <span className="hidden lg:block text-sm font-medium">Modo Claro</span>
-                </>
-            )}
-         </button>
-
-        <div className="bg-slate-900 dark:bg-slate-800 rounded-xl p-4 text-white hidden lg:block">
+      <div className="p-4 border-t border-slate-100 hidden lg:block">
+        <div className="bg-slate-900 rounded-xl p-4 text-white">
           <p className="text-xs text-slate-400 mb-1">Versão Pro</p>
           <p className="font-medium text-sm">Gestão completa de pacientes</p>
         </div>
