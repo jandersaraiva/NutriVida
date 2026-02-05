@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { CheckIn } from '../types';
 import { Save, X, Calculator } from 'lucide-react';
@@ -7,6 +8,9 @@ interface EntryFormProps {
   onCancel: () => void;
   lastRecord?: CheckIn;
 }
+
+// Helper seguro para IDs
+const generateId = () => Math.random().toString(36).substr(2, 9);
 
 export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastRecord }) => {
   const [formData, setFormData] = useState<Omit<CheckIn, 'id'>>({
@@ -41,7 +45,7 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
     e.preventDefault();
     onSave({
       ...formData,
-      id: crypto.randomUUID(),
+      id: generateId(),
     });
   };
 

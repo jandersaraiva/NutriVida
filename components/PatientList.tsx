@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { Patient } from '../types';
-import { Search, Plus, User, ChevronRight, Calendar, X, Pencil, Trash2, RefreshCcw, Archive } from 'lucide-react';
+import { Search, Plus, User, ChevronRight, Calendar, X, Pencil, Trash2, RefreshCcw, Archive, MapPin } from 'lucide-react';
 
 interface PatientListProps {
   patients: Patient[];
@@ -11,6 +12,9 @@ interface PatientListProps {
   onRestorePatient: (patientId: string) => void;
   initialOpenModal?: boolean; 
 }
+
+// Helper seguro para IDs
+const generateId = () => Math.random().toString(36).substr(2, 9);
 
 export const PatientList: React.FC<PatientListProps> = ({ 
   patients, 
@@ -40,7 +44,8 @@ export const PatientList: React.FC<PatientListProps> = ({
     gender: 'Masculino' as 'Masculino' | 'Feminino',
     profession: '',
     phone: '',
-    instagram: ''
+    instagram: '',
+    address: ''
   });
 
   const filteredPatients = patients.filter(p => 
@@ -73,7 +78,8 @@ export const PatientList: React.FC<PatientListProps> = ({
       gender: 'Masculino',
       profession: '',
       phone: '',
-      instagram: ''
+      instagram: '',
+      address: ''
     });
     setShowModal(true);
   };
@@ -87,7 +93,8 @@ export const PatientList: React.FC<PatientListProps> = ({
       gender: patient.gender,
       profession: patient.profession,
       phone: patient.phone,
-      instagram: patient.instagram
+      instagram: patient.instagram,
+      address: patient.address || ''
     });
     setShowModal(true);
   };
@@ -123,13 +130,14 @@ export const PatientList: React.FC<PatientListProps> = ({
                 profession: formData.profession,
                 phone: formData.phone,
                 instagram: formData.instagram,
+                address: formData.address,
             };
             onUpdatePatient(updated);
         }
     } else {
         // Create new
         const newPatient: Patient = {
-            id: crypto.randomUUID(),
+            id: generateId(),
             name: formData.name,
             email: `${formData.name.toLowerCase().replace(/\s/g, '.')}@email.com`, // Generated email
             gender: formData.gender,
@@ -138,6 +146,7 @@ export const PatientList: React.FC<PatientListProps> = ({
             profession: formData.profession,
             phone: formData.phone,
             instagram: formData.instagram,
+            address: formData.address,
             objective: 'Saúde e Bem-estar', // Default
             avatarColor: 'bg-emerald-100 text-emerald-700',
             status: 'active',
@@ -158,181 +167,186 @@ export const PatientList: React.FC<PatientListProps> = ({
            </h2>
            <p className="text-slate-500 text-sm">
              {viewMode === 'active' 
-               ? 'Gerencie o acompanhamento dos seus alunos' 
-               : 'Visualize ou restaure pacientes excluídos'}
+                ? 'Gerencie os cadastros e acompanhe a evolução.' 
+                : 'Recupere pacientes ou remova permanentemente.'}
            </p>
         </div>
-        <div className="flex items-center gap-3">
-          {/* View Mode Toggle */}
-          <div className="bg-slate-200 p-1 rounded-xl flex text-sm font-medium">
-             <button 
-                onClick={() => setViewMode('active')}
-                className={`px-3 py-1.5 rounded-lg transition-all ${viewMode === 'active' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-             >
-               Ativos
-             </button>
-             <button 
-                onClick={() => setViewMode('trash')}
-                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${viewMode === 'trash' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-             >
-               <Archive size={14} />
-               Lixeira
-             </button>
-          </div>
-
-          <button 
-            onClick={handleOpenAdd}
-            className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2.5 rounded-xl hover:bg-emerald-700 transition-colors shadow-sm font-medium"
-          >
-            <Plus size={20} />
-            <span className="hidden sm:inline">Novo Paciente</span>
-            <span className="sm:hidden">Novo</span>
-          </button>
+        
+        <div className="flex gap-3">
+            {viewMode === 'active' ? (
+                <>
+                    <button 
+                        onClick={() => setViewMode('trash')}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 transition-colors shadow-sm font-medium"
+                    >
+                        <Archive size={18} />
+                        <span className="hidden sm:inline">Lixeira</span>
+                    </button>
+                    <button 
+                        onClick={handleOpenAdd}
+                        className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2.5 rounded-xl hover:bg-emerald-700 transition-colors shadow-sm font-medium"
+                    >
+                        <Plus size={20} />
+                        <span className="hidden sm:inline">Novo Paciente</span>
+                    </button>
+                </>
+            ) : (
+                <button 
+                    onClick={() => setViewMode('active')}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 transition-colors shadow-sm font-medium"
+                >
+                    <User size={18} />
+                    <span className="hidden sm:inline">Ver Ativos</span>
+                </button>
+            )}
         </div>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-        <input 
-          type="text" 
-          placeholder="Buscar paciente..." 
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
-        />
+      <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+          <input 
+            type="text" 
+            placeholder="Buscar paciente por nome..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+          />
+        </div>
       </div>
 
       {filteredPatients.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-slate-200">
-           <div className="inline-flex p-4 rounded-full bg-slate-50 text-slate-400 mb-3">
-             {viewMode === 'active' ? <User size={32} /> : <Trash2 size={32} />}
-           </div>
-           <p className="text-slate-500 font-medium">
-             {viewMode === 'active' 
-                ? 'Nenhum paciente encontrado.' 
-                : 'A lixeira está vazia.'}
-           </p>
+        <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-slate-300">
+          <div className="mx-auto w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 mb-4">
+            <User size={32} />
+          </div>
+          <h3 className="text-lg font-semibold text-slate-700">Nenhum paciente encontrado</h3>
+          <p className="text-slate-500 max-w-xs mx-auto mt-2">
+            {searchTerm 
+                ? 'Tente buscar com outro termo.' 
+                : viewMode === 'active' 
+                    ? 'Cadastre seu primeiro paciente para começar o acompanhamento.'
+                    : 'A lixeira está vazia.'}
+          </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-          {filteredPatients.map(patient => {
-              const lastCheckIn = patient.checkIns.length > 0 
-                  ? [...patient.checkIns].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
-                  : null;
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredPatients.map((patient) => (
+            <div 
+              key={patient.id}
+              onClick={() => viewMode === 'active' && onSelectPatient(patient.id)}
+              className={`bg-white rounded-2xl border border-slate-100 p-6 shadow-sm hover:shadow-md transition-all group relative overflow-hidden ${viewMode === 'active' ? 'cursor-pointer hover:border-emerald-200' : 'opacity-75'}`}
+            >
+              <div className="flex justify-between items-start mb-4">
+                <div className={`h-14 w-14 ${patient.avatarColor} rounded-2xl flex items-center justify-center font-bold text-xl shadow-inner`}>
+                  {patient.name.substring(0,2).toUpperCase()}
+                </div>
+                
+                {viewMode === 'active' ? (
+                    <button 
+                        onClick={(e) => handleOpenEdit(e, patient)}
+                        className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                    >
+                        <Pencil size={18} />
+                    </button>
+                ) : (
+                    <button 
+                        onClick={(e) => handleRestoreClick(e, patient.id)}
+                        className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                        title="Restaurar"
+                    >
+                        <RefreshCcw size={18} />
+                    </button>
+                )}
+              </div>
 
-              return (
-                  <div 
-                    key={patient.id}
-                    onClick={() => viewMode === 'active' ? onSelectPatient(patient.id) : null}
-                    className={`bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all group relative ${viewMode === 'active' ? 'cursor-pointer' : 'cursor-default opacity-80'}`}
-                  >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                          <div className={`h-12 w-12 rounded-full flex items-center justify-center font-bold text-lg ${patient.avatarColor}`}>
-                              {patient.name.substring(0,2).toUpperCase()}
-                          </div>
-                          <div>
-                              <h3 className="font-bold text-slate-800 group-hover:text-emerald-700 transition-colors">{patient.name}</h3>
-                              <p className="text-xs text-slate-500">{patient.profession || 'Paciente'}</p>
-                          </div>
-                      </div>
-                      
-                      {/* Action Buttons */}
-                      <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                          {viewMode === 'active' ? (
-                            <>
-                              <button 
-                                  onClick={(e) => handleOpenEdit(e, patient)}
-                                  className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                                  title="Editar"
-                              >
-                                  <Pencil size={16} />
-                              </button>
-                              <button 
-                                  onClick={(e) => handleTrashClick(e, patient.id)}
-                                  className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                                  title="Mover para Lixeira"
-                              >
-                                  <Trash2 size={16} />
-                              </button>
-                            </>
-                          ) : (
-                            <button 
-                                onClick={(e) => handleRestoreClick(e, patient.id)}
-                                className="p-1.5 rounded-lg text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-colors flex items-center gap-1 px-2"
-                                title="Restaurar Paciente"
-                            >
-                                <RefreshCcw size={14} />
-                                <span className="text-xs font-bold">Restaurar</span>
-                            </button>
-                          )}
-                      </div>
-                    </div>
+              <h3 className="font-bold text-slate-800 text-lg truncate mb-1">{patient.name}</h3>
+              <p className="text-slate-500 text-sm mb-4 truncate">{patient.profession || 'Profissão não informada'}</p>
 
-                    <div className="pt-4 border-t border-slate-50 grid grid-cols-2 gap-2 text-sm">
-                      <div>
-                          <p className="text-slate-400 text-xs mb-1">Último Peso</p>
-                          <p className="font-semibold text-slate-700">{lastCheckIn ? `${lastCheckIn.weight} kg` : '-'}</p>
-                      </div>
-                      <div>
-                          <p className="text-slate-400 text-xs mb-1">Última Visita</p>
-                          <p className="font-semibold text-slate-700 flex items-center gap-1">
-                              {lastCheckIn ? new Date(lastCheckIn.date).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'}) : '-'}
-                          </p>
-                      </div>
-                    </div>
+              <div className="space-y-2 mb-6">
+                <div className="flex items-center gap-2 text-sm text-slate-600">
+                   <Calendar size={14} className="text-emerald-500" />
+                   {patient.age} anos
+                </div>
+                {patient.phone && (
+                   <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <span className="text-emerald-500 font-bold text-xs">Tel:</span>
+                      {patient.phone}
+                   </div>
+                )}
+              </div>
+
+              <div className="pt-4 border-t border-slate-50 flex justify-between items-center">
+                 <span className={`text-xs font-semibold px-2 py-1 rounded-md ${patient.checkIns.length > 0 ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-500'}`}>
+                    {patient.checkIns.length} Avaliações
+                 </span>
+                 
+                 {viewMode === 'active' && (
+                     <button 
+                        onClick={(e) => handleTrashClick(e, patient.id)}
+                        className="text-slate-400 hover:text-red-500 transition-colors p-1"
+                     >
+                        <Trash2 size={16} />
+                     </button>
+                 )}
+              </div>
+              
+              {viewMode === 'active' && (
+                  <div className="absolute right-4 bottom-4 opacity-0 group-hover:opacity-100 transition-opacity text-emerald-600">
+                    <ChevronRight size={20} />
                   </div>
-              );
-          })}
+              )}
+            </div>
+          ))}
         </div>
       )}
 
+      {/* Modal de Cadastro/Edição */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto">
-                <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-bold text-slate-800">
-                        {editingId ? 'Editar Paciente' : 'Adicionar Novo Paciente'}
+            <div className="bg-white rounded-2xl p-6 md:p-8 w-full max-w-2xl shadow-xl max-h-[90vh] overflow-y-auto">
+                <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+                    <h3 className="text-2xl font-bold text-slate-800">
+                        {editingId ? 'Editar Paciente' : 'Novo Paciente'}
                     </h3>
-                    <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600">
+                    <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
                         <X size={24} />
                     </button>
                 </div>
                 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Nome Completo</label>
                         <input 
-                            autoFocus
-                            name="name"
                             type="text" 
-                            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                            name="name"
+                            required
+                            placeholder="Ex: João da Silva"
                             value={formData.name}
                             onChange={handleInputChange}
-                            placeholder="Ex: João Silva"
-                            required
+                            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                         />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">Data de Nascimento</label>
                             <input 
-                                name="birthDate"
                                 type="date" 
-                                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                name="birthDate"
+                                required
                                 value={formData.birthDate}
                                 onChange={handleInputChange}
-                                required
+                                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Sexo</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Gênero</label>
                             <select 
                                 name="gender"
-                                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                 value={formData.gender}
                                 onChange={handleInputChange}
+                                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                             >
                                 <option value="Masculino">Masculino</option>
                                 <option value="Feminino">Feminino</option>
@@ -340,57 +354,77 @@ export const PatientList: React.FC<PatientListProps> = ({
                         </div>
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Profissão</label>
-                        <input 
-                            name="profession"
-                            type="text" 
-                            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                            value={formData.profession}
-                            onChange={handleInputChange}
-                            placeholder="Ex: Advogado"
-                        />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Número</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Profissão</label>
                             <input 
-                                name="phone"
-                                type="tel" 
+                                type="text" 
+                                name="profession"
+                                placeholder="Ex: Advogado"
+                                value={formData.profession}
+                                onChange={handleInputChange}
                                 className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Telefone / WhatsApp</label>
+                            <input 
+                                type="text" 
+                                name="phone"
+                                placeholder="(00) 00000-0000"
                                 value={formData.phone}
                                 onChange={handleInputChange}
-                                placeholder="(00) 00000-0000"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Instagram</label>
-                            <input 
-                                name="instagram"
-                                type="text" 
                                 className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                                value={formData.instagram}
-                                onChange={handleInputChange}
-                                placeholder="@usuario"
                             />
                         </div>
                     </div>
 
-                    <div className="flex gap-3 justify-end pt-4 border-t border-slate-50 mt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Instagram</label>
+                            <div className="relative">
+                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">@</span>
+                                <input 
+                                    type="text" 
+                                    name="instagram"
+                                    placeholder="usuario"
+                                    value={formData.instagram}
+                                    onChange={handleInputChange}
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                />
+                            </div>
+                        </div>
+                        {/* Novo Campo de Endereço */}
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Endereço</label>
+                            <div className="relative">
+                                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                <input 
+                                    type="text" 
+                                    name="address"
+                                    placeholder="Rua, Número - Cidade/UF"
+                                    value={formData.address}
+                                    onChange={handleInputChange}
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-3 justify-end pt-6 border-t border-slate-50 mt-2">
                         <button 
                             type="button"
                             onClick={() => setShowModal(false)}
-                            className="px-5 py-2.5 text-slate-600 font-medium hover:bg-slate-50 rounded-xl transition-colors"
+                            className="px-6 py-3 text-slate-600 font-medium hover:bg-slate-50 rounded-xl transition-colors"
                         >
                             Cancelar
                         </button>
                         <button 
                             type="submit"
-                            disabled={!formData.name.trim()}
-                            className="px-5 py-2.5 bg-emerald-600 text-white font-medium rounded-xl hover:bg-emerald-700 disabled:opacity-50 transition-colors shadow-lg shadow-emerald-200"
+                            className="px-6 py-3 bg-emerald-600 text-white font-medium rounded-xl hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200 flex items-center gap-2"
                         >
-                            {editingId ? 'Salvar Alterações' : 'Criar Paciente'}
+                            <User size={18} />
+                            {editingId ? 'Salvar Alterações' : 'Cadastrar Paciente'}
                         </button>
                     </div>
                 </form>

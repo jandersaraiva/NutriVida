@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { DietPlan as DietPlanType, Meal, FoodItem } from '../types';
 import { Clock, Plus, Trash2, Edit2, Save, X, ChefHat, Copy, Check } from 'lucide-react';
 
@@ -8,22 +9,33 @@ interface DietPlanProps {
   patientName: string;
 }
 
+// Helper seguro para IDs
+const generateId = () => Math.random().toString(36).substr(2, 9);
+
 export const DietPlan: React.FC<DietPlanProps> = ({ diet, onUpdateDiet, patientName }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [copied, setCopied] = useState(false);
   
   // Local state for editing form
-  const [editForm, setEditForm] = useState<DietPlanType>(diet || {
-    id: crypto.randomUUID(),
+  const [editForm, setEditForm] = useState<DietPlanType>(() => diet || {
+    id: generateId(),
     lastUpdated: new Date().toISOString(),
     meals: [],
     notes: ''
   });
 
   // Reset form when entering edit mode if diet prop changed
-  React.useEffect(() => {
+  useEffect(() => {
     if (diet) {
       setEditForm(diet);
+    } else {
+      // Caso não tenha dieta, reseta para template vazio seguro
+      setEditForm({
+        id: generateId(),
+        lastUpdated: new Date().toISOString(),
+        meals: [],
+        notes: ''
+      });
     }
   }, [diet, isEditing]);
 
@@ -50,7 +62,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ diet, onUpdateDiet, patientN
 
   const handleAddMeal = () => {
     const newMeal: Meal = {
-        id: crypto.randomUUID(),
+        id: generateId(),
         name: 'Nova Refeição',
         time: '08:00',
         items: []
@@ -71,7 +83,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ diet, onUpdateDiet, patientN
 
   const handleAddItem = (mealId: string) => {
     const newItem: FoodItem = {
-        id: crypto.randomUUID(),
+        id: generateId(),
         name: '',
         quantity: ''
     };
@@ -224,7 +236,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ diet, onUpdateDiet, patientN
   }
 
   // View Mode
-  if (!diet || diet.meals.length === 0) {
+  if (!diet || !diet.meals || diet.meals.length === 0) {
       return (
           <div className="flex flex-col items-center justify-center h-96 bg-white rounded-2xl border border-dashed border-slate-300 text-center p-8">
               <div className="bg-slate-50 p-4 rounded-full mb-4 text-slate-400">

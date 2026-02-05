@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Appointment, Patient } from '../types';
 import { Calendar, Clock, Plus, User, MapPin, X, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -7,6 +8,9 @@ interface ScheduleProps {
   appointments: Appointment[];
   onAddAppointment: (appointment: Appointment) => void;
 }
+
+// Helper seguro para IDs
+const generateId = () => Math.random().toString(36).substr(2, 9);
 
 export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAddAppointment }) => {
   const [showAddModal, setShowAddModal] = useState(false);
@@ -25,7 +29,7 @@ export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAd
     if (!formData.patientId) return;
 
     const newAppointment: Appointment = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       patientId: formData.patientId,
       date: formData.date,
       time: formData.time,

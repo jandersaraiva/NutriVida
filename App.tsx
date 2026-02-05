@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard'; // Patient Dashboard
@@ -11,6 +12,9 @@ import { DietPlan } from './components/DietPlan';
 import { NutritionistProfile } from './components/NutritionistProfile';
 import { CheckIn, ViewState, Patient, DietPlan as DietPlanType, PatientTab, Appointment, Nutritionist } from './types';
 import { User, Activity, Utensils, FileText, LayoutDashboard } from 'lucide-react';
+
+// Helper seguro para IDs
+const generateId = () => Math.random().toString(36).substr(2, 9);
 
 // Seed Data for initial demo
 const SEED_CHECKINS: CheckIn[] = [
@@ -113,6 +117,7 @@ const SEED_PATIENTS: Patient[] = [
     profession: 'Desenvolvedor',
     phone: '(11) 99999-9999',
     instagram: '@jander',
+    address: 'Rua das Flores, 123 - São Paulo, SP',
     birthDate: '1997-01-01',
     objective: 'Hipertrofia',
     avatarColor: 'bg-blue-100 text-blue-700',
@@ -129,6 +134,7 @@ const SEED_PATIENTS: Patient[] = [
     profession: 'Arquiteta',
     phone: '(11) 98888-8888',
     instagram: '@mariasilva.arq',
+    address: 'Av. Paulista, 2000 - São Paulo, SP',
     birthDate: '1990-05-15',
     objective: 'Emagrecimento',
     avatarColor: 'bg-rose-100 text-rose-700',
@@ -332,7 +338,7 @@ const App: React.FC = () => {
                  </div>
                  <div className="text-right hidden sm:block">
                     <p className="text-sm font-semibold text-slate-700 leading-tight">{activePatient.name}</p>
-                    <p className="text-[10px] text-slate-400">
+                    <p className="text-sm text-slate-400">
                        {activePatient.age} anos • {activePatient.profession}
                     </p>
                  </div>
@@ -444,6 +450,10 @@ const App: React.FC = () => {
                     <div>
                       <label className="block text-sm font-medium text-slate-500 mb-1">Instagram</label>
                       <input type="text" value={activePatient.instagram} disabled className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-slate-700" />
+                    </div>
+                    <div className="md:col-span-2 lg:col-span-3">
+                      <label className="block text-sm font-medium text-slate-500 mb-1">Endereço</label>
+                      <input type="text" value={activePatient.address || ''} disabled className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-slate-700" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-500 mb-1">Objetivo</label>

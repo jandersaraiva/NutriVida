@@ -1,3 +1,4 @@
+
 export interface CheckIn {
   id: string;
   date: string; // ISO string YYYY-MM-DD
@@ -47,12 +48,13 @@ export interface Patient {
   profession: string;
   phone: string;
   instagram: string;
+  address?: string; 
   birthDate: string;
   objective: string;
   avatarColor: string;
   status: 'active' | 'trash';
   checkIns: CheckIn[];
-  diet?: DietPlan; // New field
+  diet?: DietPlan;
 }
 
 export interface Appointment {
@@ -74,8 +76,6 @@ export interface Nutritionist {
   address: string;
 }
 
-// Simplified ViewState: The detailed views are now internal tabs of 'patient_details' (implicit)
-// Added 'home' for the main dashboard and 'profile_settings'
 export type ViewState = 'home' | 'patients' | 'schedule' | 'add_entry' | 'select_patient_for_entry' | 'profile_settings';
 
 export type PatientTab = 'overview' | 'history' | 'diet' | 'profile';
@@ -84,5 +84,5 @@ export interface MetricConfig {
   key: keyof CheckIn;
   label: string;
   unit: string;
-  inverse?: boolean; // if true, lower is better (e.g. visceral fat)
+  inverse?: boolean;
 }
