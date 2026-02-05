@@ -1,11 +1,12 @@
+
 import React from 'react';
-import { Patient, Appointment } from '../types';
+import { Patient, Appointment, ViewState } from '../types';
 import { Users, CalendarDays, Utensils, TrendingUp, Clock, AlertCircle } from 'lucide-react';
 
 interface MainDashboardProps {
   patients: Patient[];
   appointments: Appointment[];
-  onNavigateTo: (view: 'patients' | 'schedule') => void;
+  onNavigateTo: (view: ViewState) => void;
 }
 
 export const MainDashboard: React.FC<MainDashboardProps> = ({ patients, appointments, onNavigateTo }) => {
@@ -76,7 +77,7 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({ patients, appointm
             subtext={`${((patientsWithDiet/totalActive || 0)*100).toFixed(0)}% dos pacientes`}
             icon={Utensils} 
             colorClass="bg-orange-500 text-orange-500"
-            onClick={() => onNavigateTo('patients')}
+            onClick={() => onNavigateTo('active_diets')}
         />
         <Card 
             title="Novos (Mês)" 

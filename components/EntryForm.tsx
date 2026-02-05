@@ -12,6 +12,40 @@ interface EntryFormProps {
 // Helper seguro para IDs
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
+interface InputGroupProps {
+  label: string;
+  name: string;
+  unit?: string;
+  step?: string;
+  type?: string;
+  value: string | number;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
+// Componente extraído para fora para evitar re-renderização e perda de foco
+const InputGroup: React.FC<InputGroupProps> = ({ label, name, unit, step = "0.1", type = "number", value, onChange }) => (
+  <div className="flex flex-col">
+    <label htmlFor={name} className="text-sm font-medium text-slate-700 mb-1">{label}</label>
+    <div className="relative">
+      <input
+        required
+        type={type}
+        id={name}
+        name={name}
+        step={step}
+        value={value}
+        onChange={onChange}
+        className="w-full bg-slate-50 rounded-lg border-slate-200 border px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+      />
+      {unit && (
+        <span className="absolute right-4 top-2.5 text-slate-400 text-sm pointer-events-none">
+          {unit}
+        </span>
+      )}
+    </div>
+  </div>
+);
+
 export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastRecord }) => {
   const [formData, setFormData] = useState<Omit<CheckIn, 'id'>>({
     date: new Date().toISOString().split('T')[0],
@@ -49,29 +83,6 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
     });
   };
 
-  const InputGroup = ({ label, name, unit, step = "0.1", type = "number", value }: any) => (
-    <div className="flex flex-col">
-      <label htmlFor={name} className="text-sm font-medium text-slate-700 mb-1">{label}</label>
-      <div className="relative">
-        <input
-          required
-          type={type}
-          id={name}
-          name={name}
-          step={step}
-          value={value}
-          onChange={handleChange}
-          className="w-full bg-slate-50 rounded-lg border-slate-200 border px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
-        />
-        {unit && (
-          <span className="absolute right-4 top-2.5 text-slate-400 text-sm pointer-events-none">
-            {unit}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-
   return (
     <div className="max-w-2xl mx-auto">
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
@@ -88,15 +99,15 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <InputGroup label="Data da Avaliação" name="date" type="date" value={formData.date} />
-            <InputGroup label="Idade" name="age" unit="anos" step="1" value={formData.age} />
+            <InputGroup label="Data da Avaliação" name="date" type="date" value={formData.date} onChange={handleChange} />
+            <InputGroup label="Idade" name="age" unit="anos" step="1" value={formData.age} onChange={handleChange} />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <InputGroup label="Altura" name="height" unit="m" step="0.01" value={formData.height} />
-            <InputGroup label="Peso" name="weight" unit="kg" value={formData.weight} />
+            <InputGroup label="Altura" name="height" unit="m" step="0.01" value={formData.height} onChange={handleChange} />
+            <InputGroup label="Peso" name="weight" unit="kg" value={formData.weight} onChange={handleChange} />
             <div className="relative">
-               <InputGroup label="IMC" name="imc" step="0.1" value={formData.imc} />
+               <InputGroup label="IMC" name="imc" step="0.1" value={formData.imc} onChange={handleChange} />
                <div className="absolute top-0 right-0">
                   <span className="text-[10px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1">
                     <Calculator size={10} /> Auto
@@ -108,14 +119,14 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
           <div className="p-4 bg-slate-50 rounded-xl space-y-6 border border-slate-100">
             <h3 className="font-semibold text-slate-700 text-sm uppercase tracking-wide">Composição Corporal</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <InputGroup label="Gordura Corporal" name="bodyFat" unit="%" value={formData.bodyFat} />
-              <InputGroup label="Massa Muscular" name="muscleMass" unit="%" value={formData.muscleMass} />
+              <InputGroup label="Gordura Corporal" name="bodyFat" unit="%" value={formData.bodyFat} onChange={handleChange} />
+              <InputGroup label="Massa Muscular" name="muscleMass" unit="%" value={formData.muscleMass} onChange={handleChange} />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <InputGroup label="Taxa Metabólica Basal" name="bmr" unit="Kcal" step="1" value={formData.bmr} />
-            <InputGroup label="Gordura Visceral" name="visceralFat" step="1" value={formData.visceralFat} />
+            <InputGroup label="Taxa Metabólica Basal" name="bmr" unit="Kcal" step="1" value={formData.bmr} onChange={handleChange} />
+            <InputGroup label="Gordura Visceral" name="visceralFat" step="1" value={formData.visceralFat} onChange={handleChange} />
           </div>
 
           <div className="flex gap-4 pt-4">

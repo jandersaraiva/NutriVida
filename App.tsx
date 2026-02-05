@@ -10,6 +10,7 @@ import { Schedule } from './components/Schedule';
 import { PatientSelector } from './components/PatientSelector';
 import { DietPlan } from './components/DietPlan';
 import { NutritionistProfile } from './components/NutritionistProfile';
+import { ActiveDietsList } from './components/ActiveDietsList';
 import { CheckIn, ViewState, Patient, DietPlan as DietPlanType, PatientTab, Appointment, Nutritionist } from './types';
 import { User, Activity, Utensils, FileText, LayoutDashboard } from 'lucide-react';
 
@@ -65,10 +66,10 @@ const SEED_DIET: DietPlanType = {
       name: 'Café da Manhã',
       time: '07:30',
       items: [
-        { id: 'i1', name: 'Ovos mexidos', quantity: '3 unidades' },
-        { id: 'i2', name: 'Pão integral', quantity: '2 fatias' },
-        { id: 'i3', name: 'Mamão papaya', quantity: '1/2 unidade' },
-        { id: 'i4', name: 'Café preto s/ açúcar', quantity: '200ml' }
+        { id: 'i1', name: 'Ovos mexidos', quantity: '3 unidades', calories: 240, protein: 18, carbs: 2, fats: 16 },
+        { id: 'i2', name: 'Pão integral', quantity: '2 fatias', calories: 120, protein: 6, carbs: 22, fats: 2 },
+        { id: 'i3', name: 'Mamão papaya', quantity: '1/2 unidade', calories: 60, protein: 1, carbs: 14, fats: 0 },
+        { id: 'i4', name: 'Café preto s/ açúcar', quantity: '200ml', calories: 5, protein: 0, carbs: 1, fats: 0 }
       ]
     },
     {
@@ -76,11 +77,11 @@ const SEED_DIET: DietPlanType = {
       name: 'Almoço',
       time: '12:30',
       items: [
-        { id: 'i5', name: 'Arroz branco', quantity: '150g' },
-        { id: 'i6', name: 'Feijão carioca', quantity: '100g' },
-        { id: 'i7', name: 'Peito de frango grelhado', quantity: '150g' },
-        { id: 'i8', name: 'Salada de folhas verdes', quantity: 'À vontade' },
-        { id: 'i9', name: 'Azeite de oliva', quantity: '1 col. sopa' }
+        { id: 'i5', name: 'Arroz branco', quantity: '150g', calories: 190, protein: 4, carbs: 42, fats: 0 },
+        { id: 'i6', name: 'Feijão carioca', quantity: '100g', calories: 76, protein: 5, carbs: 14, fats: 0.5 },
+        { id: 'i7', name: 'Peito de frango grelhado', quantity: '150g', calories: 240, protein: 46, carbs: 0, fats: 5 },
+        { id: 'i8', name: 'Salada de folhas verdes', quantity: 'À vontade', calories: 20, protein: 1, carbs: 3, fats: 0 },
+        { id: 'i9', name: 'Azeite de oliva', quantity: '1 col. sopa', calories: 119, protein: 0, carbs: 0, fats: 13.5 }
       ]
     },
     {
@@ -88,9 +89,9 @@ const SEED_DIET: DietPlanType = {
       name: 'Lanche da Tarde',
       time: '16:00',
       items: [
-        { id: 'i10', name: 'Iogurte Natural', quantity: '170g' },
-        { id: 'i11', name: 'Whey Protein', quantity: '30g' },
-        { id: 'i12', name: 'Aveia em flocos', quantity: '20g' }
+        { id: 'i10', name: 'Iogurte Natural', quantity: '170g', calories: 100, protein: 6, carbs: 10, fats: 6 },
+        { id: 'i11', name: 'Whey Protein', quantity: '30g', calories: 120, protein: 24, carbs: 3, fats: 1 },
+        { id: 'i12', name: 'Aveia em flocos', quantity: '20g', calories: 70, protein: 3, carbs: 12, fats: 1.5 }
       ]
     },
     {
@@ -98,9 +99,9 @@ const SEED_DIET: DietPlanType = {
       name: 'Jantar',
       time: '20:00',
       items: [
-        { id: 'i13', name: 'Batata doce cozida', quantity: '150g' },
-        { id: 'i14', name: 'Patinho moído', quantity: '150g' },
-        { id: 'i15', name: 'Legumes cozidos (Brócolis/Cenoura)', quantity: '100g' }
+        { id: 'i13', name: 'Batata doce cozida', quantity: '150g', calories: 115, protein: 2, carbs: 27, fats: 0 },
+        { id: 'i14', name: 'Patinho moído', quantity: '150g', calories: 330, protein: 36, carbs: 0, fats: 20 },
+        { id: 'i15', name: 'Legumes cozidos (Brócolis/Cenoura)', quantity: '100g', calories: 40, protein: 3, carbs: 7, fats: 0 }
       ]
     }
   ],
@@ -235,6 +236,13 @@ const App: React.FC = () => {
     setCurrentView('patients'); // Ensure we are in the "Patients" section
   };
 
+  // Specific handler to go from active diet list directly to diet tab
+  const handleSelectPatientDiet = (id: string) => {
+    setSelectedPatientId(id);
+    setActiveTab('diet');
+    setCurrentView('patients');
+  };
+
   // Specific handler for the selector screen to go straight to entry
   const handleSelectPatientForEntry = (id: string) => {
     setSelectedPatientId(id);
@@ -311,7 +319,7 @@ const App: React.FC = () => {
       <main className="flex-1 overflow-y-auto p-4 md:p-8">
         
         {/* Dynamic Header (Only show if NOT in Home/Main Dashboard because it has its own header) */}
-        {currentView !== 'home' && (
+        {currentView !== 'home' && currentView !== 'active_diets' && (
           <header className="mb-6 flex justify-between items-center max-w-[1920px] mx-auto">
             <div>
               <h1 className="text-2xl font-bold text-slate-800">
@@ -355,6 +363,14 @@ const App: React.FC = () => {
               appointments={appointments}
               onNavigateTo={(view) => setCurrentView(view as ViewState)}
             />
+          )}
+
+          {currentView === 'active_diets' && (
+             <ActiveDietsList 
+                patients={patients}
+                onSelectPatient={handleSelectPatientDiet}
+                onBack={() => setCurrentView('home')}
+             />
           )}
 
           {currentView === 'profile_settings' && (
@@ -417,6 +433,7 @@ const App: React.FC = () => {
                     diet={activePatient.diet} 
                     onUpdateDiet={handleUpdateDiet}
                     patientName={activePatient.name}
+                    patientWeight={activeCheckIns[0]?.weight || 70} // Passando peso para calculo de g/kg
                 />
               )}
 

@@ -16,7 +16,10 @@ export interface FoodItem {
   id: string;
   name: string;
   quantity: string;
-  calories?: number;
+  calories: number;
+  protein: number; // grams
+  carbs: number; // grams
+  fats: number; // grams
 }
 
 export interface Meal {
@@ -76,7 +79,7 @@ export interface Nutritionist {
   address: string;
 }
 
-export type ViewState = 'home' | 'patients' | 'schedule' | 'add_entry' | 'select_patient_for_entry' | 'profile_settings';
+export type ViewState = 'home' | 'patients' | 'schedule' | 'add_entry' | 'select_patient_for_entry' | 'profile_settings' | 'active_diets';
 
 export type PatientTab = 'overview' | 'history' | 'diet' | 'profile';
 
