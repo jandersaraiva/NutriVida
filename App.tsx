@@ -266,6 +266,10 @@ const App: React.FC = () => {
     setAppointments(prev => [...prev, newAppointment]);
   };
 
+  const handleUpdateAppointment = (updatedAppointment: Appointment) => {
+    setAppointments(prev => prev.map(a => a.id === updatedAppointment.id ? updatedAppointment : a));
+  };
+
   const handleViewChange = (view: ViewState) => {
     // Reset states when changing main sections
     if (view === 'patients') {
@@ -408,6 +412,7 @@ const App: React.FC = () => {
               patients={patients} 
               appointments={appointments} 
               onAddAppointment={handleAddAppointment}
+              onUpdateAppointment={handleUpdateAppointment}
             />
           )}
 

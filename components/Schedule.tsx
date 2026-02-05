@@ -1,20 +1,27 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Appointment, Patient } from '../types';
-import { Calendar, Clock, Plus, User, MapPin, X, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, Plus, ChevronLeft, ChevronRight, X, Edit2 } from 'lucide-react';
 
 interface ScheduleProps {
   patients: Patient[];
   appointments: Appointment[];
   onAddAppointment: (appointment: Appointment) => void;
+  onUpdateAppointment: (appointment: Appointment) => void;
 }
 
 // Helper seguro para IDs
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
-export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAddAppointment }) => {
+export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAddAppointment, onUpdateAppointment }) => {
   const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [editingId, setEditingId] = useState<string | null>(null);
+  
+  // Estado para navegação do calendário (Mês/Ano visível)
+  const [viewDate, setViewDate] = useState(new Date());
+  
+  // Estado para filtro (Dia selecionado) - Inicia com hoje
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   const [formData, setFormData] = useState({
     patientId: '',
@@ -24,50 +31,132 @@ export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAd
     notes: ''
   });
 
-  const handleAddAppointment = (e: React.FormEvent) => {
+  // Utilitários de Data
+  const getDaysInMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  const getFirstDayOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1).getDay(); // 0 = Domingo
+
+  const toDateString = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const handlePrevMonth = () => {
+    setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1));
+  };
+
+  const handleDayClick = (day: number) => {
+    const newDate = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
+    setSelectedDate(newDate);
+  };
+
+  const handleOpenAddModal = (preSelectedDate?: Date) => {
+    setEditingId(null);
+    const dateToUse = preSelectedDate || selectedDate || new Date();
+    setFormData({
+        patientId: '',
+        date: toDateString(dateToUse),
+        time: '10:00',
+        type: 'Consulta',
+        notes: ''
+    });
+    setShowAddModal(true);
+  };
+
+  const handleEditClick = (app: Appointment) => {
+    setEditingId(app.id);
+    setFormData({
+        patientId: app.patientId,
+        date: app.date,
+        time: app.time,
+        type: app.type,
+        notes: app.notes || ''
+    });
+    setShowAddModal(true);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.patientId) return;
 
-    const newAppointment: Appointment = {
-      id: generateId(),
-      patientId: formData.patientId,
-      date: formData.date,
-      time: formData.time,
-      type: formData.type,
-      status: 'Agendado',
-      notes: formData.notes
-    };
+    if (editingId) {
+        // Modo Edição
+        const originalApp = appointments.find(a => a.id === editingId);
+        const updatedAppointment: Appointment = {
+            id: editingId,
+            patientId: formData.patientId,
+            date: formData.date,
+            time: formData.time,
+            type: formData.type,
+            status: originalApp?.status || 'Agendado',
+            notes: formData.notes
+        };
+        onUpdateAppointment(updatedAppointment);
+    } else {
+        // Modo Criação
+        const newAppointment: Appointment = {
+            id: generateId(),
+            patientId: formData.patientId,
+            date: formData.date,
+            time: formData.time,
+            type: formData.type,
+            status: 'Agendado',
+            notes: formData.notes
+        };
+        onAddAppointment(newAppointment);
+    }
 
-    onAddAppointment(newAppointment);
     setShowAddModal(false);
-    setFormData({ ...formData, notes: '' }); // Reset notes only
+    setEditingId(null);
+    setFormData(prev => ({ ...prev, notes: '' }));
   };
 
-  // Group appointments by date
-  const sortedAppointments = [...appointments].sort((a, b) => {
-    const dateA = new Date(`${a.date}T${a.time}`);
-    const dateB = new Date(`${b.date}T${b.time}`);
-    return dateA.getTime() - dateB.getTime();
-  });
+  // Filtragem e Ordenação
+  const selectedDateString = toDateString(selectedDate);
+  
+  const filteredAppointments = useMemo(() => {
+    return appointments
+        .filter(a => a.date === selectedDateString)
+        .sort((a, b) => a.time.localeCompare(b.time));
+  }, [appointments, selectedDateString]);
+
+  // Identificar dias com agendamentos para o mês visível (para as bolinhas)
+  const daysWithAppointments = useMemo(() => {
+    const daysSet = new Set<number>();
+    const monthStr = String(viewDate.getMonth() + 1).padStart(2, '0');
+    const yearStr = String(viewDate.getFullYear());
+    
+    appointments.forEach(app => {
+        const [appYear, appMonth, appDay] = app.date.split('-');
+        if (appYear === yearStr && appMonth === monthStr) {
+            daysSet.add(parseInt(appDay));
+        }
+    });
+    return daysSet;
+  }, [appointments, viewDate]);
 
   const getPatientName = (id: string) => patients.find(p => p.id === id)?.name || 'Paciente Desconhecido';
-  
-  const formatDateHeader = (dateStr: string) => {
-    const date = new Date(`${dateStr}T12:00:00`);
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
 
-    if (date.toDateString() === today.toDateString()) return 'Hoje';
-    if (date.toDateString() === tomorrow.toDateString()) return 'Amanhã';
-    
-    return date.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
-  };
+  // Próximo agendamento global (independente do filtro)
+  const nextAppointment = useMemo(() => {
+     const now = new Date();
+     return [...appointments]
+        .filter(a => new Date(`${a.date}T${a.time}`) > now)
+        .sort((a, b) => new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime())[0];
+  }, [appointments]);
 
-  // Filter for next appointment (simplistic logic for demo)
-  const nextAppointment = sortedAppointments.find(a => {
-      const appDate = new Date(`${a.date}T${a.time}`);
-      return appDate > new Date();
+  // Geração da Grade do Calendário
+  const daysInMonth = getDaysInMonth(viewDate);
+  const startDay = getFirstDayOfMonth(viewDate);
+  const totalSlots = Math.ceil((daysInMonth + startDay) / 7) * 7; // Garante linhas completas
+  const calendarGrid = Array.from({ length: totalSlots }, (_, i) => {
+    const dayNumber = i - startDay + 1;
+    return (dayNumber > 0 && dayNumber <= daysInMonth) ? dayNumber : null;
   });
 
   return (
@@ -78,7 +167,7 @@ export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAd
            <p className="text-slate-500 text-sm">Gerencie seus horários e atendimentos</p>
         </div>
         <button 
-          onClick={() => setShowAddModal(true)}
+          onClick={() => handleOpenAddModal()}
           className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2.5 rounded-xl hover:bg-emerald-700 transition-colors shadow-sm font-medium"
         >
           <Plus size={20} />
@@ -86,136 +175,184 @@ export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAd
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Simple Calendar Sidebar (Visual only for this demo) */}
-        <div className="lg:col-span-1 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        {/* Lado Esquerdo: Calendário e Próxima Consulta Global */}
+        <div className="lg:col-span-4 space-y-6">
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-bold text-slate-700 capitalize">
-                        {selectedDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+                <div className="flex items-center justify-between mb-6">
+                    <h3 className="font-bold text-slate-800 capitalize text-lg">
+                        {viewDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
                     </h3>
                     <div className="flex gap-2">
-                        <button className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-600">
+                        <button onClick={handlePrevMonth} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-emerald-600 transition-colors">
                             <ChevronLeft size={20} />
                         </button>
-                        <button className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-600">
+                        <button onClick={handleNextMonth} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-emerald-600 transition-colors">
                             <ChevronRight size={20} />
                         </button>
                     </div>
                 </div>
-                {/* Simplified Calendar Grid */}
+                
                 <div className="grid grid-cols-7 gap-1 text-center text-sm mb-2">
                     {['D','S','T','Q','Q','S','S'].map((d, i) => (
-                        <div key={i} className="text-slate-400 text-xs font-medium py-1">{d}</div>
+                        <div key={i} className="text-slate-400 text-xs font-bold py-2">{d}</div>
                     ))}
                 </div>
+                
                 <div className="grid grid-cols-7 gap-1 text-center text-sm">
-                    {Array.from({length: 35}, (_, i) => {
-                        const day = i - 2; // Offset for demo
-                        const isToday = day === new Date().getDate();
-                        // Find if there are appointments on this day
-                        // Note: This matches day number only for the current month visualization
-                        const hasApps = appointments.some(a => {
-                            const d = new Date(a.date);
-                            return d.getDate() === day && d.getMonth() === new Date().getMonth();
-                        });
+                    {calendarGrid.map((day, i) => {
+                        if (day === null) return <div key={i} className="h-10"></div>;
+
+                        const isSelected = 
+                            selectedDate.getDate() === day && 
+                            selectedDate.getMonth() === viewDate.getMonth() &&
+                            selectedDate.getFullYear() === viewDate.getFullYear();
+                        
+                        const isToday = 
+                            new Date().getDate() === day &&
+                            new Date().getMonth() === viewDate.getMonth() &&
+                            new Date().getFullYear() === viewDate.getFullYear();
+
+                        const hasEvents = daysWithAppointments.has(day);
 
                         return (
-                            <div 
+                            <button 
                                 key={i} 
+                                onClick={() => handleDayClick(day)}
                                 className={`
-                                    h-8 w-8 flex items-center justify-center rounded-full cursor-pointer transition-colors relative
-                                    ${day <= 0 || day > 31 ? 'text-slate-300' : 'text-slate-700 hover:bg-slate-50'}
-                                    ${isToday ? 'bg-emerald-600 text-white hover:bg-emerald-700' : ''}
+                                    h-10 w-full flex flex-col items-center justify-center rounded-lg transition-all relative font-medium
+                                    ${isSelected 
+                                        ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200' 
+                                        : 'text-slate-700 hover:bg-emerald-50 hover:text-emerald-700'
+                                    }
+                                    ${isToday && !isSelected ? 'border border-emerald-200 text-emerald-700' : ''}
                                 `}
                             >
-                                {day > 0 && day <= 31 ? day : ''}
-                                {hasApps && !isToday && day > 0 && day <= 31 && (
-                                    <span className="absolute bottom-1 w-1 h-1 bg-emerald-500 rounded-full"></span>
+                                <span>{day}</span>
+                                {hasEvents && !isSelected && (
+                                    <span className="absolute bottom-1.5 w-1 h-1 bg-emerald-500 rounded-full"></span>
                                 )}
-                            </div>
+                            </button>
                         );
                     })}
                 </div>
             </div>
 
-            <div className="bg-emerald-50 p-5 rounded-2xl border border-emerald-100">
-                <h4 className="font-bold text-emerald-900 mb-2">Próxima Consulta</h4>
+            {/* Cartão de Próxima Consulta (Global) */}
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-2xl text-white shadow-lg">
+                <h4 className="font-bold text-slate-200 mb-4 flex items-center gap-2 text-sm uppercase tracking-wide">
+                    <Clock size={16} className="text-emerald-400" />
+                    Próximo Atendimento
+                </h4>
                 {nextAppointment ? (
                     <div>
-                        <div className="text-emerald-700 text-2xl font-bold mb-1">{nextAppointment.time}</div>
-                        <div className="text-emerald-800 font-medium mb-1">{getPatientName(nextAppointment.patientId)}</div>
-                        <div className="text-emerald-600 text-sm capitalize">{nextAppointment.type} • {new Date(nextAppointment.date).toLocaleDateString('pt-BR', {weekday: 'long'})}</div>
+                        <div className="text-4xl font-bold mb-1">{nextAppointment.time}</div>
+                        <div className="text-emerald-400 font-medium mb-3 text-lg">{getPatientName(nextAppointment.patientId)}</div>
+                        <div className="inline-flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg text-sm">
+                            <Calendar size={14} />
+                            <span className="capitalize">{new Date(nextAppointment.date).toLocaleDateString('pt-BR', {weekday: 'long', day: 'numeric', month: 'short'})}</span>
+                        </div>
                     </div>
                 ) : (
-                    <p className="text-emerald-600 text-sm">Nenhum agendamento futuro encontrado.</p>
+                    <p className="text-slate-400 text-sm">Nenhum agendamento futuro encontrado na agenda.</p>
                 )}
             </div>
         </div>
 
-        {/* Appointments List */}
-        <div className="lg:col-span-2 space-y-6">
-            {sortedAppointments.length === 0 ? (
-                <div className="bg-white p-12 rounded-2xl border border-dashed border-slate-300 text-center">
-                    <Calendar size={48} className="mx-auto text-slate-300 mb-4" />
-                    <h3 className="text-lg font-semibold text-slate-600">Agenda Vazia</h3>
-                    <p className="text-slate-400">Nenhum agendamento encontrado.</p>
-                </div>
-            ) : (
-                <>
-                {Array.from(new Set(sortedAppointments.map(a => a.date))).map(date => (
-                    <div key={date}>
-                        <h3 className="font-bold text-slate-500 text-sm uppercase tracking-wide mb-3 ml-1">
-                            {formatDateHeader(date)}
+        {/* Lado Direito: Lista de Agendamentos do Dia Selecionado */}
+        <div className="lg:col-span-8">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 min-h-[500px] flex flex-col">
+                <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 rounded-t-2xl">
+                    <div>
+                        <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1 block">Visualizando Dia</span>
+                        <h3 className="font-bold text-slate-800 text-xl capitalize flex items-center gap-2">
+                             {selectedDate.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
                         </h3>
-                        <div className="space-y-3">
-                            {sortedAppointments.filter(a => a.date === date).map(app => (
-                                <div key={app.id} className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between hover:border-emerald-200 transition-colors group">
-                                    <div className="flex items-center gap-4">
-                                        <div className="flex flex-col items-center justify-center w-14 h-14 bg-slate-50 rounded-lg text-slate-700 border border-slate-100 group-hover:bg-emerald-50 group-hover:text-emerald-700 group-hover:border-emerald-100 transition-colors">
-                                            <span className="text-lg font-bold leading-none">{app.time.split(':')[0]}</span>
-                                            <span className="text-xs font-medium text-slate-400 group-hover:text-emerald-600">{app.time.split(':')[1]}</span>
-                                        </div>
-                                        <div>
-                                            <h4 className="font-bold text-slate-800">{getPatientName(app.patientId)}</h4>
-                                            <div className="flex items-center gap-3 text-sm text-slate-500 mt-0.5">
-                                                <span className="flex items-center gap-1">
-                                                    <CheckCircle size={14} className="text-emerald-500" />
-                                                    {app.type}
+                    </div>
+                    <div className="bg-white px-3 py-1 rounded-lg border border-slate-200 text-xs font-medium text-slate-500">
+                        {filteredAppointments.length} agendamentos
+                    </div>
+                </div>
+
+                <div className="p-6 flex-1">
+                    {filteredAppointments.length === 0 ? (
+                        <div className="h-full flex flex-col items-center justify-center text-center py-12">
+                            <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                                <Calendar size={32} className="text-slate-300" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-slate-600">Agenda Livre</h3>
+                            <p className="text-slate-400 mb-6 max-w-xs">Não há consultas marcadas para este dia.</p>
+                            <button 
+                                onClick={() => handleOpenAddModal(selectedDate)}
+                                className="text-emerald-600 font-medium hover:text-emerald-700 hover:bg-emerald-50 px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                            >
+                                <Plus size={18} /> Agendar neste dia
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {filteredAppointments.map(app => (
+                                <div key={app.id} className="bg-white p-5 rounded-xl border border-slate-200 hover:border-emerald-300 hover:shadow-md transition-all group flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                                    <div className="flex flex-col items-center justify-center min-w-[80px] h-full">
+                                        <span className="text-2xl font-bold text-slate-700">{app.time}</span>
+                                        <span className={`text-xs px-2 py-0.5 rounded-full mt-1 ${
+                                            app.type === 'Consulta' ? 'bg-blue-50 text-blue-600' :
+                                            app.type === 'Retorno' ? 'bg-emerald-50 text-emerald-600' :
+                                            'bg-purple-50 text-purple-600'
+                                        }`}>
+                                            {app.type}
+                                        </span>
+                                    </div>
+                                    
+                                    <div className="w-px h-12 bg-slate-100 hidden sm:block"></div>
+
+                                    <div className="flex-1">
+                                        <h4 className="font-bold text-slate-800 text-lg mb-1">{getPatientName(app.patientId)}</h4>
+                                        <div className="flex items-center gap-4 text-sm text-slate-500">
+                                            {app.notes ? (
+                                                <span className="flex items-center gap-1.5">
+                                                    <div className="w-1.5 h-1.5 bg-slate-300 rounded-full"></div>
+                                                    {app.notes}
                                                 </span>
-                                                {app.notes && (
-                                                    <span className="text-slate-400 max-w-[200px] truncate hidden sm:inline-block">
-                                                        • {app.notes}
-                                                    </span>
-                                                )}
-                                            </div>
+                                            ) : (
+                                                <span className="text-slate-400 italic">Sem observações</span>
+                                            )}
                                         </div>
                                     </div>
-                                    <button className="p-2 hover:bg-slate-50 rounded-full text-slate-400 hover:text-emerald-600 transition-colors">
-                                        <ChevronRight size={20} />
-                                    </button>
+
+                                    <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                                        <button 
+                                            onClick={() => handleEditClick(app)}
+                                            className="flex-1 sm:flex-none px-4 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                                        >
+                                            <Edit2 size={16} />
+                                            Editar
+                                        </button>
+                                    </div>
                                 </div>
                             ))}
                         </div>
-                    </div>
-                ))}
-                </>
-            )}
+                    )}
+                </div>
+            </div>
         </div>
       </div>
 
-      {/* Add Modal */}
+      {/* Modal de Adição/Edição */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
             <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto">
                 <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-bold text-slate-800">Novo Agendamento</h3>
+                    <h3 className="text-xl font-bold text-slate-800">
+                        {editingId ? 'Editar Agendamento' : 'Novo Agendamento'}
+                    </h3>
                     <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600">
                         <X size={24} />
                     </button>
                 </div>
                 
-                <form onSubmit={handleAddAppointment} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Paciente</label>
                         <select 
@@ -298,7 +435,7 @@ export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAd
                             disabled={!formData.patientId}
                             className="px-5 py-2.5 bg-emerald-600 text-white font-medium rounded-xl hover:bg-emerald-700 disabled:opacity-50 transition-colors shadow-lg shadow-emerald-200"
                         >
-                            Agendar
+                            {editingId ? 'Salvar Alterações' : 'Agendar'}
                         </button>
                     </div>
                 </form>
