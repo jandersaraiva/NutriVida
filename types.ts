@@ -16,7 +16,10 @@ export interface FoodItem {
   id: string;
   name: string;
   quantity: string;
-  calories?: number;
+  calories: number;
+  protein: number; // grams
+  carbs: number; // grams
+  fats: number; // grams
 }
 
 export interface Meal {

@@ -1,20 +1,46 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { DietPlan as DietPlanType, Meal, FoodItem } from '../types';
-import { Clock, Plus, Trash2, Edit2, Save, X, ChefHat, Copy, Check } from 'lucide-react';
+import { Clock, Plus, Trash2, Edit2, Save, X, ChefHat, Copy, Check, PieChart, Search, Zap } from 'lucide-react';
 
 interface DietPlanProps {
   diet?: DietPlanType;
   onUpdateDiet: (diet: DietPlanType) => void;
   patientName: string;
+  patientWeight?: number;
 }
+
+// --- BANCO DE DADOS DE ALIMENTOS (Por 100g) ---
+const FOOD_DATABASE = [
+  { name: 'Arroz Branco Cozido', protein: 2.5, carbs: 28.1, fats: 0.2, calories: 128 },
+  { name: 'Arroz Integral Cozido', protein: 2.6, carbs: 25.8, fats: 1.0, calories: 124 },
+  { name: 'Feijão Carioca Cozido', protein: 4.8, carbs: 13.6, fats: 0.5, calories: 76 },
+  { name: 'Peito de Frango Grelhado', protein: 32.0, carbs: 0.0, fats: 2.5, calories: 159 },
+  { name: 'Carne Moída (Patinho)', protein: 35.9, carbs: 0.0, fats: 7.3, calories: 219 },
+  { name: 'Ovo Cozido (Inteiro)', protein: 13.0, carbs: 1.1, fats: 11.0, calories: 155 },
+  { name: 'Clara de Ovo', protein: 11.0, carbs: 0.0, fats: 0.0, calories: 50 },
+  { name: 'Batata Doce Cozida', protein: 1.6, carbs: 28.0, fats: 0.1, calories: 115 },
+  { name: 'Batata Inglesa Cozida', protein: 1.9, carbs: 20.1, fats: 0.0, calories: 86 },
+  { name: 'Aveia em Flocos', protein: 14.0, carbs: 66.0, fats: 7.0, calories: 389 },
+  { name: 'Banana Prata', protein: 1.3, carbs: 26.0, fats: 0.1, calories: 98 },
+  { name: 'Maçã Fuji', protein: 0.3, carbs: 15.0, fats: 0.2, calories: 56 },
+  { name: 'Whey Protein (Padrão)', protein: 80.0, carbs: 5.0, fats: 2.0, calories: 360 },
+  { name: 'Iogurte Natural Desnatado', protein: 5.9, carbs: 7.0, fats: 0.1, calories: 51 },
+  { name: 'Azeite de Oliva', protein: 0.0, carbs: 0.0, fats: 100.0, calories: 884 },
+  { name: 'Pão Integral (Fatia)', protein: 9.4, carbs: 49.0, fats: 3.7, calories: 253 }, // Valores médios por 100g
+  { name: 'Queijo Cottage', protein: 11.0, carbs: 3.4, fats: 4.3, calories: 98 },
+  { name: 'Tilápia Grelhada', protein: 26.0, carbs: 0.0, fats: 2.7, calories: 128 },
+];
 
 // Helper seguro para IDs
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
-export const DietPlan: React.FC<DietPlanProps> = ({ diet, onUpdateDiet, patientName }) => {
+export const DietPlan: React.FC<DietPlanProps> = ({ diet, onUpdateDiet, patientName, patientWeight = 70 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [copied, setCopied] = useState(false);
+  
+  // Estado para controlar o autocomplete
+  const [activeSuggestionId, setActiveSuggestionId] = useState<string | null>(null);
   
   // Local state for editing form
   const [editForm, setEditForm] = useState<DietPlanType>(() => diet || {
@@ -29,7 +55,6 @@ export const DietPlan: React.FC<DietPlanProps> = ({ diet, onUpdateDiet, patientN
     if (diet) {
       setEditForm(diet);
     } else {
-      // Caso não tenha dieta, reseta para template vazio seguro
       setEditForm({
         id: generateId(),
         lastUpdated: new Date().toISOString(),
@@ -39,6 +64,13 @@ export const DietPlan: React.FC<DietPlanProps> = ({ diet, onUpdateDiet, patientN
     }
   }, [diet, isEditing]);
 
+  // Click outside to close suggestions
+  useEffect(() => {
+    const handleClickOutside = () => setActiveSuggestionId(null);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
   const handleCopyDiet = () => {
     if (!diet) return;
     
@@ -46,7 +78,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ diet, onUpdateDiet, patientN
     diet.meals.forEach(meal => {
         text += `⏰ ${meal.time} - ${meal.name}\n`;
         meal.items.forEach(item => {
-            text += `• ${item.quantity} ${item.name}\n`;
+            text += `• ${item.quantity} ${item.name} (${item.calories.toFixed(0)} kcal)\n`;
         });
         text += '\n';
     });
@@ -85,7 +117,11 @@ export const DietPlan: React.FC<DietPlanProps> = ({ diet, onUpdateDiet, patientN
     const newItem: FoodItem = {
         id: generateId(),
         name: '',
-        quantity: ''
+        quantity: '',
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fats: 0
     };
     setEditForm(prev => ({
         ...prev,
@@ -100,6 +136,29 @@ export const DietPlan: React.FC<DietPlanProps> = ({ diet, onUpdateDiet, patientN
     }));
   };
 
+  // --- LÓGICA DE CÁLCULO AUTOMÁTICO ---
+  const calculateNutrition = (currentName: string, currentQtyStr: string, currentItem: FoodItem): Partial<FoodItem> => {
+    // 1. Tenta achar o alimento no banco
+    const foodDB = FOOD_DATABASE.find(f => f.name.toLowerCase() === currentName.toLowerCase());
+    
+    if (!foodDB) return {}; // Se não achar, não muda os macros (permite edição manual)
+
+    // 2. Extrai apenas os números da quantidade (ex: "150g" -> 150)
+    const qtyNumber = parseFloat(currentQtyStr.replace(/[^0-9.]/g, ''));
+    
+    if (!qtyNumber || isNaN(qtyNumber)) return {};
+
+    // 3. Calcula (BaseDB / 100 * QtdInserida)
+    const factor = qtyNumber / 100;
+
+    return {
+        protein: parseFloat((foodDB.protein * factor).toFixed(1)),
+        carbs: parseFloat((foodDB.carbs * factor).toFixed(1)),
+        fats: parseFloat((foodDB.fats * factor).toFixed(1)),
+        calories: parseFloat((foodDB.calories * factor).toFixed(1))
+    };
+  };
+
   const handleItemChange = (mealId: string, itemId: string, field: keyof FoodItem, value: string) => {
     setEditForm(prev => ({
         ...prev,
@@ -107,16 +166,88 @@ export const DietPlan: React.FC<DietPlanProps> = ({ diet, onUpdateDiet, patientN
             if (m.id === mealId) {
                 return {
                     ...m,
-                    items: m.items.map(i => i.id === itemId ? { ...i, [field]: value } : i)
+                    items: m.items.map(i => {
+                        if (i.id === itemId) {
+                            let updatedItem = { ...i, [field]: value };
+                            
+                            // Se alterou NOME ou QUANTIDADE, tenta recalcular
+                            if (field === 'name' || field === 'quantity') {
+                                // Se for alteração de nome, checa se tem match exato para auto-calcular
+                                // Se for quantidade, usa o nome atual
+                                const nameToUse = field === 'name' ? value : updatedItem.name;
+                                const qtyToUse = field === 'quantity' ? value : updatedItem.quantity;
+                                
+                                const autoMacros = calculateNutrition(nameToUse, qtyToUse, updatedItem);
+                                updatedItem = { ...updatedItem, ...autoMacros };
+                            }
+
+                            // Se alterou MACROS manualmente, recalcula calorias (fallback)
+                            if (field === 'protein' || field === 'carbs' || field === 'fats') {
+                                const p = parseFloat(String(updatedItem.protein) || '0');
+                                const c = parseFloat(String(updatedItem.carbs) || '0');
+                                const f = parseFloat(String(updatedItem.fats) || '0');
+                                updatedItem.calories = (p * 4) + (c * 4) + (f * 9);
+                            }
+                            
+                            return updatedItem;
+                        }
+                        return i;
+                    })
                 };
             }
             return m;
         })
     }));
+
+    if (field === 'name') {
+        setActiveSuggestionId(value.length > 2 ? itemId : null);
+    }
+  };
+
+  const handleSelectSuggestion = (mealId: string, itemId: string, food: typeof FOOD_DATABASE[0]) => {
+    // Ao selecionar, preenche o nome
+    // Se já tiver quantidade, calcula. Se não, deixa zerado ou põe "100g" padrão?
+    // Vamos manter a quantidade atual se existir, ou por 100g padrão.
+    
+    setEditForm(prev => {
+        const currentMeal = prev.meals.find(m => m.id === mealId);
+        const currentItem = currentMeal?.items.find(i => i.id === itemId);
+        const currentQty = currentItem?.quantity || '100g';
+        
+        // Extrai número para calcular inicial
+        const qtyNumber = parseFloat(currentQty.replace(/[^0-9.]/g, '')) || 100;
+        const factor = qtyNumber / 100;
+
+        return {
+            ...prev,
+            meals: prev.meals.map(m => {
+                if (m.id === mealId) {
+                    return {
+                        ...m,
+                        items: m.items.map(i => {
+                            if (i.id === itemId) {
+                                return {
+                                    ...i,
+                                    name: food.name,
+                                    quantity: currentQty, // Mantém o que estava ou 100g
+                                    protein: parseFloat((food.protein * factor).toFixed(1)),
+                                    carbs: parseFloat((food.carbs * factor).toFixed(1)),
+                                    fats: parseFloat((food.fats * factor).toFixed(1)),
+                                    calories: parseFloat((food.calories * factor).toFixed(1))
+                                };
+                            }
+                            return i;
+                        })
+                    };
+                }
+                return m;
+            })
+        };
+    });
+    setActiveSuggestionId(null);
   };
 
   const handleSave = () => {
-    // Sort meals by time
     const sortedMeals = [...editForm.meals].sort((a, b) => a.time.localeCompare(b.time));
     onUpdateDiet({
         ...editForm,
@@ -126,9 +257,92 @@ export const DietPlan: React.FC<DietPlanProps> = ({ diet, onUpdateDiet, patientN
     setIsEditing(false);
   };
 
+  // Cálculo dos totais
+  const totals = useMemo(() => {
+    const data = isEditing ? editForm : diet;
+    if (!data) return { kcal: 0, p: 0, c: 0, f: 0 };
+
+    let totalKcal = 0;
+    let totalP = 0;
+    let totalC = 0;
+    let totalF = 0;
+
+    data.meals.forEach(meal => {
+        meal.items.forEach(item => {
+            totalP += Number(item.protein) || 0;
+            totalC += Number(item.carbs) || 0;
+            totalF += Number(item.fats) || 0;
+            totalKcal += Number(item.calories) || ((Number(item.protein) || 0) * 4 + (Number(item.carbs) || 0) * 4 + (Number(item.fats) || 0) * 9);
+        });
+    });
+
+    return { kcal: totalKcal, p: totalP, c: totalC, f: totalF };
+  }, [diet, editForm, isEditing]);
+
+  // Componente da Barra de Macros
+  const MacroSummary = () => {
+    if (totals.kcal === 0) return null;
+
+    const calFromP = totals.p * 4;
+    const calFromC = totals.c * 4;
+    const calFromF = totals.f * 9;
+    const validTotal = (calFromP + calFromC + calFromF) || totals.kcal || 1; 
+
+    const pctP = Math.round((calFromP / validTotal) * 100);
+    const pctC = Math.round((calFromC / validTotal) * 100);
+    const pctF = Math.round((calFromF / validTotal) * 100);
+
+    return (
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 mb-6">
+            <div className="flex items-center gap-3 mb-4">
+                <div className="bg-indigo-100 p-2 rounded-lg text-indigo-600">
+                    <PieChart size={20} />
+                </div>
+                <div>
+                     <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Diário</span>
+                     <div className="text-xl font-bold text-slate-800 flex items-baseline gap-1">
+                        {Math.round(totals.kcal).toLocaleString()} 
+                        <span className="text-sm font-medium text-slate-500">kcal</span>
+                     </div>
+                </div>
+                <div className="ml-auto text-xs text-slate-400">
+                   Baseado em {patientWeight}kg
+                </div>
+            </div>
+
+            <div className="h-4 w-full bg-slate-200 rounded-full overflow-hidden flex mb-3">
+                <div style={{ width: `${pctP}%` }} className="h-full bg-rose-500 transition-all duration-500" title={`Proteínas: ${pctP}%`}></div>
+                <div style={{ width: `${pctC}%` }} className="h-full bg-blue-500 transition-all duration-500" title={`Carboidratos: ${pctC}%`}></div>
+                <div style={{ width: `${pctF}%` }} className="h-full bg-amber-400 transition-all duration-500" title={`Gorduras: ${pctF}%`}></div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                    <div className="text-rose-600 font-bold text-lg">{pctP}%</div>
+                    <div className="text-slate-600 text-sm font-medium">{totals.p.toFixed(0)}g</div>
+                    <div className="text-slate-400 text-xs">{(totals.p / patientWeight).toFixed(2)}g/kg</div>
+                    <div className="text-rose-600 text-xs font-semibold mt-1">Proteínas</div>
+                </div>
+                <div className="border-x border-slate-200">
+                    <div className="text-blue-600 font-bold text-lg">{pctC}%</div>
+                    <div className="text-slate-600 text-sm font-medium">{totals.c.toFixed(0)}g</div>
+                    <div className="text-slate-400 text-xs">{(totals.c / patientWeight).toFixed(2)}g/kg</div>
+                    <div className="text-blue-600 text-xs font-semibold mt-1">Carboidratos</div>
+                </div>
+                <div>
+                    <div className="text-amber-500 font-bold text-lg">{pctF}%</div>
+                    <div className="text-slate-600 text-sm font-medium">{totals.f.toFixed(0)}g</div>
+                    <div className="text-slate-400 text-xs">{(totals.f / patientWeight).toFixed(2)}g/kg</div>
+                    <div className="text-amber-500 text-xs font-semibold mt-1">Gorduras</div>
+                </div>
+            </div>
+        </div>
+    );
+  };
+
   if (isEditing) {
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 max-w-4xl mx-auto">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 max-w-5xl mx-auto">
             <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
                 <h2 className="text-xl font-bold text-slate-800">Editar Dieta</h2>
                 <div className="flex gap-2">
@@ -146,6 +360,8 @@ export const DietPlan: React.FC<DietPlanProps> = ({ diet, onUpdateDiet, patientN
                     </button>
                 </div>
             </div>
+
+            <MacroSummary />
 
             <div className="space-y-6">
                 {editForm.meals.map((meal, index) => (
@@ -178,29 +394,119 @@ export const DietPlan: React.FC<DietPlanProps> = ({ diet, onUpdateDiet, patientN
                             </button>
                         </div>
 
-                        <div className="space-y-2 pl-4 border-l-2 border-slate-200">
+                        <div className="space-y-3 pl-0 sm:pl-4 sm:border-l-2 sm:border-slate-200">
+                             {/* Header Row for Items */}
+                             {meal.items.length > 0 && (
+                                <div className="hidden sm:grid grid-cols-12 gap-2 text-xs font-semibold text-slate-400 uppercase mb-1 px-1">
+                                    <div className="col-span-2">Qtd (g)</div>
+                                    <div className="col-span-4">Alimento</div>
+                                    <div className="col-span-1 text-center text-rose-500">P(g)</div>
+                                    <div className="col-span-1 text-center text-blue-500">C(g)</div>
+                                    <div className="col-span-1 text-center text-amber-500">G(g)</div>
+                                    <div className="col-span-2 text-center">Kcal</div>
+                                    <div className="col-span-1"></div>
+                                </div>
+                             )}
+
                             {meal.items.map((item) => (
-                                <div key={item.id} className="flex gap-2 items-center">
-                                    <input 
-                                        type="text" 
-                                        value={item.quantity}
-                                        onChange={(e) => handleItemChange(meal.id, item.id, 'quantity', e.target.value)}
-                                        placeholder="Qtd (Ex: 200g)"
-                                        className="w-32 bg-white text-slate-900 px-3 py-1.5 text-sm rounded-lg border border-slate-200 focus:ring-1 focus:ring-emerald-500 outline-none"
-                                    />
-                                    <input 
-                                        type="text" 
-                                        value={item.name}
-                                        onChange={(e) => handleItemChange(meal.id, item.id, 'name', e.target.value)}
-                                        placeholder="Alimento (Ex: Arroz Integral)"
-                                        className="flex-1 bg-white text-slate-900 px-3 py-1.5 text-sm rounded-lg border border-slate-200 focus:ring-1 focus:ring-emerald-500 outline-none"
-                                    />
-                                    <button 
-                                        onClick={() => handleRemoveItem(meal.id, item.id)}
-                                        className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"
-                                    >
-                                        <X size={16} />
-                                    </button>
+                                <div key={item.id} className="relative flex flex-col sm:grid sm:grid-cols-12 gap-2 items-center bg-white sm:bg-transparent p-3 sm:p-0 rounded-lg border sm:border-0 border-slate-200 shadow-sm sm:shadow-none z-20">
+                                    {/* Mobile Labels are handled by placeholders */}
+                                    <div className="col-span-2 w-full">
+                                        <input 
+                                            type="text" 
+                                            value={item.quantity}
+                                            onChange={(e) => handleItemChange(meal.id, item.id, 'quantity', e.target.value)}
+                                            placeholder="Ex: 100g"
+                                            className="w-full bg-white text-slate-900 px-3 py-1.5 text-sm rounded-lg border border-slate-200 focus:ring-1 focus:ring-emerald-500 outline-none"
+                                        />
+                                    </div>
+                                    <div className="col-span-4 w-full relative">
+                                        <div className="relative">
+                                            <input 
+                                                type="text" 
+                                                value={item.name}
+                                                onFocus={() => item.name.length >= 2 && setActiveSuggestionId(item.id)}
+                                                onChange={(e) => handleItemChange(meal.id, item.id, 'name', e.target.value)}
+                                                onClick={(e) => e.stopPropagation()}
+                                                placeholder="Busque o alimento..."
+                                                className="w-full bg-white text-slate-900 px-3 py-1.5 text-sm rounded-lg border border-slate-200 focus:ring-1 focus:ring-emerald-500 outline-none"
+                                                autoComplete="off"
+                                            />
+                                            {/* AutoComplete Icon Indicator */}
+                                            {item.name.length === 0 && (
+                                                <Search size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                            )}
+                                        </div>
+
+                                        {/* Suggestions Dropdown */}
+                                        {activeSuggestionId === item.id && (
+                                            <div className="absolute top-full left-0 w-full bg-white rounded-lg shadow-xl border border-slate-100 mt-1 max-h-48 overflow-y-auto z-50">
+                                                {FOOD_DATABASE.filter(f => f.name.toLowerCase().includes(item.name.toLowerCase())).length > 0 ? (
+                                                    FOOD_DATABASE
+                                                    .filter(f => f.name.toLowerCase().includes(item.name.toLowerCase()))
+                                                    .map((food, idx) => (
+                                                        <button
+                                                            key={idx}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleSelectSuggestion(meal.id, item.id, food);
+                                                            }}
+                                                            className="w-full text-left px-4 py-2 text-sm hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 flex justify-between items-center"
+                                                        >
+                                                            <span>{food.name}</span>
+                                                            <span className="text-xs text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">{food.calories}kcal/100g</span>
+                                                        </button>
+                                                    ))
+                                                ) : (
+                                                    <div className="px-4 py-2 text-sm text-slate-400 italic">Nenhum alimento encontrado</div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                    {/* Macros Inputs */}
+                                    <div className="col-span-3 grid grid-cols-3 gap-2 w-full">
+                                        <input 
+                                            type="number" 
+                                            value={item.protein || ''}
+                                            onChange={(e) => handleItemChange(meal.id, item.id, 'protein', e.target.value)}
+                                            placeholder="P"
+                                            className="w-full bg-rose-50 text-rose-900 px-1 py-1.5 text-sm text-center rounded-lg border border-rose-100 focus:ring-1 focus:ring-rose-500 outline-none font-medium"
+                                            title="Proteínas (g)"
+                                        />
+                                        <input 
+                                            type="number" 
+                                            value={item.carbs || ''}
+                                            onChange={(e) => handleItemChange(meal.id, item.id, 'carbs', e.target.value)}
+                                            placeholder="C"
+                                            className="w-full bg-blue-50 text-blue-900 px-1 py-1.5 text-sm text-center rounded-lg border border-blue-100 focus:ring-1 focus:ring-blue-500 outline-none font-medium"
+                                            title="Carboidratos (g)"
+                                        />
+                                        <input 
+                                            type="number" 
+                                            value={item.fats || ''}
+                                            onChange={(e) => handleItemChange(meal.id, item.id, 'fats', e.target.value)}
+                                            placeholder="G"
+                                            className="w-full bg-amber-50 text-amber-900 px-1 py-1.5 text-sm text-center rounded-lg border border-amber-100 focus:ring-1 focus:ring-amber-500 outline-none font-medium"
+                                            title="Gorduras (g)"
+                                        />
+                                    </div>
+
+                                    <div className="col-span-2 w-full">
+                                         <div className="bg-slate-100 text-slate-600 px-2 py-1.5 text-sm text-center rounded-lg font-mono font-bold flex items-center justify-center gap-1">
+                                            {item.calories ? Math.round(item.calories) : 0}
+                                            <span className="text-[10px] font-normal text-slate-400">kcal</span>
+                                         </div>
+                                    </div>
+
+                                    <div className="col-span-1 text-right w-full sm:w-auto">
+                                        <button 
+                                            onClick={() => handleRemoveItem(meal.id, item.id)}
+                                            className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"
+                                        >
+                                            <X size={16} />
+                                        </button>
+                                    </div>
                                 </div>
                             ))}
                             <button 
@@ -280,6 +586,9 @@ export const DietPlan: React.FC<DietPlanProps> = ({ diet, onUpdateDiet, patientN
                 </button>
             </div>
         </div>
+        
+        {/* Macro Summary Display */}
+        <MacroSummary />
 
         {/* Timeline View */}
         <div className="relative space-y-4">
@@ -304,17 +613,32 @@ export const DietPlan: React.FC<DietPlanProps> = ({ diet, onUpdateDiet, patientN
                                 {meal.time}
                              </div>
                              <h3 className="font-bold text-lg text-slate-800">{meal.name}</h3>
-                             <span className="text-xs font-medium bg-slate-100 text-slate-500 px-2 py-1 rounded-full">
-                                {meal.items.length} itens
-                             </span>
+                             <div className="flex items-center gap-2">
+                                <span className="text-xs font-medium text-slate-400">
+                                    {meal.items.reduce((acc, i) => acc + (Number(i.calories) || 0), 0).toFixed(0)} kcal
+                                </span>
+                                <span className="text-xs font-medium bg-slate-100 text-slate-500 px-2 py-1 rounded-full">
+                                    {meal.items.length} itens
+                                </span>
+                             </div>
                         </div>
                         
                         <ul className="space-y-2">
                             {meal.items.map((item) => (
-                                <li key={item.id} className="flex items-start text-sm">
-                                    <span className="w-2 h-2 rounded-full bg-emerald-400 mt-1.5 mr-3 shrink-0"></span>
-                                    <span className="font-semibold text-slate-700 mr-1.5">{item.quantity}</span>
-                                    <span className="text-slate-600">{item.name}</span>
+                                <li key={item.id} className="flex justify-between items-start text-sm group/item">
+                                    <div className="flex items-start">
+                                        <span className="w-2 h-2 rounded-full bg-emerald-400 mt-1.5 mr-3 shrink-0"></span>
+                                        <span className="font-semibold text-slate-700 mr-1.5">{item.quantity}</span>
+                                        <span className="text-slate-600">{item.name}</span>
+                                    </div>
+                                    {(item.calories > 0 || item.protein > 0) && (
+                                        <div className="text-xs text-slate-400 opacity-0 group-hover/item:opacity-100 transition-opacity flex gap-2">
+                                            {item.protein > 0 && <span className="text-rose-400">P:{item.protein}</span>}
+                                            {item.carbs > 0 && <span className="text-blue-400">C:{item.carbs}</span>}
+                                            {item.fats > 0 && <span className="text-amber-400">G:{item.fats}</span>}
+                                            <span className="font-semibold text-slate-500">{item.calories?.toFixed(0)}kcal</span>
+                                        </div>
+                                    )}
                                 </li>
                             ))}
                         </ul>
