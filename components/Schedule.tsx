@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { Appointment, Patient } from '../types';
-import { Calendar, Clock, Plus, ChevronLeft, ChevronRight, X, Edit2 } from 'lucide-react';
+import { Calendar, Clock, Plus, ChevronLeft, ChevronRight, X, Edit2, Check } from 'lucide-react';
 
 interface ScheduleProps {
   patients: Patient[];
@@ -146,7 +146,7 @@ export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAd
   const nextAppointment = useMemo(() => {
      const now = new Date();
      return [...appointments]
-        .filter(a => new Date(`${a.date}T${a.time}`) > now)
+        .filter(a => new Date(`${a.date}T${a.time}`) > now && a.status !== 'Concluído')
         .sort((a, b) => new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime())[0];
   }, [appointments]);
 
@@ -255,7 +255,7 @@ export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAd
                         </div>
                     </div>
                 ) : (
-                    <p className="text-slate-400 text-sm">Nenhum agendamento futuro encontrado na agenda.</p>
+                    <p className="text-slate-400 text-sm">Nenhum agendamento pendente encontrado na agenda.</p>
                 )}
             </div>
         </div>
@@ -292,46 +292,72 @@ export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAd
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            {filteredAppointments.map(app => (
-                                <div key={app.id} className="bg-white p-5 rounded-xl border border-slate-200 hover:border-emerald-300 hover:shadow-md transition-all group flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                                    <div className="flex flex-col items-center justify-center min-w-[80px] h-full">
-                                        <span className="text-2xl font-bold text-slate-700">{app.time}</span>
-                                        <span className={`text-xs px-2 py-0.5 rounded-full mt-1 ${
-                                            app.type === 'Consulta' ? 'bg-blue-50 text-blue-600' :
-                                            app.type === 'Retorno' ? 'bg-emerald-50 text-emerald-600' :
-                                            'bg-purple-50 text-purple-600'
-                                        }`}>
-                                            {app.type}
-                                        </span>
-                                    </div>
+                            {filteredAppointments.map(app => {
+                                const isCompleted = app.status === 'Concluído';
+                                return (
+                                <div key={app.id} className={`p-5 rounded-xl border transition-all group flex gap-4 ${
+                                    isCompleted 
+                                    ? 'bg-slate-50 border-slate-100' 
+                                    : 'bg-white border-slate-200 hover:border-emerald-300 hover:shadow-md'
+                                }`}>
                                     
-                                    <div className="w-px h-12 bg-slate-100 hidden sm:block"></div>
-
-                                    <div className="flex-1">
-                                        <h4 className="font-bold text-slate-800 text-lg mb-1">{getPatientName(app.patientId)}</h4>
-                                        <div className="flex items-center gap-4 text-sm text-slate-500">
-                                            {app.notes ? (
-                                                <span className="flex items-center gap-1.5">
-                                                    <div className="w-1.5 h-1.5 bg-slate-300 rounded-full"></div>
-                                                    {app.notes}
-                                                </span>
-                                            ) : (
-                                                <span className="text-slate-400 italic">Sem observações</span>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-                                        <button 
-                                            onClick={() => handleEditClick(app)}
-                                            className="flex-1 sm:flex-none px-4 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                                    {/* Botão de Checkbox */}
+                                    <div className="flex items-center sm:items-start sm:pt-1">
+                                        <button
+                                            onClick={() => onUpdateAppointment({ ...app, status: isCompleted ? 'Agendado' : 'Concluído' })}
+                                            className={`shrink-0 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
+                                                isCompleted 
+                                                ? 'bg-emerald-500 border-emerald-500 text-white' 
+                                                : 'bg-white border-slate-300 text-transparent hover:border-emerald-400'
+                                            }`}
+                                            title={isCompleted ? "Marcar como pendente" : "Marcar como concluído"}
                                         >
-                                            <Edit2 size={16} />
-                                            Editar
+                                            <Check size={14} strokeWidth={4} />
                                         </button>
                                     </div>
+
+                                    <div className="flex-1 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                                        <div className={`flex flex-col items-center justify-center min-w-[80px] h-full ${isCompleted ? 'opacity-50 grayscale' : ''}`}>
+                                            <span className="text-2xl font-bold text-slate-700">{app.time}</span>
+                                            <span className={`text-xs px-2 py-0.5 rounded-full mt-1 ${
+                                                app.type === 'Consulta' ? 'bg-blue-50 text-blue-600' :
+                                                app.type === 'Retorno' ? 'bg-emerald-50 text-emerald-600' :
+                                                'bg-purple-50 text-purple-600'
+                                            }`}>
+                                                {app.type}
+                                            </span>
+                                        </div>
+                                        
+                                        <div className="w-px h-12 bg-slate-100 hidden sm:block"></div>
+
+                                        <div className={`flex-1 ${isCompleted ? 'opacity-50' : ''}`}>
+                                            <h4 className={`font-bold text-lg mb-1 ${isCompleted ? 'text-slate-500 line-through' : 'text-slate-800'}`}>
+                                                {getPatientName(app.patientId)}
+                                            </h4>
+                                            <div className="flex items-center gap-4 text-sm text-slate-500">
+                                                {app.notes ? (
+                                                    <span className="flex items-center gap-1.5">
+                                                        <div className="w-1.5 h-1.5 bg-slate-300 rounded-full"></div>
+                                                        {app.notes}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-slate-400 italic">Sem observações</span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                                            <button 
+                                                onClick={() => handleEditClick(app)}
+                                                className="flex-1 sm:flex-none px-4 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                                            >
+                                                <Edit2 size={16} />
+                                                Editar
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
-                            ))}
+                            )})}
                         </div>
                     )}
                 </div>
