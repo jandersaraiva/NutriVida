@@ -12,7 +12,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) =
     { id: 'home', label: 'Visão Geral', icon: LayoutDashboard }, // New Dashboard
     { id: 'patients', label: 'Pacientes', icon: Users },
     { id: 'schedule', label: 'Agenda', icon: CalendarDays },
-    { id: 'select_patient_for_entry', label: 'Nova Avaliação', icon: PlusCircle },
+    { id: 'select_patient_for_entry', label: 'Novo', icon: PlusCircle },
     { id: 'profile_settings', label: 'Meu Perfil', icon: Settings },
   ];
 

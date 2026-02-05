@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { DietPlan as DietPlanType, Meal, FoodItem } from '../types';
 import { Clock, Plus, Trash2, Edit2, Save, X, ChefHat, Copy, Check, PieChart, Search, Zap } from 'lucide-react';
@@ -10,26 +9,81 @@ interface DietPlanProps {
   patientWeight?: number;
 }
 
-// --- BANCO DE DADOS DE ALIMENTOS (Por 100g) ---
+// --- BANCO DE DADOS DE ALIMENTOS (Baseado na TACO/TBCA - Por 100g) ---
 const FOOD_DATABASE = [
+  // --- PROTEÍNAS ANIMAIS ---
+  { name: 'Peito de Frango Grelhado', protein: 32.0, carbs: 0.0, fats: 2.5, calories: 159 },
+  { name: 'Peito de Frango Cozido', protein: 31.5, carbs: 0.0, fats: 3.2, calories: 163 },
+  { name: 'Sobrecoxa de Frango Assada (sem pele)', protein: 26.0, carbs: 0.0, fats: 11.0, calories: 230 },
+  { name: 'Carne Moída (Patinho) Refogada', protein: 35.9, carbs: 0.0, fats: 7.3, calories: 219 },
+  { name: 'Alcatra Grelhada (sem gordura)', protein: 31.9, carbs: 0.0, fats: 11.6, calories: 241 },
+  { name: 'Contrafilé Grelhado (sem gordura)', protein: 32.4, carbs: 0.0, fats: 15.5, calories: 278 },
+  { name: 'Tilápia Grelhada', protein: 26.0, carbs: 0.0, fats: 2.7, calories: 128 },
+  { name: 'Salmão Grelhado', protein: 24.0, carbs: 0.0, fats: 14.0, calories: 220 },
+  { name: 'Atum em Conserva (Água)', protein: 26.0, carbs: 0.0, fats: 1.0, calories: 116 },
+  
+  // --- OVOS ---
+  { name: 'Ovo de Galinha Cozido (Inteiro)', protein: 13.3, carbs: 0.6, fats: 9.5, calories: 146 },
+  { name: 'Ovo de Galinha Frito (Inteiro)', protein: 15.6, carbs: 1.2, fats: 18.6, calories: 240 },
+  { name: 'Ovo Mexido (simples)', protein: 14.0, carbs: 1.5, fats: 12.0, calories: 170 },
+  { name: 'Clara de Ovo Cozida', protein: 13.0, carbs: 0.0, fats: 0.0, calories: 54 },
+  
+  // --- CARBOIDRATOS / CEREAIS / TUBÉRCULOS ---
   { name: 'Arroz Branco Cozido', protein: 2.5, carbs: 28.1, fats: 0.2, calories: 128 },
   { name: 'Arroz Integral Cozido', protein: 2.6, carbs: 25.8, fats: 1.0, calories: 124 },
   { name: 'Feijão Carioca Cozido', protein: 4.8, carbs: 13.6, fats: 0.5, calories: 76 },
-  { name: 'Peito de Frango Grelhado', protein: 32.0, carbs: 0.0, fats: 2.5, calories: 159 },
-  { name: 'Carne Moída (Patinho)', protein: 35.9, carbs: 0.0, fats: 7.3, calories: 219 },
-  { name: 'Ovo Cozido (Inteiro)', protein: 13.0, carbs: 1.1, fats: 11.0, calories: 155 },
-  { name: 'Clara de Ovo', protein: 11.0, carbs: 0.0, fats: 0.0, calories: 50 },
-  { name: 'Batata Doce Cozida', protein: 1.6, carbs: 28.0, fats: 0.1, calories: 115 },
-  { name: 'Batata Inglesa Cozida', protein: 1.9, carbs: 20.1, fats: 0.0, calories: 86 },
-  { name: 'Aveia em Flocos', protein: 14.0, carbs: 66.0, fats: 7.0, calories: 389 },
-  { name: 'Banana Prata', protein: 1.3, carbs: 26.0, fats: 0.1, calories: 98 },
-  { name: 'Maçã Fuji', protein: 0.3, carbs: 15.0, fats: 0.2, calories: 56 },
-  { name: 'Whey Protein (Padrão)', protein: 80.0, carbs: 5.0, fats: 2.0, calories: 360 },
-  { name: 'Iogurte Natural Desnatado', protein: 5.9, carbs: 7.0, fats: 0.1, calories: 51 },
-  { name: 'Azeite de Oliva', protein: 0.0, carbs: 0.0, fats: 100.0, calories: 884 },
-  { name: 'Pão Integral (Fatia)', protein: 9.4, carbs: 49.0, fats: 3.7, calories: 253 }, // Valores médios por 100g
+  { name: 'Feijão Preto Cozido', protein: 4.5, carbs: 14.0, fats: 0.5, calories: 77 },
+  { name: 'Batata Inglesa Cozida', protein: 1.2, carbs: 11.9, fats: 0.0, calories: 52 },
+  { name: 'Batata Doce Cozida', protein: 0.6, carbs: 18.4, fats: 0.1, calories: 77 },
+  { name: 'Mandioca Cozida', protein: 0.6, carbs: 30.1, fats: 0.3, calories: 125 },
+  { name: 'Macarrão Cozido (Trigo)', protein: 5.8, carbs: 30.0, fats: 0.9, calories: 157 },
+  { name: 'Aveia em Flocos', protein: 13.9, carbs: 66.6, fats: 8.5, calories: 394 },
+  { name: 'Tapioca (Goma Hidratada)', protein: 0.0, carbs: 54.0, fats: 0.0, calories: 240 },
+  { name: 'Cuscuz de Milho Cozido', protein: 2.2, carbs: 25.0, fats: 0.7, calories: 113 },
+  
+  // --- PANIFICADOS ---
+  { name: 'Pão Francês', protein: 8.0, carbs: 58.0, fats: 3.0, calories: 300 },
+  { name: 'Pão de Forma Integral', protein: 9.4, carbs: 49.0, fats: 3.7, calories: 253 },
+  
+  // --- LATICÍNIOS ---
+  { name: 'Leite Integral (Vaca)', protein: 3.2, carbs: 4.7, fats: 3.0, calories: 60 },
+  { name: 'Leite Desnatado (Vaca)', protein: 3.0, carbs: 4.9, fats: 0.0, calories: 35 },
+  { name: 'Iogurte Natural', protein: 4.0, carbs: 5.0, fats: 3.0, calories: 60 },
+  { name: 'Queijo Minas Frescal', protein: 17.4, carbs: 3.2, fats: 20.2, calories: 264 },
+  { name: 'Queijo Muçarela', protein: 22.6, carbs: 3.0, fats: 21.6, calories: 300 },
   { name: 'Queijo Cottage', protein: 11.0, carbs: 3.4, fats: 4.3, calories: 98 },
-  { name: 'Tilápia Grelhada', protein: 26.0, carbs: 0.0, fats: 2.7, calories: 128 },
+  { name: 'Requeijão Cremoso', protein: 9.6, carbs: 2.4, fats: 26.0, calories: 280 },
+  
+  // --- FRUTAS ---
+  { name: 'Banana Prata', protein: 1.3, carbs: 26.0, fats: 0.1, calories: 98 },
+  { name: 'Banana Nanica', protein: 1.4, carbs: 24.0, fats: 0.1, calories: 92 },
+  { name: 'Maçã Fuji (com casca)', protein: 0.3, carbs: 15.0, fats: 0.2, calories: 56 },
+  { name: 'Mamão Papaya', protein: 0.5, carbs: 10.0, fats: 0.1, calories: 40 },
+  { name: 'Abacaxi Pérola', protein: 0.9, carbs: 12.3, fats: 0.1, calories: 48 },
+  { name: 'Abacate', protein: 1.2, carbs: 6.0, fats: 8.4, calories: 96 },
+  { name: 'Morango', protein: 0.9, carbs: 6.8, fats: 0.3, calories: 30 },
+  { name: 'Melancia', protein: 0.9, carbs: 8.1, fats: 0.0, calories: 33 },
+  { name: 'Laranja Pera', protein: 1.0, carbs: 8.9, fats: 0.1, calories: 37 },
+  { name: 'Uva Rubi', protein: 0.6, carbs: 12.7, fats: 0.2, calories: 49 },
+
+  // --- LEGUMES E VERDURAS ---
+  { name: 'Alface', protein: 1.3, carbs: 2.9, fats: 0.2, calories: 14 },
+  { name: 'Tomate', protein: 1.1, carbs: 3.1, fats: 0.2, calories: 15 },
+  { name: 'Brócolis Cozido', protein: 2.1, carbs: 4.4, fats: 0.5, calories: 25 },
+  { name: 'Cenoura Crua', protein: 1.3, carbs: 7.7, fats: 0.2, calories: 34 },
+  { name: 'Beterraba Cozida', protein: 1.3, carbs: 7.2, fats: 0.1, calories: 32 },
+  { name: 'Abobrinha Italiana Cozida', protein: 1.1, carbs: 3.0, fats: 0.2, calories: 15 },
+
+  // --- GORDURAS E OLEAGINOSAS ---
+  { name: 'Azeite de Oliva', protein: 0.0, carbs: 0.0, fats: 100.0, calories: 884 },
+  { name: 'Manteiga (com sal)', protein: 0.4, carbs: 0.0, fats: 83.0, calories: 726 },
+  { name: 'Pasta de Amendoim (Integral)', protein: 25.0, carbs: 20.0, fats: 50.0, calories: 590 },
+  { name: 'Castanha do Pará', protein: 14.0, carbs: 12.0, fats: 66.0, calories: 656 },
+  
+  // --- SUPLEMENTOS E OUTROS ---
+  { name: 'Whey Protein (Concentrado Padrão)', protein: 80.0, carbs: 5.0, fats: 2.0, calories: 360 },
+  { name: 'Creatina', protein: 0.0, carbs: 0.0, fats: 0.0, calories: 0 },
+  { name: 'Chocolate 70% Cacau', protein: 8.0, carbs: 34.0, fats: 42.0, calories: 580 },
 ];
 
 // Helper seguro para IDs
@@ -42,11 +96,19 @@ export const DietPlan: React.FC<DietPlanProps> = ({ diet, onUpdateDiet, patientN
   // Estado para controlar o autocomplete
   const [activeSuggestionId, setActiveSuggestionId] = useState<string | null>(null);
   
+  // Helper function to create a default meal structure
+  const createDefaultMeals = (): Meal[] => [
+    { id: generateId(), name: 'Café da Manhã', time: '07:30', items: [] },
+    { id: generateId(), name: 'Almoço', time: '12:30', items: [] },
+    { id: generateId(), name: 'Lanche da Tarde', time: '16:00', items: [] },
+    { id: generateId(), name: 'Jantar', time: '20:00', items: [] },
+  ];
+
   // Local state for editing form
   const [editForm, setEditForm] = useState<DietPlanType>(() => diet || {
     id: generateId(),
     lastUpdated: new Date().toISOString(),
-    meals: [],
+    meals: createDefaultMeals(),
     notes: ''
   });
 
@@ -55,10 +117,11 @@ export const DietPlan: React.FC<DietPlanProps> = ({ diet, onUpdateDiet, patientN
     if (diet) {
       setEditForm(diet);
     } else {
+      // Se não houver dieta (Novo Plano), inicializa com o template padrão
       setEditForm({
         id: generateId(),
         lastUpdated: new Date().toISOString(),
-        meals: [],
+        meals: createDefaultMeals(),
         notes: ''
       });
     }
@@ -281,7 +344,8 @@ export const DietPlan: React.FC<DietPlanProps> = ({ diet, onUpdateDiet, patientN
 
   // Componente da Barra de Macros
   const MacroSummary = () => {
-    if (totals.kcal === 0) return null;
+    // Show summary even if total is 0 when in editing mode, to show targets/empty state
+    if (totals.kcal === 0 && !isEditing) return null;
 
     const calFromP = totals.p * 4;
     const calFromC = totals.c * 4;
