@@ -17,7 +17,7 @@ interface ErrorBoundaryState {
 }
 
 // Componente de segurança para capturar erros e evitar tela branca total
-class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = {
