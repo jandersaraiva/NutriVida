@@ -150,7 +150,8 @@ export const PatientList: React.FC<PatientListProps> = ({
             objective: 'Saúde e Bem-estar', // Default
             avatarColor: 'bg-emerald-100 text-emerald-700',
             status: 'active',
-            checkIns: []
+            checkIns: [],
+            dietPlans: [] // Start with empty array
         };
         onAddPatient(newPatient);
     }
@@ -284,7 +285,7 @@ export const PatientList: React.FC<PatientListProps> = ({
                  {viewMode === 'active' && (
                      <button 
                         onClick={(e) => handleTrashClick(e, patient.id)}
-                        className="text-slate-400 hover:text-red-500 transition-colors p-1"
+                        className="text-slate-400 hover:text-red-500 transition-colors p-1 relative z-10"
                      >
                         <Trash2 size={16} />
                      </button>
@@ -292,7 +293,7 @@ export const PatientList: React.FC<PatientListProps> = ({
               </div>
               
               {viewMode === 'active' && (
-                  <div className="absolute right-4 bottom-4 opacity-0 group-hover:opacity-100 transition-opacity text-emerald-600">
+                  <div className="absolute right-4 bottom-4 opacity-0 group-hover:opacity-100 transition-opacity text-emerald-600 pointer-events-none">
                     <ChevronRight size={20} />
                   </div>
               )}

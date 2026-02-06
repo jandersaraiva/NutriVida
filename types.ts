@@ -31,6 +31,9 @@ export interface Meal {
 
 export interface DietPlan {
   id: string;
+  name: string; // Ex: "Plano Hipertrofia - Fev/26"
+  status: 'active' | 'archived';
+  createdAt: string;
   lastUpdated: string;
   totalCalories?: number;
   macros?: {
@@ -57,7 +60,7 @@ export interface Patient {
   avatarColor: string;
   status: 'active' | 'trash';
   checkIns: CheckIn[];
-  diet?: DietPlan;
+  dietPlans: DietPlan[]; // Alterado de 'diet' para array de planos
 }
 
 export interface Appointment {

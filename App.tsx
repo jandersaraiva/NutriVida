@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard'; // Patient Dashboard
@@ -58,6 +59,9 @@ const SEED_CHECKINS: CheckIn[] = [
 
 const SEED_DIET: DietPlanType = {
   id: 'd1',
+  name: 'Plano Hipertrofia Inicial',
+  status: 'active',
+  createdAt: '2026-01-01T10:00:00Z',
   lastUpdated: new Date().toISOString(),
   meals: [
     {
@@ -123,7 +127,7 @@ const SEED_PATIENTS: Patient[] = [
     avatarColor: 'bg-blue-100 text-blue-700',
     status: 'active',
     checkIns: SEED_CHECKINS,
-    diet: SEED_DIET
+    dietPlans: [SEED_DIET]
   },
   {
     id: 'p2',
@@ -139,7 +143,8 @@ const SEED_PATIENTS: Patient[] = [
     objective: 'Emagrecimento',
     avatarColor: 'bg-rose-100 text-rose-700',
     status: 'active',
-    checkIns: []
+    checkIns: [],
+    dietPlans: []
   }
 ];
 
@@ -209,11 +214,11 @@ const App: React.FC = () => {
     setPatients(prev => prev.map(p => p.id === updatedPatient.id ? updatedPatient : p));
   };
 
-  const handleUpdateDiet = (newDiet: DietPlanType) => {
+  const handleUpdateDietPlans = (newDietPlans: DietPlanType[]) => {
     if (!activePatient) return;
     const updatedPatient: Patient = {
         ...activePatient,
-        diet: newDiet
+        dietPlans: newDietPlans
     };
     handleUpdatePatient(updatedPatient);
   };
@@ -299,7 +304,7 @@ const App: React.FC = () => {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as PatientTab)}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${
+            className={`flex-1 flex items-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${
               isActive 
                 ? 'bg-emerald-50 text-emerald-700 shadow-sm ring-1 ring-emerald-100' 
                 : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
@@ -426,6 +431,7 @@ const App: React.FC = () => {
                   checkIns={activeCheckIns} 
                   onAddEntry={() => setCurrentView('add_entry')}
                   age={activePatient.age}
+                  gender={activePatient.gender}
                 />
               )}
 
@@ -435,8 +441,8 @@ const App: React.FC = () => {
               
               {activeTab === 'diet' && (
                 <DietPlan 
-                    diet={activePatient.diet} 
-                    onUpdateDiet={handleUpdateDiet}
+                    plans={activePatient.dietPlans} 
+                    onUpdatePlans={handleUpdateDietPlans}
                     patientName={activePatient.name}
                     patientWeight={activeCheckIns[0]?.weight || 70} // Passando peso para calculo de g/kg
                 />

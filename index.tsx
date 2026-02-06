@@ -27,25 +27,23 @@ interface ErrorBoundaryState {
 
 // Componente de segurança para capturar erros e evitar tela branca total
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  public state: ErrorBoundaryState;
+  // Explicitly declare props to avoid TS error
+  declare props: Readonly<ErrorBoundaryProps>;
 
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = {
-      hasError: false,
-      error: null
-    };
-  }
+  state: ErrorBoundaryState = {
+    hasError: false,
+    error: null
+  };
 
-  public static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("Uncaught error:", error, errorInfo);
   }
 
-  public render() {
+  render() {
     if (this.state.hasError) {
       return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 p-6 text-center font-sans">
