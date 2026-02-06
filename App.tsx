@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard'; // Patient Dashboard
@@ -331,14 +330,14 @@ const App: React.FC = () => {
                 {currentView === 'patients' && selectedPatientId && (activePatient?.name || 'Detalhes do Paciente')}
                 {currentView === 'schedule' && 'Agenda'}
                 {currentView === 'add_entry' && 'Nova Avaliação'}
-                {currentView === 'select_patient_for_entry' && 'Iniciar Avaliação'}
+                {currentView === 'select_patient_for_entry' && 'Menu de Ações'}
                 {currentView === 'profile_settings' && 'Meu Perfil'}
               </h1>
               <p className="text-slate-500 text-sm mt-1">
                 {currentView === 'patients' && !selectedPatientId && 'Gerencie o acompanhamento dos seus alunos'}
                 {currentView === 'patients' && selectedPatientId && 'Acompanhe a evolução e gerencie o plano'}
                 {currentView === 'schedule' && 'Visualize seus próximos atendimentos'}
-                {currentView === 'select_patient_for_entry' && 'Escolha um paciente'}
+                {currentView === 'select_patient_for_entry' && 'Selecione o que deseja criar ou gerenciar'}
                 {currentView === 'profile_settings' && 'Gerencie seus dados e informações da clínica'}
               </p>
             </div>
@@ -388,6 +387,7 @@ const App: React.FC = () => {
             <PatientSelector 
               patients={patients}
               onSelectPatient={handleSelectPatientForEntry}
+              onSelectForDiet={handleSelectPatientDiet}
               onCreateNew={() => {
                 setShouldOpenAddPatientModal(true);
                 setCurrentView('patients');
