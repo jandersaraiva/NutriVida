@@ -502,6 +502,7 @@ const App: React.FC = () => {
                 setActiveTab('overview');
               }}
               lastRecord={activeCheckIns[0]}
+              patientBirthDate={activePatient.birthDate}
             />
           )}
 

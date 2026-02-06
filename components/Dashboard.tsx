@@ -56,6 +56,43 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, age 
     );
   };
 
+  // Custom Tooltip para o Gráfico de Composição
+  const CustomCompositionTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-4 border border-slate-100 shadow-xl rounded-xl text-sm outline-none">
+          <p className="font-bold text-slate-700 mb-2 border-b border-slate-50 pb-2">{label}</p>
+          {payload.map((entry: any, index: number) => {
+            const data = entry.payload;
+            
+            // Determina a porcentagem baseada na chave do dado
+            let percentage = null;
+            if (entry.dataKey === 'muscleMassKg') percentage = data.muscleMass;
+            if (entry.dataKey === 'fatMassKg') percentage = data.bodyFat;
+
+            return (
+              <div key={index} className="flex items-center justify-between gap-4 mb-1.5 last:mb-0" style={{ color: entry.color }}>
+                 <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }}></div>
+                    <span className="font-medium text-slate-600">{entry.name}:</span>
+                 </div>
+                 <div className="flex items-center gap-2">
+                    <span className="font-bold">{entry.value}</span>
+                    {percentage !== null && (
+                        <span className="text-xs bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-medium min-w-[3rem] text-center">
+                            {percentage}%
+                        </span>
+                    )}
+                 </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+    return null;
+  };
+
   if (!current) {
     return (
       <div className="flex flex-col items-center justify-center h-96 bg-white rounded-2xl border border-dashed border-slate-300">
@@ -226,10 +263,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, age 
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="dateFormatted" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} domain={['auto', 'auto']} unit="kg" />
-                <Tooltip 
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                    itemStyle={{ fontSize: '13px', fontWeight: 500 }}
-                />
+                <Tooltip content={<CustomCompositionTooltip />} cursor={{ opacity: 0.2 }} />
                 <Legend iconType="circle" wrapperStyle={{paddingTop: '20px'}} />
                 <Line type="monotone" dataKey="weight" name="Peso Total" stroke="#3b82f6" strokeWidth={2} dot={{r: 3}} />
                 <Line type="monotone" dataKey="muscleMassKg" name="Massa Magra (kg)" stroke="#10b981" strokeWidth={2} dot={{r: 3}} />

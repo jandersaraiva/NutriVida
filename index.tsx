@@ -1,6 +1,15 @@
-import React, { ErrorInfo, ReactNode } from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+
+// Suppress specific Recharts/React warnings
+const originalConsoleError = console.error;
+console.error = (...args) => {
+  if (typeof args[0] === 'string' && /defaultProps/.test(args[0])) {
+    return;
+  }
+  originalConsoleError(...args);
+};
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -17,11 +26,16 @@ interface ErrorBoundaryState {
 }
 
 // Componente de segurança para capturar erros e evitar tela branca total
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  public state: ErrorBoundaryState = {
-    hasError: false,
-    error: null
-  };
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  public state: ErrorBoundaryState;
+
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = {
+      hasError: false,
+      error: null
+    };
+  }
 
   public static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };

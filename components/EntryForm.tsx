@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { CheckIn } from '../types';
 import { Save, X, Calculator } from 'lucide-react';
@@ -7,6 +6,7 @@ interface EntryFormProps {
   onSave: (data: CheckIn) => void;
   onCancel: () => void;
   lastRecord?: CheckIn;
+  patientBirthDate?: string;
 }
 
 // Helper seguro para IDs
@@ -20,22 +20,28 @@ interface InputGroupProps {
   type?: string;
   value: string | number;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  readOnly?: boolean;
 }
 
 // Componente extraído para fora para evitar re-renderização e perda de foco
-const InputGroup: React.FC<InputGroupProps> = ({ label, name, unit, step = "0.1", type = "number", value, onChange }) => (
+const InputGroup: React.FC<InputGroupProps> = ({ label, name, unit, step = "0.1", type = "number", value, onChange, readOnly }) => (
   <div className="flex flex-col">
     <label htmlFor={name} className="text-sm font-medium text-slate-700 mb-1">{label}</label>
     <div className="relative">
       <input
         required
+        readOnly={readOnly}
         type={type}
         id={name}
         name={name}
         step={step}
         value={value}
         onChange={onChange}
-        className="w-full bg-slate-50 rounded-lg border-slate-200 border px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+        className={`w-full rounded-lg border px-4 py-2.5 outline-none transition-all ${
+            readOnly 
+            ? 'bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed'
+            : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500'
+        }`}
       />
       {unit && (
         <span className="absolute right-4 top-2.5 text-slate-400 text-sm pointer-events-none">
@@ -46,7 +52,20 @@ const InputGroup: React.FC<InputGroupProps> = ({ label, name, unit, step = "0.1"
   </div>
 );
 
-export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastRecord }) => {
+export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastRecord, patientBirthDate }) => {
+  // Calcula idade baseada na data da avaliação vs data de nascimento
+  const calculateAgeAtDate = (dob: string, targetDate: string) => {
+    if (!dob || !targetDate) return 0;
+    const birth = new Date(dob);
+    const target = new Date(targetDate);
+    let age = target.getFullYear() - birth.getFullYear();
+    const m = target.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && target.getDate() < birth.getDate())) {
+        age--;
+    }
+    return age;
+  };
+
   const [formData, setFormData] = useState<Omit<CheckIn, 'id'>>({
     date: new Date().toISOString().split('T')[0],
     height: lastRecord?.height || 1.72,
@@ -55,9 +74,16 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
     bodyFat: 0,
     muscleMass: 0,
     bmr: 0,
-    age: lastRecord?.age || 33,
+    age: patientBirthDate ? calculateAgeAtDate(patientBirthDate, new Date().toISOString().split('T')[0]) : (lastRecord?.age || 33),
     visceralFat: 0,
   });
+
+  // Recalcula idade se a data da avaliação mudar
+  useEffect(() => {
+    if (patientBirthDate && formData.date) {
+        setFormData(prev => ({ ...prev, age: calculateAgeAtDate(patientBirthDate, prev.date) }));
+    }
+  }, [formData.date, patientBirthDate]);
 
   // Auto-calculate IMC when weight or height changes
   useEffect(() => {
@@ -98,14 +124,15 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <InputGroup label="Data da Avaliação" name="date" type="date" value={formData.date} onChange={handleChange} />
-            <InputGroup label="Idade" name="age" unit="anos" step="1" value={formData.age} onChange={handleChange} />
-          </div>
-
+          {/* Linha 1: Data, Altura, Peso */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <InputGroup label="Data da Avaliação" name="date" type="date" value={formData.date} onChange={handleChange} />
             <InputGroup label="Altura" name="height" unit="m" step="0.01" value={formData.height} onChange={handleChange} />
             <InputGroup label="Peso" name="weight" unit="kg" value={formData.weight} onChange={handleChange} />
+          </div>
+
+          {/* Linha 2: IMC, Gordura, Músculo */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="relative">
                <InputGroup label="IMC" name="imc" step="0.1" value={formData.imc} onChange={handleChange} />
                <div className="absolute top-0 right-0">
@@ -114,19 +141,16 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
                   </span>
                </div>
             </div>
+            <InputGroup label="Gordura Corporal" name="bodyFat" unit="%" value={formData.bodyFat} onChange={handleChange} />
+            <InputGroup label="Massa Muscular" name="muscleMass" unit="%" value={formData.muscleMass} onChange={handleChange} />
           </div>
 
-          <div className="p-4 bg-slate-50 rounded-xl space-y-6 border border-slate-100">
-            <h3 className="font-semibold text-slate-700 text-sm uppercase tracking-wide">Composição Corporal</h3>
+          <div className="p-4 bg-slate-50 rounded-xl space-y-4 border border-slate-100">
+            <h3 className="font-semibold text-slate-700 text-sm uppercase tracking-wide mb-2">Indicadores Metabólicos</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <InputGroup label="Gordura Corporal" name="bodyFat" unit="%" value={formData.bodyFat} onChange={handleChange} />
-              <InputGroup label="Massa Muscular" name="muscleMass" unit="%" value={formData.muscleMass} onChange={handleChange} />
+                <InputGroup label="Taxa Metabólica Basal" name="bmr" unit="Kcal" step="1" value={formData.bmr} onChange={handleChange} />
+                <InputGroup label="Gordura Visceral" name="visceralFat" step="1" value={formData.visceralFat} onChange={handleChange} />
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <InputGroup label="Taxa Metabólica Basal" name="bmr" unit="Kcal" step="1" value={formData.bmr} onChange={handleChange} />
-            <InputGroup label="Gordura Visceral" name="visceralFat" step="1" value={formData.visceralFat} onChange={handleChange} />
           </div>
 
           <div className="flex gap-4 pt-4">
