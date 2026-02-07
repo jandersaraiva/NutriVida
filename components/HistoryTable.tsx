@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { CheckIn } from '../types';
 import { Calendar, Download } from 'lucide-react';
@@ -25,6 +26,7 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns }) => {
               <th className="px-6 py-4">IMC</th>
               <th className="px-6 py-4">Gordura</th>
               <th className="px-6 py-4">Músculo</th>
+              <th className="px-6 py-4">Idade Corp.</th>
               <th className="px-6 py-4">TMB (Kcal)</th>
               <th className="px-6 py-4 text-center">Visceral</th>
             </tr>
@@ -48,6 +50,13 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns }) => {
                 </td>
                 <td className="px-6 py-4 text-slate-600">{checkIn.bodyFat.toFixed(1)}%</td>
                 <td className="px-6 py-4 text-slate-600">{checkIn.muscleMass.toFixed(1)}%</td>
+                <td className="px-6 py-4 text-slate-600">
+                    {checkIn.bodyAge ? (
+                        <span className={`${checkIn.bodyAge < checkIn.age ? 'text-emerald-600 font-semibold' : 'text-slate-600'}`}>
+                            {checkIn.bodyAge} anos
+                        </span>
+                    ) : '-'}
+                </td>
                 <td className="px-6 py-4 text-slate-600">{checkIn.bmr}</td>
                 <td className="px-6 py-4 text-center">
                   <div className="inline-block w-8 py-0.5 bg-slate-100 rounded text-slate-600 text-xs font-bold">

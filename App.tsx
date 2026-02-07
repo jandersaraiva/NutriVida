@@ -29,6 +29,7 @@ const SEED_CHECKINS: CheckIn[] = [
     muscleMass: 38.5,
     bmr: 1649,
     age: 29,
+    bodyAge: 27, // Nova propriedade
     visceralFat: 7,
   },
   {
@@ -41,6 +42,7 @@ const SEED_CHECKINS: CheckIn[] = [
     muscleMass: 38.7,
     bmr: 1640,
     age: 29,
+    bodyAge: 28, // Nova propriedade
     visceralFat: 7,
   },
   {
@@ -53,6 +55,7 @@ const SEED_CHECKINS: CheckIn[] = [
     muscleMass: 40.0,
     bmr: 1550,
     age: 28,
+    bodyAge: 25, // Nova propriedade
     visceralFat: 4,
   }
 ];

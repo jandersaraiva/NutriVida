@@ -8,7 +8,8 @@ export interface CheckIn {
   bodyFat: number; // %
   muscleMass: number; // %
   bmr: number; // Kcal
-  age: number; // years
+  age: number; // years (chronological)
+  bodyAge: number; // years (bioimpedance)
   visceralFat: number; // level
 }
 

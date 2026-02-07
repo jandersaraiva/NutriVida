@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { CheckIn } from '../types';
 import { Save, X, Calculator } from 'lucide-react';
@@ -75,6 +76,7 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
     muscleMass: 0,
     bmr: 0,
     age: patientBirthDate ? calculateAgeAtDate(patientBirthDate, new Date().toISOString().split('T')[0]) : (lastRecord?.age || 33),
+    bodyAge: lastRecord?.bodyAge || 0, // Novo campo padrão
     visceralFat: 0,
   });
 
@@ -147,9 +149,11 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
 
           <div className="p-4 bg-slate-50 rounded-xl space-y-4 border border-slate-100">
             <h3 className="font-semibold text-slate-700 text-sm uppercase tracking-wide mb-2">Indicadores Metabólicos</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <InputGroup label="Taxa Metabólica Basal" name="bmr" unit="Kcal" step="1" value={formData.bmr} onChange={handleChange} />
                 <InputGroup label="Gordura Visceral" name="visceralFat" step="1" value={formData.visceralFat} onChange={handleChange} />
+                {/* Novo Campo Adicionado */}
+                <InputGroup label="Idade Corporal" name="bodyAge" unit="anos" step="1" value={formData.bodyAge} onChange={handleChange} />
             </div>
           </div>
 
