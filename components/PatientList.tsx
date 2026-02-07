@@ -236,64 +236,76 @@ export const PatientList: React.FC<PatientListProps> = ({
             <div 
               key={patient.id}
               onClick={() => viewMode === 'active' && onSelectPatient(patient.id)}
-              className={`bg-white rounded-2xl border border-slate-100 p-6 shadow-sm hover:shadow-md transition-all group relative overflow-hidden ${viewMode === 'active' ? 'cursor-pointer hover:border-emerald-200' : 'opacity-75'}`}
+              className={`bg-white rounded-2xl border border-slate-100 p-6 shadow-sm hover:shadow-md transition-all group relative overflow-hidden flex flex-col justify-between ${viewMode === 'active' ? 'cursor-pointer hover:border-emerald-200' : 'opacity-75'}`}
             >
-              <div className="flex justify-between items-start mb-4">
-                <div className={`h-14 w-14 ${patient.avatarColor} rounded-2xl flex items-center justify-center font-bold text-xl shadow-inner`}>
-                  {patient.name.substring(0,2).toUpperCase()}
+              <div>
+                <div className="flex justify-between items-start mb-4">
+                  <div className={`h-14 w-14 ${patient.avatarColor} rounded-2xl flex items-center justify-center font-bold text-xl shadow-inner`}>
+                    {patient.name.substring(0,2).toUpperCase()}
+                  </div>
+                  
+                  <div className="flex gap-1">
+                    {viewMode === 'active' ? (
+                        <>
+                            <button 
+                                onClick={(e) => handleOpenEdit(e, patient)}
+                                className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                                title="Editar"
+                            >
+                                <Pencil size={18} />
+                            </button>
+                            <button 
+                                onClick={(e) => handleTrashClick(e, patient.id)}
+                                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Excluir"
+                            >
+                                <Trash2 size={18} />
+                            </button>
+                        </>
+                    ) : (
+                        <button 
+                            onClick={(e) => handleRestoreClick(e, patient.id)}
+                            className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                            title="Restaurar"
+                        >
+                            <RefreshCcw size={18} />
+                        </button>
+                    )}
+                  </div>
                 </div>
-                
-                {viewMode === 'active' ? (
-                    <button 
-                        onClick={(e) => handleOpenEdit(e, patient)}
-                        className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                    >
-                        <Pencil size={18} />
-                    </button>
-                ) : (
-                    <button 
-                        onClick={(e) => handleRestoreClick(e, patient.id)}
-                        className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                        title="Restaurar"
-                    >
-                        <RefreshCcw size={18} />
-                    </button>
-                )}
+
+                <h3 className="font-bold text-slate-800 text-lg truncate mb-1">{patient.name}</h3>
+                <p className="text-slate-500 text-sm mb-4 truncate">{patient.profession || 'Profissão não informada'}</p>
+
+                <div className="space-y-2 mb-6">
+                  <div className="flex items-center gap-2 text-sm text-slate-600">
+                    <Calendar size={14} className="text-emerald-500" />
+                    {patient.age} anos
+                  </div>
+                  {patient.phone && (
+                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                        <span className="text-emerald-500 font-bold text-xs">Tel:</span>
+                        {patient.phone}
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <h3 className="font-bold text-slate-800 text-lg truncate mb-1">{patient.name}</h3>
-              <p className="text-slate-500 text-sm mb-4 truncate">{patient.profession || 'Profissão não informada'}</p>
-
-              <div className="space-y-2 mb-6">
-                <div className="flex items-center gap-2 text-sm text-slate-600">
-                   <Calendar size={14} className="text-emerald-500" />
-                   {patient.age} anos
-                </div>
-                {patient.phone && (
-                   <div className="flex items-center gap-2 text-sm text-slate-600">
-                      <span className="text-emerald-500 font-bold text-xs">Tel:</span>
-                      {patient.phone}
-                   </div>
-                )}
-              </div>
-
-              <div className="pt-4 border-t border-slate-50 flex justify-between items-center">
+              <div className="pt-4 border-t border-slate-50 flex justify-between items-center mt-auto">
                  <span className={`text-xs font-semibold px-2 py-1 rounded-md ${patient.checkIns.length > 0 ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-500'}`}>
                     {patient.checkIns.length} Avaliações
                  </span>
                  
+                 {/* Espaço reservado para o indicador de navegação que aparece no hover */}
                  {viewMode === 'active' && (
-                     <button 
-                        onClick={(e) => handleTrashClick(e, patient.id)}
-                        className="text-slate-400 hover:text-red-500 transition-colors p-1 relative z-10"
-                     >
-                        <Trash2 size={16} />
-                     </button>
+                     <span className="text-xs text-slate-300 font-medium opacity-100 group-hover:opacity-0 transition-opacity">
+                        Ver perfil
+                     </span>
                  )}
               </div>
               
               {viewMode === 'active' && (
-                  <div className="absolute right-4 bottom-4 opacity-0 group-hover:opacity-100 transition-opacity text-emerald-600 pointer-events-none">
+                  <div className="absolute right-4 bottom-4 opacity-0 group-hover:opacity-100 transition-opacity text-emerald-600 pointer-events-none bg-white pl-2">
                     <ChevronRight size={20} />
                   </div>
               )}

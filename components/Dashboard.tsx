@@ -7,7 +7,7 @@ import {
 } from 'recharts';
 import { 
   Scale, Activity, Zap, Flame, PieChart, Hourglass, TrendingDown, TrendingUp, 
-  Calculator, Calendar, Heart 
+  Calculator, Calendar, AlertTriangle, CheckCircle 
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -99,8 +99,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, age,
     const isGood = payload.bodyAge <= payload.age;
     const color = isGood ? '#10b981' : '#f43f5e'; // emerald-500 or rose-500
     
+    // Reduzi r de 5 para 4 e strokeWidth de 3 para 2
     return (
-        <circle cx={cx} cy={cy} r={5} stroke={color} strokeWidth={3} fill="white" />
+        <circle cx={cx} cy={cy} r={4} stroke={color} strokeWidth={2} fill="white" />
     );
   };
 
@@ -138,6 +139,55 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, age,
       }
       return null;
   };
+
+  // --- Lógica para Gráfico de Gordura Visceral ---
+  const getVisceralColor = (value: number) => {
+    if (value <= 9) return '#10b981'; // Green (Normal)
+    if (value <= 14) return '#f59e0b'; // Amber (Alert)
+    return '#f43f5e'; // Rose (Excess)
+  };
+
+  const CustomVisceralDot = (props: any) => {
+    const { cx, cy, payload } = props;
+    const color = getVisceralColor(payload.visceralFat);
+    // Reduzi r de 5 para 4 e strokeWidth de 3 para 2
+    return <circle cx={cx} cy={cy} r={4} stroke={color} strokeWidth={2} fill="white" />;
+  };
+
+  const CustomVisceralTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+        const data = payload[0].payload;
+        const value = data.visceralFat;
+        let status = 'Normal';
+        let statusColor = 'text-emerald-600 bg-emerald-50';
+        let Icon = CheckCircle;
+
+        if (value > 9 && value <= 14) {
+            status = 'Alerta';
+            statusColor = 'text-amber-600 bg-amber-50';
+            Icon = AlertTriangle;
+        } else if (value > 14) {
+            status = 'Alto Risco';
+            statusColor = 'text-rose-600 bg-rose-50';
+            Icon = Flame;
+        }
+
+        return (
+            <div className="bg-white p-4 border border-slate-100 shadow-xl rounded-xl text-sm outline-none min-w-[160px]">
+                <p className="font-bold text-slate-700 mb-2 border-b border-slate-50 pb-2">{label}</p>
+                <div className="flex items-center justify-between mb-3">
+                    <span className="text-slate-500">Nível</span>
+                    <span className="font-bold text-xl text-slate-800">{value}</span>
+                </div>
+                <div className={`flex items-center justify-center gap-2 p-2 rounded-lg font-bold text-xs ${statusColor}`}>
+                    <Icon size={14} /> {status}
+                </div>
+            </div>
+        );
+    }
+    return null;
+  };
+
 
   if (!current) {
     return (
@@ -259,7 +309,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, age,
         />
       </div>
 
-      {/* Charts Section */}
+      {/* Charts Section: Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
         
         {/* Chart 1: Weight & IMC */}
@@ -270,7 +320,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, age,
               Evolução de Peso & IMC
             </h3>
           </div>
-          <div className="h-[300px] w-full">
+          <div className="h-[280px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <defs>
@@ -288,10 +338,31 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, age,
                     itemStyle={{ fontSize: '13px', fontWeight: 500 }}
                 />
                 <Legend iconType="circle" wrapperStyle={{paddingTop: '20px'}} />
-                {/* Weight Area */}
-                <Area yAxisId="left" type="monotone" dataKey="weight" name="Peso (kg)" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorWeight)" />
-                {/* IMC Line */}
-                <Line yAxisId="right" type="monotone" dataKey="imc" name="IMC" stroke="#8b5cf6" strokeWidth={2} strokeDasharray="5 5" dot={{r: 4, fill: '#8b5cf6', strokeWidth: 2, stroke:'#fff'}} />
+                {/* Weight Area with Dot */}
+                <Area 
+                  yAxisId="left" 
+                  type="monotone" 
+                  dataKey="weight" 
+                  name="Peso (kg)" 
+                  stroke="#3b82f6" 
+                  strokeWidth={3} 
+                  fillOpacity={1} 
+                  fill="url(#colorWeight)" 
+                  dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }}
+                  activeDot={{ r: 6, strokeWidth: 0, fill: '#2563eb' }}
+                />
+                {/* IMC Line with Dot - Stroke removed */}
+                <Line 
+                  yAxisId="right" 
+                  type="monotone" 
+                  dataKey="imc" 
+                  name="IMC" 
+                  stroke="#8b5cf6" 
+                  strokeWidth={2} 
+                  strokeDasharray="5 5" 
+                  dot={{ r: 4, fill: '#8b5cf6', strokeWidth: 0 }}
+                  activeDot={{ r: 6, strokeWidth: 0, fill: '#7c3aed' }}
+                />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
@@ -305,7 +376,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, age,
               Composição do Peso (kg)
             </h3>
           </div>
-          <div className="h-[300px] w-full">
+          <div className="h-[280px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -323,8 +394,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, age,
 
       </div>
 
-      {/* Row 4: Body Age vs Real Age Chart (Versão Melhorada) */}
-      <div className="grid grid-cols-1 gap-6 pt-2">
+      {/* Charts Section: Row 2 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
+          
+          {/* Chart 3: Body Age vs Real Age */}
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
             <div className="flex justify-between items-center mb-6">
                 <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
@@ -348,9 +421,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, age,
                     <Tooltip content={<CustomAgeTooltip />} cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '4 4' }} />
                     <Legend iconType="circle" wrapperStyle={{paddingTop: '20px'}} />
                     
-                    {/* Linha de Base: Idade Real */}
+                    {/* Linha de Base: Idade Real (Monotone agora) */}
                     <Area 
-                        type="step" 
+                        type="monotone" 
                         dataKey="age" 
                         name="Idade Real" 
                         stroke="#94a3b8" 
@@ -371,12 +444,53 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, age,
                         fillOpacity={1} 
                         fill="url(#colorBodyAge)" 
                         dot={<CustomBodyAgeDot />}
-                        activeDot={{ r: 6, strokeWidth: 0, fill: '#059669' }}
+                        activeDot={{ r: 5, strokeWidth: 0, fill: '#059669' }}
                     />
                 </AreaChart>
                 </ResponsiveContainer>
             </div>
           </div>
+
+          {/* Chart 4: Visceral Fat Evolution */}
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+            <div className="flex justify-between items-center mb-6">
+                <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <Flame size={18} className="text-amber-500" />
+                    Evolução da Gordura Visceral
+                </h3>
+            </div>
+            <div className="h-[280px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                        <defs>
+                            <linearGradient id="colorVisceral" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.2}/>
+                                <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                            </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis dataKey="dateFormatted" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dy={10} />
+                        <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} domain={[0, 'dataMax + 2']} />
+                        
+                        <Tooltip content={<CustomVisceralTooltip />} cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                        <Legend iconType="circle" wrapperStyle={{paddingTop: '20px'}} />
+                        
+                        <Area 
+                            type="monotone" 
+                            dataKey="visceralFat" 
+                            name="Nível Visceral" 
+                            stroke="#f59e0b" 
+                            strokeWidth={3} 
+                            fillOpacity={1} 
+                            fill="url(#colorVisceral)"
+                            dot={<CustomVisceralDot />} 
+                            activeDot={{ r: 5, strokeWidth: 0, fill: '#d97706' }}
+                        />
+                    </AreaChart>
+                </ResponsiveContainer>
+            </div>
+          </div>
+
       </div>
 
     </div>
