@@ -22,22 +22,55 @@
       }
     </script>
     <style>
-      /* Estilos para impressão limpa da dieta */
+      /* --- CSS CRÍTICO PARA IMPRESSÃO --- */
       @media print {
-        @page { margin: 2cm; }
-        body { background-color: white !important; }
-        aside, header, nav, button, .print\:hidden { display: none !important; }
+        @page { 
+          margin: 1cm; 
+          size: A4;
+        }
+
+        /* 1. Resetar layout de App (SPA) para Documento Fluído */
+        html, body, #root, main, .flex, .h-screen, .overflow-hidden, .overflow-y-auto {
+          height: auto !important;
+          min-height: 0 !important;
+          width: 100% !important;
+          overflow: visible !important;
+          display: block !important;
+          position: relative !important;
+          background-color: white !important;
+        }
+
+        /* 2. Esconder elementos de UI */
+        aside, header, nav, button, .print\:hidden, .sidebar, .no-print { 
+          display: none !important; 
+        }
+
+        /* 3. Ajustes de Cores e Gráficos */
+        * { 
+          -webkit-print-color-adjust: exact !important; 
+          print-color-adjust: exact !important; 
+          box-shadow: none !important; /* Remove sombras dos cards */
+        }
+
+        /* 4. Forçar quebras de página limpas */
+        .break-inside-avoid {
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+        
+        .break-before-page {
+          page-break-before: always;
+          break-before: page;
+        }
+
+        /* 5. Ajuste fino do container principal */
         main { 
           padding: 0 !important; 
-          overflow: visible !important; 
-          height: auto !important; 
+          margin: 0 !important; 
         }
-        .bg-slate-50 { background-color: white !important; }
-        /* Forçar exibição de cores de fundo em navegadores webkit */
-        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
       }
       
-      /* Scrollbar personalizada */
+      /* Scrollbar personalizada para tela (não afeta impressão) */
       .custom-scrollbar::-webkit-scrollbar {
         width: 6px;
       }

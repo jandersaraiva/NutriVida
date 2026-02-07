@@ -197,7 +197,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
   };
 
   return (
-    <div className="bg-slate-50 min-h-screen pb-12 print:bg-white print:pb-0">
+    <div className="bg-slate-50 min-h-screen pb-12 print:bg-white print:pb-0 print:min-h-0 print:h-auto">
       
       {/* Header de Ação (Não imprime) */}
       <div className="max-w-5xl mx-auto pt-6 px-4 mb-6 flex justify-between items-center print:hidden">
@@ -214,10 +214,11 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
       </div>
 
       {/* DOCUMENTO A4 */}
-      <div className="max-w-[210mm] mx-auto bg-white shadow-xl print:shadow-none p-8 md:p-12 print:p-0 min-h-[297mm] flex flex-col">
+      {/* Removemos max-w fixo na impressão para usar 100% da folha */}
+      <div className="max-w-[210mm] mx-auto bg-white shadow-xl print:shadow-none p-8 md:p-12 print:p-0 print:m-0 print:max-w-none print:w-full min-h-[297mm] flex flex-col">
         
         {/* Cabeçalho do Relatório */}
-        <header className="flex justify-between items-end border-b-2 border-slate-100 pb-6 mb-8">
+        <header className="flex justify-between items-end border-b-2 border-slate-100 pb-6 mb-8 print:mb-4">
             <div>
                 <div className="flex items-center gap-2 text-blue-700 mb-1">
                     <Activity size={24} />
@@ -348,7 +349,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
         </div>
 
         {/* --- ÁREA DE GRÁFICOS DE EVOLUÇÃO --- */}
-        <div className="mb-8 break-inside-avoid">
+        <div className="mb-8 break-inside-avoid print:break-before-page">
             <h3 className="font-bold text-slate-800 mb-4 text-sm uppercase border-b border-slate-100 pb-2 flex items-center gap-2">
                 <TrendingUp size={16} /> Evolução Detalhada
             </h3>
@@ -356,7 +357,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
                 {/* 1. Peso e IMC */}
-                <div className="bg-slate-50 rounded-xl border border-slate-100 p-4 print:bg-white print:border-slate-200">
+                <div className="bg-slate-50 rounded-xl border border-slate-100 p-4 print:bg-white print:border-slate-200 break-inside-avoid">
                     <p className="text-xs text-center font-bold text-slate-600 mb-2">Peso Corporal (kg) e IMC</p>
                     <div className="h-48 w-full">
                         <ResponsiveContainer width="100%" height="100%">
@@ -394,7 +395,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                 </div>
 
                 {/* 2. Massas em KG (Gordura vs Músculo) */}
-                <div className="bg-slate-50 rounded-xl border border-slate-100 p-4 print:bg-white print:border-slate-200">
+                <div className="bg-slate-50 rounded-xl border border-slate-100 p-4 print:bg-white print:border-slate-200 break-inside-avoid">
                     <p className="text-xs text-center font-bold text-slate-600 mb-2">Composição Corporal (Kg)</p>
                     <div className="h-48 w-full">
                         <ResponsiveContainer width="100%" height="100%">
@@ -427,7 +428,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                 </div>
 
                 {/* 3. Gordura Visceral */}
-                <div className="bg-slate-50 rounded-xl border border-slate-100 p-4 print:bg-white print:border-slate-200">
+                <div className="bg-slate-50 rounded-xl border border-slate-100 p-4 print:bg-white print:border-slate-200 break-inside-avoid">
                     <p className="text-xs text-center font-bold text-slate-600 mb-2 flex items-center justify-center gap-1"><Flame size={12} className="text-amber-500"/> Nível Visceral</p>
                     <div className="h-48 w-full">
                         <ResponsiveContainer width="100%" height="100%">
@@ -452,7 +453,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                 </div>
 
                 {/* 4. Idade Corporal */}
-                <div className="bg-slate-50 rounded-xl border border-slate-100 p-4 print:bg-white print:border-slate-200">
+                <div className="bg-slate-50 rounded-xl border border-slate-100 p-4 print:bg-white print:border-slate-200 break-inside-avoid">
                     <p className="text-xs text-center font-bold text-slate-600 mb-2 flex items-center justify-center gap-1"><Hourglass size={12} className="text-blue-500"/> Idade Corporal (anos)</p>
                     <div className="h-48 w-full">
                         <ResponsiveContainer width="100%" height="100%">
@@ -522,7 +523,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
         )}
 
         {/* Rodapé e Assinatura (Apenas Print) */}
-        <div className="mt-auto pt-12">
+        <div className="mt-auto pt-12 break-inside-avoid">
             <div className="hidden print:flex justify-between items-end gap-12">
                 <div className="flex-1 border-t border-slate-300 pt-2 text-center">
                     <p className="font-bold text-slate-800 text-sm">Assinatura do Paciente</p>
