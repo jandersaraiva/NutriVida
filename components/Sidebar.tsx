@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ViewState } from '../types';
 import { PlusCircle, Activity, Users, CalendarDays, LayoutDashboard, Settings } from 'lucide-react';
@@ -17,7 +18,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) =
   ];
 
   return (
-    <aside className="w-20 lg:w-64 bg-white border-r border-slate-200 flex flex-col justify-between transition-all duration-300 z-10 shadow-sm">
+    <aside className="w-20 lg:w-64 bg-white border-r border-slate-200 flex flex-col justify-between transition-all duration-300 z-10 shadow-sm print:hidden">
       <div>
         <div className="h-20 flex items-center justify-center lg:justify-start lg:px-6 border-b border-slate-100">
           <div className="flex items-center gap-3">

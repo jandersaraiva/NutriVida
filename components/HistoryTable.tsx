@@ -1,13 +1,16 @@
 
 import React from 'react';
 import { CheckIn } from '../types';
-import { Calendar, Download } from 'lucide-react';
+import { Calendar, Download, Pencil, Trash2, FileText } from 'lucide-react';
 
 interface HistoryTableProps {
   checkIns: CheckIn[];
+  onEdit: (checkIn: CheckIn) => void;
+  onDelete: (id: string) => void;
+  onViewReport?: (checkIn: CheckIn) => void; // Nova prop opcional para não quebrar outros usos se houver
 }
 
-export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns }) => {
+export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, onDelete, onViewReport }) => {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
       <div className="p-6 border-b border-slate-100 flex justify-between items-center">
@@ -29,11 +32,12 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns }) => {
               <th className="px-6 py-4">Idade Corp.</th>
               <th className="px-6 py-4">TMB (Kcal)</th>
               <th className="px-6 py-4 text-center">Visceral</th>
+              <th className="px-6 py-4 text-right">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {checkIns.map((checkIn) => (
-              <tr key={checkIn.id} className="hover:bg-slate-50 transition-colors">
+              <tr key={checkIn.id} className="hover:bg-slate-50 transition-colors group">
                 <td className="px-6 py-4 font-medium text-slate-700 flex items-center gap-2">
                   <Calendar size={14} className="text-slate-400" />
                   {new Date(checkIn.date).toLocaleDateString('pt-BR')}
@@ -61,6 +65,33 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns }) => {
                 <td className="px-6 py-4 text-center">
                   <div className="inline-block w-8 py-0.5 bg-slate-100 rounded text-slate-600 text-xs font-bold">
                     {checkIn.visceralFat}
+                  </div>
+                </td>
+                <td className="px-6 py-4 text-right">
+                  <div className="flex justify-end gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                    {onViewReport && (
+                        <button 
+                            onClick={() => onViewReport(checkIn)}
+                            className="p-1.5 text-white bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors shadow-sm"
+                            title="Ver Relatório Completo"
+                        >
+                            <FileText size={16} />
+                        </button>
+                    )}
+                    <button 
+                      onClick={() => onEdit(checkIn)}
+                      className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                      title="Editar"
+                    >
+                      <Pencil size={16} />
+                    </button>
+                    <button 
+                      onClick={() => onDelete(checkIn.id)}
+                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                      title="Excluir"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
                 </td>
               </tr>

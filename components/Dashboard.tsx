@@ -7,17 +7,18 @@ import {
 } from 'recharts';
 import { 
   Scale, Activity, Zap, Flame, PieChart, Hourglass, TrendingDown, TrendingUp, 
-  Calculator, Calendar, AlertTriangle, CheckCircle 
+  Calculator, Calendar, AlertTriangle, CheckCircle, FileText 
 } from 'lucide-react';
 
 interface DashboardProps {
   checkIns: CheckIn[];
   onAddEntry: () => void;
+  onViewReport?: (checkIn: CheckIn) => void; // Nova prop
   age: number; // Current calculated age of the patient
   gender: 'Masculino' | 'Feminino';
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, age, gender }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onViewReport, age, gender }) => {
   // We assume checkIns is already sorted (newest first) for card display
   const current = checkIns[0];
   const previous = checkIns[1];
@@ -160,15 +161,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, age,
         const value = data.visceralFat;
         let status = 'Normal';
         let statusColor = 'text-emerald-600 bg-emerald-50';
+        let dotColor = '#10b981';
         let Icon = CheckCircle;
 
         if (value > 9 && value <= 14) {
             status = 'Alerta';
             statusColor = 'text-amber-600 bg-amber-50';
+            dotColor = '#f59e0b';
             Icon = AlertTriangle;
         } else if (value > 14) {
             status = 'Alto Risco';
             statusColor = 'text-rose-600 bg-rose-50';
+            dotColor = '#f43f5e';
             Icon = Flame;
         }
 
@@ -176,7 +180,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, age,
             <div className="bg-white p-4 border border-slate-100 shadow-xl rounded-xl text-sm outline-none min-w-[160px]">
                 <p className="font-bold text-slate-700 mb-2 border-b border-slate-50 pb-2">{label}</p>
                 <div className="flex items-center justify-between mb-3">
-                    <span className="text-slate-500">Nível</span>
+                    <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: dotColor }}></span>
+                        <span className="text-slate-500">Nível</span>
+                    </div>
                     <span className="font-bold text-xl text-slate-800">{value}</span>
                 </div>
                 <div className={`flex items-center justify-center gap-2 p-2 rounded-lg font-bold text-xs ${statusColor}`}>
@@ -238,6 +245,30 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, age,
   return (
     <div className="space-y-6">
       
+      {/* Action Header - Latest CheckIn */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+         <div className="flex items-center gap-3">
+             <div className="bg-blue-50 p-2.5 rounded-xl text-blue-600">
+                <Calendar size={20} />
+             </div>
+             <div>
+                <h3 className="font-bold text-slate-800 text-sm">Última Avaliação: {new Date(current.date).toLocaleDateString('pt-BR')}</h3>
+                <p className="text-xs text-slate-500">Confira a evolução detalhada e gere o PDF.</p>
+             </div>
+         </div>
+         <div className="w-full sm:w-auto flex gap-2">
+             {onViewReport && (
+                <button 
+                    onClick={() => onViewReport(current)}
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium text-sm shadow-sm shadow-blue-100"
+                >
+                    <FileText size={16} />
+                    Ver Relatório Detalhado
+                </button>
+             )}
+         </div>
+      </div>
+
       {/* Metrics Grid - Unified */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Linha 1 */}

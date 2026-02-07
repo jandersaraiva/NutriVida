@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Nutritionist } from '../types';
-import { User, Building, Phone, Mail, BadgeCheck, MapPin, Save, CheckCircle } from 'lucide-react';
+import { User, Phone, Mail, BadgeCheck, Save, CheckCircle, Camera, Calendar, Cake } from 'lucide-react';
 
 interface NutritionistProfileProps {
   data: Nutritionist;
@@ -13,10 +14,11 @@ export const NutritionistProfile: React.FC<NutritionistProfileProps> = ({ data, 
     crn: '',
     email: '',
     phone: '',
-    clinicName: '',
-    address: ''
+    birthDate: '',
+    photo: ''
   });
   const [showSuccess, setShowSuccess] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (data) {
@@ -28,6 +30,29 @@ export const NutritionistProfile: React.FC<NutritionistProfileProps> = ({ data, 
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({ ...prev, photo: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const calculateAge = useMemo(() => {
+    if (!formData.birthDate) return null;
+    const birth = new Date(formData.birthDate);
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+        age--;
+    }
+    return age;
+  }, [formData.birthDate]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,12 +67,43 @@ export const NutritionistProfile: React.FC<NutritionistProfileProps> = ({ data, 
         {/* Left Column: Avatar & Summary */}
         <div className="w-full md:w-1/3">
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex flex-col items-center text-center">
-            <div className="w-32 h-32 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-4 text-4xl font-bold border-4 border-white shadow-sm">
-              {formData.name ? formData.name.substring(0, 2).toUpperCase() : 'NU'}
+            
+            <div className="relative mb-4 group">
+              <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-sm bg-emerald-100 flex items-center justify-center">
+                {formData.photo ? (
+                  <img src={formData.photo} alt="Perfil" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-4xl font-bold text-emerald-600">
+                    {formData.name ? formData.name.substring(0, 2).toUpperCase() : 'NU'}
+                  </span>
+                )}
+              </div>
+              <button 
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute bottom-1 right-1 p-2 bg-emerald-600 text-white rounded-full shadow-lg hover:bg-emerald-700 transition-colors"
+                title="Alterar foto"
+              >
+                <Camera size={18} />
+              </button>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handlePhotoUpload} 
+                className="hidden" 
+                accept="image/*"
+              />
             </div>
-            <h2 className="text-xl font-bold text-slate-800">{formData.name || 'Seu Nome'}</h2>
-            <p className="text-emerald-600 font-medium mb-1">{formData.clinicName || 'Nome da Clínica'}</p>
-            <p className="text-slate-400 text-sm">{formData.crn || 'CRN não informado'}</p>
+
+            <h2 className="text-xl font-bold text-slate-800 mb-1">{formData.name || 'Seu Nome'}</h2>
+            <p className="text-slate-500 text-sm mb-2">{formData.crn || 'CRN não informado'}</p>
+            
+            {calculateAge !== null && (
+               <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-medium">
+                  <Cake size={14} className="text-pink-500" />
+                  {calculateAge} anos
+               </div>
+            )}
             
             <div className="mt-6 w-full pt-6 border-t border-slate-50">
                 <div className="flex items-center justify-center gap-2 text-slate-500 text-sm">
@@ -76,8 +132,9 @@ export const NutritionistProfile: React.FC<NutritionistProfileProps> = ({ data, 
                     <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
                         <User size={14} /> Informações Pessoais
                     </h4>
+                    
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
+                        <div className="md:col-span-2">
                             <label className="block text-sm font-medium text-slate-700 mb-1">Nome Completo</label>
                             <div className="relative">
                                 <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
@@ -91,6 +148,36 @@ export const NutritionistProfile: React.FC<NutritionistProfileProps> = ({ data, 
                                 />
                             </div>
                         </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Data de Nascimento</label>
+                            <div className="relative">
+                                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                <input
+                                    type="date"
+                                    name="birthDate"
+                                    value={formData.birthDate}
+                                    onChange={handleChange}
+                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Idade</label>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    disabled
+                                    value={calculateAge !== null ? `${calculateAge} anos` : '-'}
+                                    className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 cursor-not-allowed"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">CRN / Registro</label>
                             <div className="relative">
@@ -105,8 +192,6 @@ export const NutritionistProfile: React.FC<NutritionistProfileProps> = ({ data, 
                                 />
                             </div>
                         </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                          <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">Email Profissional</label>
                             <div className="relative">
@@ -121,55 +206,19 @@ export const NutritionistProfile: React.FC<NutritionistProfileProps> = ({ data, 
                                 />
                             </div>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Telefone / WhatsApp</label>
-                            <div className="relative">
-                                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                <input
-                                    type="text"
-                                    name="phone"
-                                    value={formData.phone}
-                                    onChange={handleChange}
-                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                                    placeholder="(00) 00000-0000"
-                                />
-                            </div>
-                        </div>
                     </div>
-                </div>
-
-                <hr className="border-slate-100" />
-
-                {/* Clinic Info */}
-                <div className="space-y-4">
-                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                        <Building size={14} /> Dados da Clínica
-                    </h4>
+                    
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Nome da Clínica / Consultório</label>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Telefone / WhatsApp</label>
                         <div className="relative">
-                            <Building className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                             <input
                                 type="text"
-                                name="clinicName"
-                                value={formData.clinicName}
+                                name="phone"
+                                value={formData.phone}
                                 onChange={handleChange}
                                 className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                                placeholder="Ex: Clínica Bem Estar"
-                            />
-                        </div>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Endereço Completo</label>
-                        <div className="relative">
-                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                            <input
-                                type="text"
-                                name="address"
-                                value={formData.address}
-                                onChange={handleChange}
-                                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                                placeholder="Rua, Número, Bairro, Cidade - UF"
+                                placeholder="(00) 00000-0000"
                             />
                         </div>
                     </div>

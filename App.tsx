@@ -11,8 +11,10 @@ import { PatientSelector } from './components/PatientSelector';
 import { DietPlan } from './components/DietPlan';
 import { NutritionistProfile } from './components/NutritionistProfile';
 import { ActiveDietsList } from './components/ActiveDietsList';
-import { CheckIn, ViewState, Patient, DietPlan as DietPlanType, PatientTab, Appointment, Nutritionist } from './types';
-import { User, Activity, Utensils, FileText, LayoutDashboard } from 'lucide-react';
+import { AnamnesisForm } from './components/AnamnesisForm';
+import { AssessmentReport } from './components/AssessmentReport';
+import { CheckIn, ViewState, Patient, DietPlan as DietPlanType, PatientTab, Appointment, Nutritionist, Anamnesis } from './types';
+import { User, Activity, Utensils, FileText, LayoutDashboard, Stethoscope } from 'lucide-react';
 
 // Helper seguro para IDs
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -31,6 +33,8 @@ const SEED_CHECKINS: CheckIn[] = [
     age: 29,
     bodyAge: 27, // Nova propriedade
     visceralFat: 7,
+    waistCircumference: 84,
+    hipCircumference: 100
   },
   {
     id: '0',
@@ -44,6 +48,8 @@ const SEED_CHECKINS: CheckIn[] = [
     age: 29,
     bodyAge: 28, // Nova propriedade
     visceralFat: 7,
+    waistCircumference: 85,
+    hipCircumference: 101
   },
   {
     id: 'old',
@@ -57,6 +63,8 @@ const SEED_CHECKINS: CheckIn[] = [
     age: 28,
     bodyAge: 25, // Nova propriedade
     visceralFat: 4,
+    waistCircumference: 78,
+    hipCircumference: 95
   }
 ];
 
@@ -66,6 +74,7 @@ const SEED_DIET: DietPlanType = {
   status: 'active',
   createdAt: '2026-01-01T10:00:00Z',
   lastUpdated: new Date().toISOString(),
+  waterTarget: 2500,
   meals: [
     {
       id: 'm1',
@@ -130,7 +139,18 @@ const SEED_PATIENTS: Patient[] = [
     avatarColor: 'bg-blue-100 text-blue-700',
     status: 'active',
     checkIns: SEED_CHECKINS,
-    dietPlans: [SEED_DIET]
+    dietPlans: [SEED_DIET],
+    anamnesis: {
+        mainComplaint: 'Gostaria de ganhar massa muscular e definir o abdômen.',
+        history: 'Sem histórico de doenças crônicas na família.',
+        allergies: 'Nenhuma conhecida.',
+        medications: 'Nenhum.',
+        sleepQuality: 'Bom',
+        bowelFunction: 'Regular',
+        alcohol: 'Socialmente, 2x no mês.',
+        smoker: false,
+        notes: 'Pratica musculação 5x na semana.'
+    }
   },
   {
     id: 'p2',
@@ -177,8 +197,8 @@ const SEED_NUTRITIONIST: Nutritionist = {
   crn: 'CRN-3 45678',
   email: 'contato@drjoao.com.br',
   phone: '(11) 97777-7777',
-  clinicName: 'Clínica NutriVida',
-  address: 'Av. Paulista, 1000 - São Paulo, SP'
+  birthDate: '1990-01-01',
+  photo: ''
 };
 
 const App: React.FC = () => {
@@ -189,6 +209,8 @@ const App: React.FC = () => {
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null); // Start with no patient
   const [currentView, setCurrentView] = useState<ViewState>('home'); // Default to dashboard
   const [activeTab, setActiveTab] = useState<PatientTab>('overview');
+  const [checkInToEdit, setCheckInToEdit] = useState<CheckIn | null>(null);
+  const [reportCheckIn, setReportCheckIn] = useState<CheckIn | null>(null); // Estado para o relatório
   
   // Controls if the add patient modal should automatically open when viewing PatientList
   const [shouldOpenAddPatientModal, setShouldOpenAddPatientModal] = useState(false);
@@ -226,6 +248,15 @@ const App: React.FC = () => {
     handleUpdatePatient(updatedPatient);
   };
 
+  const handleUpdateAnamnesis = (newAnamnesis: Anamnesis) => {
+    if (!activePatient) return;
+    const updatedPatient: Patient = {
+        ...activePatient,
+        anamnesis: newAnamnesis
+    };
+    handleUpdatePatient(updatedPatient);
+  };
+
   const handleTrashPatient = (id: string) => {
     setPatients(prev => prev.map(p => p.id === id ? { ...p, status: 'trash' } : p));
     if (selectedPatientId === id) {
@@ -253,20 +284,59 @@ const App: React.FC = () => {
   // Specific handler for the selector screen to go straight to entry
   const handleSelectPatientForEntry = (id: string) => {
     setSelectedPatientId(id);
+    setCheckInToEdit(null); // Ensure clean form
     setCurrentView('add_entry');
   };
 
-  const handleAddCheckIn = (newCheckIn: CheckIn) => {
+  const handleSaveCheckIn = (checkIn: CheckIn) => {
     if (!activePatient) return;
+
+    // Verificar se é uma atualização ou inserção
+    const isUpdate = activePatient.checkIns.some(c => c.id === checkIn.id);
+    let updatedCheckIns;
+
+    if (isUpdate) {
+        updatedCheckIns = activePatient.checkIns.map(c => c.id === checkIn.id ? checkIn : c);
+    } else {
+        updatedCheckIns = [...activePatient.checkIns, checkIn];
+    }
 
     const updatedPatient = {
       ...activePatient,
-      checkIns: [...activePatient.checkIns, newCheckIn]
+      checkIns: updatedCheckIns
     };
 
     setPatients(prev => prev.map(p => p.id === updatedPatient.id ? updatedPatient : p));
     setCurrentView('patients');
-    setActiveTab('overview');
+    
+    // Se estava editando, provavelmente quer ver o histórico. Se é novo, quer ver o dashboard.
+    if (isUpdate) {
+        setActiveTab('history');
+    } else {
+        setActiveTab('overview');
+    }
+    setCheckInToEdit(null);
+  };
+
+  const handleDeleteCheckIn = (id: string) => {
+    if (!activePatient) return;
+    if (!window.confirm("Tem certeza que deseja excluir esta avaliação?")) return;
+
+    const updatedCheckIns = activePatient.checkIns.filter(c => c.id !== id);
+    const updatedPatient = { ...activePatient, checkIns: updatedCheckIns };
+    
+    setPatients(prev => prev.map(p => p.id === updatedPatient.id ? updatedPatient : p));
+  };
+
+  const handleEditCheckIn = (checkIn: CheckIn) => {
+    setCheckInToEdit(checkIn);
+    setCurrentView('add_entry');
+  };
+
+  // --- Handler para Visualizar Relatório ---
+  const handleViewReport = (checkIn: CheckIn) => {
+      setReportCheckIn(checkIn);
+      setCurrentView('assessment_report');
   };
 
   const handleAddAppointment = (newAppointment: Appointment) => {
@@ -288,15 +358,25 @@ const App: React.FC = () => {
         setShouldOpenAddPatientModal(false);
         setSelectedPatientId(null);
     }
+    
+    // Ensure entry form state is clean when navigating away
+    if (view !== 'add_entry') {
+        setCheckInToEdit(null);
+    }
+    
+    if (view !== 'assessment_report') {
+        setReportCheckIn(null);
+    }
 
     setCurrentView(view);
   };
 
   // Render Tabs Logic
   const renderTabs = () => (
-    <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 mb-6 w-full max-w-2xl mx-auto">
+    <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 mb-6 w-full max-w-2xl mx-auto print:hidden">
       {[
         { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard },
+        { id: 'anamnesis', label: 'Anamnese', icon: Stethoscope }, // Nova Aba
         { id: 'history', label: 'Histórico', icon: FileText },
         { id: 'diet', label: 'Dieta', icon: Utensils },
         { id: 'profile', label: 'Perfil', icon: User },
@@ -327,17 +407,17 @@ const App: React.FC = () => {
       <Sidebar currentView={currentView} onViewChange={handleViewChange} />
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto p-4 md:p-8">
+      <main className="flex-1 overflow-y-auto p-4 md:p-8 print:p-0 print:overflow-visible">
         
         {/* Dynamic Header (Only show if NOT in Home/Main Dashboard because it has its own header) */}
-        {currentView !== 'home' && currentView !== 'active_diets' && (
-          <header className="mb-6 flex justify-between items-center max-w-[1920px] mx-auto">
+        {currentView !== 'home' && currentView !== 'active_diets' && currentView !== 'assessment_report' && (
+          <header className="mb-6 flex justify-between items-center max-w-[1920px] mx-auto print:hidden">
             <div>
               <h1 className="text-2xl font-bold text-slate-800">
                 {currentView === 'patients' && !selectedPatientId && 'Gestão de Pacientes'}
                 {currentView === 'patients' && selectedPatientId && (activePatient?.name || 'Detalhes do Paciente')}
                 {currentView === 'schedule' && 'Agenda'}
-                {currentView === 'add_entry' && 'Nova Avaliação'}
+                {currentView === 'add_entry' && (checkInToEdit ? 'Editar Avaliação' : 'Nova Avaliação')}
                 {currentView === 'select_patient_for_entry' && 'Menu de Ações'}
                 {currentView === 'profile_settings' && 'Meu Perfil'}
               </h1>
@@ -381,6 +461,19 @@ const App: React.FC = () => {
                 patients={patients}
                 onSelectPatient={handleSelectPatientDiet}
                 onBack={() => setCurrentView('home')}
+             />
+          )}
+
+          {/* VIEW: RELATÓRIO DE AVALIAÇÃO */}
+          {currentView === 'assessment_report' && reportCheckIn && activePatient && (
+             <AssessmentReport 
+                checkIn={reportCheckIn}
+                patient={activePatient}
+                allCheckIns={activeCheckIns}
+                onBack={() => {
+                    setCurrentView('patients');
+                    setActiveTab('history');
+                }}
              />
           )}
 
@@ -432,14 +525,30 @@ const App: React.FC = () => {
               {activeTab === 'overview' && (
                 <Dashboard 
                   checkIns={activeCheckIns} 
-                  onAddEntry={() => setCurrentView('add_entry')}
+                  onAddEntry={() => {
+                      setCheckInToEdit(null); // Ensure clean form
+                      setCurrentView('add_entry');
+                  }}
+                  onViewReport={handleViewReport}
                   age={activePatient.age}
                   gender={activePatient.gender}
                 />
               )}
 
+              {activeTab === 'anamnesis' && (
+                <AnamnesisForm 
+                    initialData={activePatient.anamnesis}
+                    onSave={handleUpdateAnamnesis}
+                />
+              )}
+
               {activeTab === 'history' && (
-                <HistoryTable checkIns={activeCheckIns} />
+                <HistoryTable 
+                    checkIns={activeCheckIns} 
+                    onEdit={handleEditCheckIn}
+                    onDelete={handleDeleteCheckIn}
+                    onViewReport={handleViewReport}
+                />
               )}
               
               {activeTab === 'diet' && (
@@ -506,13 +615,15 @@ const App: React.FC = () => {
 
           {activePatient && currentView === 'add_entry' && (
             <EntryForm 
-              onSave={handleAddCheckIn} 
+              onSave={handleSaveCheckIn} 
               onCancel={() => {
+                setCheckInToEdit(null); // Limpa estado de edição
                 setCurrentView('patients'); // Back to patient details
-                setActiveTab('overview');
+                setActiveTab(checkInToEdit ? 'history' : 'overview'); // Retorna para onde estava logicamente
               }}
               lastRecord={activeCheckIns[0]}
               patientBirthDate={activePatient.birthDate}
+              initialData={checkInToEdit}
             />
           )}
 

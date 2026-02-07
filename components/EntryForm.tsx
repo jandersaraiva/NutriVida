@@ -8,6 +8,7 @@ interface EntryFormProps {
   onCancel: () => void;
   lastRecord?: CheckIn;
   patientBirthDate?: string;
+  initialData?: CheckIn | null;
 }
 
 // Helper seguro para IDs
@@ -53,7 +54,7 @@ const InputGroup: React.FC<InputGroupProps> = ({ label, name, unit, step = "0.1"
   </div>
 );
 
-export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastRecord, patientBirthDate }) => {
+export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastRecord, patientBirthDate, initialData }) => {
   // Calcula idade baseada na data da avaliação vs data de nascimento
   const calculateAgeAtDate = (dob: string, targetDate: string) => {
     if (!dob || !targetDate) return 0;
@@ -78,9 +79,19 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
     age: patientBirthDate ? calculateAgeAtDate(patientBirthDate, new Date().toISOString().split('T')[0]) : (lastRecord?.age || 33),
     bodyAge: lastRecord?.bodyAge || 0, // Novo campo padrão
     visceralFat: 0,
+    waistCircumference: 0,
+    hipCircumference: 0,
   });
 
-  // Recalcula idade se a data da avaliação mudar
+  // Load initial data for editing
+  useEffect(() => {
+    if (initialData) {
+        const { id, ...rest } = initialData;
+        setFormData(rest);
+    }
+  }, [initialData]);
+
+  // Recalcula idade se a data da avaliação mudar (apenas se não estiver editando ou se desejar recalcular na edição também)
   useEffect(() => {
     if (patientBirthDate && formData.date) {
         setFormData(prev => ({ ...prev, age: calculateAgeAtDate(patientBirthDate, prev.date) }));
@@ -107,7 +118,7 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
     e.preventDefault();
     onSave({
       ...formData,
-      id: generateId(),
+      id: initialData?.id || generateId(), // Usa ID existente se editando
     });
   };
 
@@ -115,7 +126,9 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
     <div className="max-w-2xl mx-auto">
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
         <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-50">
-          <h2 className="text-xl font-bold text-slate-800">Nova Avaliação Física</h2>
+          <h2 className="text-xl font-bold text-slate-800">
+            {initialData ? 'Editar Avaliação' : 'Nova Avaliação Física'}
+          </h2>
           <button 
             type="button" 
             onClick={onCancel}
@@ -148,11 +161,18 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
           </div>
 
           <div className="p-4 bg-slate-50 rounded-xl space-y-4 border border-slate-100">
+            <h3 className="font-semibold text-slate-700 text-sm uppercase tracking-wide mb-2">Medidas de Circunferência</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <InputGroup label="Cintura" name="waistCircumference" unit="cm" step="0.5" value={formData.waistCircumference || 0} onChange={handleChange} />
+                <InputGroup label="Quadril" name="hipCircumference" unit="cm" step="0.5" value={formData.hipCircumference || 0} onChange={handleChange} />
+            </div>
+          </div>
+
+          <div className="p-4 bg-slate-50 rounded-xl space-y-4 border border-slate-100">
             <h3 className="font-semibold text-slate-700 text-sm uppercase tracking-wide mb-2">Indicadores Metabólicos</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <InputGroup label="Taxa Metabólica Basal" name="bmr" unit="Kcal" step="1" value={formData.bmr} onChange={handleChange} />
                 <InputGroup label="Gordura Visceral" name="visceralFat" step="1" value={formData.visceralFat} onChange={handleChange} />
-                {/* Novo Campo Adicionado */}
                 <InputGroup label="Idade Corporal" name="bodyAge" unit="anos" step="1" value={formData.bodyAge} onChange={handleChange} />
             </div>
           </div>
@@ -169,7 +189,7 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
               type="submit"
               className="flex-1 px-4 py-3 bg-emerald-600 text-white rounded-xl font-medium hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-emerald-200"
             >
-              <Save size={18} /> Salvar Registro
+              <Save size={18} /> {initialData ? 'Salvar Alterações' : 'Salvar Registro'}
             </button>
           </div>
         </form>

@@ -11,6 +11,8 @@ export interface CheckIn {
   age: number; // years (chronological)
   bodyAge: number; // years (bioimpedance)
   visceralFat: number; // level
+  waistCircumference?: number; // cm (Novo)
+  hipCircumference?: number; // cm (Novo)
 }
 
 export interface FoodItem {
@@ -37,6 +39,7 @@ export interface DietPlan {
   createdAt: string;
   lastUpdated: string;
   totalCalories?: number;
+  waterTarget?: number; // Nova propriedade: Meta de água em ml
   macros?: {
     protein: number;
     carbs: number;
@@ -44,6 +47,18 @@ export interface DietPlan {
   };
   meals: Meal[];
   notes?: string;
+}
+
+export interface Anamnesis {
+  mainComplaint: string;
+  history: string;
+  allergies: string;
+  medications: string;
+  sleepQuality: 'Ruim' | 'Regular' | 'Bom' | 'Ótimo';
+  bowelFunction: 'Constipado' | 'Regular' | 'Solto';
+  alcohol: string;
+  smoker: boolean;
+  notes: string;
 }
 
 export interface Patient {
@@ -61,7 +76,8 @@ export interface Patient {
   avatarColor: string;
   status: 'active' | 'trash';
   checkIns: CheckIn[];
-  dietPlans: DietPlan[]; // Alterado de 'diet' para array de planos
+  dietPlans: DietPlan[];
+  anamnesis?: Anamnesis; // Nova propriedade
 }
 
 export interface Appointment {
@@ -79,13 +95,13 @@ export interface Nutritionist {
   crn: string;
   email: string;
   phone: string;
-  clinicName: string;
-  address: string;
+  birthDate: string;
+  photo?: string; // URL ou Base64 da imagem
 }
 
-export type ViewState = 'home' | 'patients' | 'schedule' | 'add_entry' | 'select_patient_for_entry' | 'profile_settings' | 'active_diets';
+export type ViewState = 'home' | 'patients' | 'schedule' | 'add_entry' | 'select_patient_for_entry' | 'profile_settings' | 'active_diets' | 'assessment_report';
 
-export type PatientTab = 'overview' | 'history' | 'diet' | 'profile';
+export type PatientTab = 'overview' | 'anamnesis' | 'history' | 'diet' | 'profile';
 
 export interface MetricConfig {
   key: keyof CheckIn;
