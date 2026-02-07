@@ -691,10 +691,11 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                                              )}
                                                          </div>
                                                      </div>
-                                                     <div className="flex gap-1 w-full sm:w-auto">
-                                                         <input type="number" className="w-10 p-1 border border-rose-200 rounded text-xs text-center bg-rose-50 text-rose-900 placeholder-rose-300 focus:border-rose-500 outline-none" placeholder="P" value={item.protein} onChange={(e) => handleItemChange(meal.id, item.id, 'protein', e.target.value)} />
-                                                         <input type="number" className="w-10 p-1 border border-blue-200 rounded text-xs text-center bg-blue-50 text-blue-900 placeholder-blue-300 focus:border-blue-500 outline-none" placeholder="C" value={item.carbs} onChange={(e) => handleItemChange(meal.id, item.id, 'carbs', e.target.value)} />
-                                                         <input type="number" className="w-10 p-1 border border-amber-200 rounded text-xs text-center bg-amber-50 text-amber-900 placeholder-amber-300 focus:border-amber-500 outline-none" placeholder="G" value={item.fats} onChange={(e) => handleItemChange(meal.id, item.id, 'fats', e.target.value)} />
+                                                     {/* Alterado gap-1 para gap-2 e w-10 para w-16 para melhor visibilidade */}
+                                                     <div className="flex gap-2 w-full sm:w-auto">
+                                                         <input type="number" className="w-16 p-1 border border-rose-200 rounded text-xs text-center bg-rose-50 text-rose-900 placeholder-rose-300 focus:border-rose-500 outline-none" placeholder="P" value={item.protein} onChange={(e) => handleItemChange(meal.id, item.id, 'protein', e.target.value)} />
+                                                         <input type="number" className="w-16 p-1 border border-blue-200 rounded text-xs text-center bg-blue-50 text-blue-900 placeholder-blue-300 focus:border-blue-500 outline-none" placeholder="C" value={item.carbs} onChange={(e) => handleItemChange(meal.id, item.id, 'carbs', e.target.value)} />
+                                                         <input type="number" className="w-16 p-1 border border-amber-200 rounded text-xs text-center bg-amber-50 text-amber-900 placeholder-amber-300 focus:border-amber-500 outline-none" placeholder="G" value={item.fats} onChange={(e) => handleItemChange(meal.id, item.id, 'fats', e.target.value)} />
                                                      </div>
                                                      <div className="flex items-center justify-between flex-1">
                                                          <span className="text-xs text-slate-400 w-12 text-right">{item.calories?.toFixed(0)}kcal</span>

@@ -294,7 +294,7 @@ const App: React.FC = () => {
 
   // Render Tabs Logic
   const renderTabs = () => (
-    <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 mb-6 w-full max-w-2xl">
+    <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 mb-6 w-full max-w-2xl mx-auto">
       {[
         { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard },
         { id: 'history', label: 'Histórico', icon: FileText },
@@ -307,7 +307,7 @@ const App: React.FC = () => {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as PatientTab)}
-            className={`flex-1 flex items-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${
               isActive 
                 ? 'bg-emerald-50 text-emerald-700 shadow-sm ring-1 ring-emerald-100' 
                 : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
@@ -452,7 +452,7 @@ const App: React.FC = () => {
               )}
 
               {activeTab === 'profile' && (
-                <div className="bg-white rounded-2xl shadow-sm p-8 max-w-4xl">
+                <div className="bg-white rounded-2xl shadow-sm p-8 max-w-4xl mx-auto">
                   <div className="flex items-center gap-4 mb-6 text-emerald-600">
                     <User size={32} />
                     <h2 className="text-xl font-semibold">Dados Pessoais</h2>
