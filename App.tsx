@@ -448,6 +448,7 @@ const App: React.FC = () => {
                     onUpdatePlans={handleUpdateDietPlans}
                     patientName={activePatient.name}
                     patientWeight={activeCheckIns[0]?.weight || 70} // Passando peso para calculo de g/kg
+                    targetCalories={activeCheckIns[0]?.bmr} // Passando BMR como Meta
                 />
               )}
 

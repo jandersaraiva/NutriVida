@@ -1,13 +1,14 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { DietPlan as DietPlanType, Meal, FoodItem } from '../types';
-import { Clock, Plus, Trash2, Edit2, Save, X, ChefHat, Copy, Check, PieChart, Search, Calendar, Archive, FilePlus, ChevronLeft, Zap } from 'lucide-react';
+import { Clock, Plus, Trash2, Edit2, Save, X, ChefHat, Copy, Check, PieChart, Search, Calendar, Archive, FilePlus, ChevronLeft, Zap, Target } from 'lucide-react';
 
 interface DietPlanProps {
   plans: DietPlanType[];
   onUpdatePlans: (plans: DietPlanType[]) => void;
   patientName: string;
   patientWeight?: number;
+  targetCalories?: number; // Nova Prop para Meta
 }
 
 // --- BANCO DE DADOS DE ALIMENTOS (Baseado na TACO/TBCA - Por 100g) ---
@@ -100,7 +101,7 @@ const createDefaultMeals = (): Meal[] => [
     { id: generateId(), name: 'Jantar', time: '20:00', items: [] },
 ];
 
-export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, patientName, patientWeight = 70 }) => {
+export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, patientName, patientWeight = 70, targetCalories }) => {
   // State for which plan is currently being viewed
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   
@@ -414,25 +415,47 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
     const pctC = Math.round((calFromC / validTotal) * 100);
     const pctF = Math.round((calFromF / validTotal) * 100);
 
+    const diff = targetCalories ? totals.kcal - targetCalories : 0;
+
     return (
         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-6">
-            <div className="flex items-center gap-3 mb-4">
-                <div className="bg-indigo-100 p-2 rounded-lg text-indigo-600">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4">
+                <div className="bg-indigo-100 p-2 rounded-lg text-indigo-600 self-start">
                     <PieChart size={20} />
                 </div>
-                <div>
-                     <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Diário</span>
-                     <div className="text-xl font-bold text-slate-800 flex items-baseline gap-1">
-                        {Math.round(totals.kcal).toLocaleString()} 
-                        <span className="text-sm font-medium text-slate-500">kcal</span>
+                
+                <div className="flex-1 w-full">
+                     <div className="flex justify-between items-start">
+                        <div>
+                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Diário</span>
+                            <div className="text-xl font-bold text-slate-800 flex items-baseline gap-1">
+                                {Math.round(totals.kcal).toLocaleString()} 
+                                <span className="text-sm font-medium text-slate-500">kcal</span>
+                            </div>
+                        </div>
+                        
+                        {targetCalories && targetCalories > 0 && (
+                             <div className="text-right">
+                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center justify-end gap-1">
+                                    <Target size={12} /> Meta: {targetCalories}
+                                </span>
+                                <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold mt-1 ${
+                                    Math.abs(diff) < 50 ? 'bg-emerald-100 text-emerald-700' : 
+                                    diff > 0 ? 'bg-amber-100 text-amber-700' : 
+                                    'bg-blue-100 text-blue-700'
+                                }`}>
+                                    {diff > 0 ? '+' : ''}{diff.toFixed(0)} kcal
+                                    <span className="opacity-75 font-medium">
+                                        ({diff > 0 ? 'Superávit' : 'Déficit'})
+                                    </span>
+                                </div>
+                             </div>
+                        )}
                      </div>
-                </div>
-                <div className="ml-auto text-xs text-slate-400 hidden sm:block">
-                   Peso ref: {patientWeight}kg
                 </div>
             </div>
 
-            <div className="h-4 w-full bg-slate-200 rounded-full overflow-hidden flex mb-4">
+            <div className="h-4 w-full bg-slate-200 rounded-full overflow-hidden flex mb-4 relative group">
                 <div style={{ width: `${pctP}%` }} className="h-full bg-rose-500" title="Proteínas"></div>
                 <div style={{ width: `${pctC}%` }} className="h-full bg-blue-500" title="Carboidratos"></div>
                 <div style={{ width: `${pctF}%` }} className="h-full bg-amber-400" title="Gorduras"></div>
@@ -693,9 +716,9 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                                      </div>
                                                      {/* Alterado gap-1 para gap-2 e w-10 para w-16 para melhor visibilidade */}
                                                      <div className="flex gap-2 w-full sm:w-auto">
-                                                         <input type="number" className="w-16 p-1 border border-rose-200 rounded text-xs text-center bg-rose-50 text-rose-900 placeholder-rose-300 focus:border-rose-500 outline-none" placeholder="P" value={item.protein} onChange={(e) => handleItemChange(meal.id, item.id, 'protein', e.target.value)} />
-                                                         <input type="number" className="w-16 p-1 border border-blue-200 rounded text-xs text-center bg-blue-50 text-blue-900 placeholder-blue-300 focus:border-blue-500 outline-none" placeholder="C" value={item.carbs} onChange={(e) => handleItemChange(meal.id, item.id, 'carbs', e.target.value)} />
-                                                         <input type="number" className="w-16 p-1 border border-amber-200 rounded text-xs text-center bg-amber-50 text-amber-900 placeholder-amber-300 focus:border-amber-500 outline-none" placeholder="G" value={item.fats} onChange={(e) => handleItemChange(meal.id, item.id, 'fats', e.target.value)} />
+                                                         <input type="number" className="w-16 p-1 border border-rose-200 rounded text-xs text-center bg-rose-50 text-rose-900 placeholder-rose-300 focus:border-rose-500 outline-none [color-scheme:light]" placeholder="P" value={item.protein} onChange={(e) => handleItemChange(meal.id, item.id, 'protein', e.target.value)} />
+                                                         <input type="number" className="w-16 p-1 border border-blue-200 rounded text-xs text-center bg-blue-50 text-blue-900 placeholder-blue-300 focus:border-blue-500 outline-none [color-scheme:light]" placeholder="C" value={item.carbs} onChange={(e) => handleItemChange(meal.id, item.id, 'carbs', e.target.value)} />
+                                                         <input type="number" className="w-16 p-1 border border-amber-200 rounded text-xs text-center bg-amber-50 text-amber-900 placeholder-amber-300 focus:border-amber-500 outline-none [color-scheme:light]" placeholder="G" value={item.fats} onChange={(e) => handleItemChange(meal.id, item.id, 'fats', e.target.value)} />
                                                      </div>
                                                      <div className="flex items-center justify-between flex-1">
                                                          <span className="text-xs text-slate-400 w-12 text-right">{item.calories?.toFixed(0)}kcal</span>
