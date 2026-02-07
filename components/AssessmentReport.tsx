@@ -1,10 +1,10 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { CheckIn, Patient } from '../types';
-import { ChevronLeft, Download, AlertTriangle, CheckCircle, User, Camera, X, Plus } from 'lucide-react';
+import { ChevronLeft, Download, AlertTriangle, CheckCircle, User, Camera, X, Activity, Scale, Ruler } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  PieChart, Pie, Cell 
+  PieChart, Pie, Cell, Legend 
 } from 'recharts';
 
 interface AssessmentReportProps {
@@ -66,9 +66,33 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
   const img = fatMass / heightM2; // Índice de Massa Gorda
   const imm = muscleMass / heightM2; // Índice de Massa Magra
 
-  // Water (Estimativa simples se não tiver input: TBW approx 73% of FFM or simple formula)
-  // Usando residual simples para gráfico
+  // Water / Residual
   const residualMass = checkIn.weight - fatMass - muscleMass;
+
+  // --- ALGORITMO DE PONTUAÇÃO DE SAÚDE (HEALTH SCORE) ---
+  const healthScore = useMemo(() => {
+    let score = 100;
+
+    // Penalidade por IMC (Muito baixo ou muito alto)
+    if (checkIn.imc > 25) score -= (checkIn.imc - 25) * 2; // -2 pontos por unidade acima
+    else if (checkIn.imc < 18.5) score -= (18.5 - checkIn.imc) * 2; // -2 pontos por unidade abaixo
+
+    // Penalidade por Gordura Visceral (Crítico)
+    if (checkIn.visceralFat > 9) score -= (checkIn.visceralFat - 9) * 4; // -4 pontos por nível acima
+
+    // Penalidade por % Gordura (Exemplo genérico simplificado)
+    // Homens > 25% | Mulheres > 32%
+    const fatLimit = patient.gender === 'Masculino' ? 25 : 32;
+    if (checkIn.bodyFat > fatLimit) score -= (checkIn.bodyFat - fatLimit);
+
+    // Bônus por Massa Muscular (Exemplo genérico)
+    // Homens > 35% | Mulheres > 30%
+    const muscleTarget = patient.gender === 'Masculino' ? 35 : 30;
+    if (checkIn.muscleMass > muscleTarget) score += (checkIn.muscleMass - muscleTarget) * 0.5;
+
+    return Math.max(0, Math.min(100, Math.round(score)));
+  }, [checkIn, patient.gender]);
+
 
   // Dados para gráficos
   const sortedHistory = [...allCheckIns].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -79,52 +103,65 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
   }));
 
   const pieData = [
-    { name: 'Gordura', value: fatMass, color: '#f43f5e' }, // Rose 500
-    { name: 'Músculo', value: muscleMass, color: '#10b981' }, // Emerald 500
-    { name: 'Resid/Água', value: residualMass, color: '#3b82f6' } // Blue 500
+    { name: 'Massa Gorda', value: parseFloat(fatMass.toFixed(1)), color: '#f43f5e' }, // Rose 500
+    { name: 'Massa Magra', value: parseFloat(muscleMass.toFixed(1)), color: '#10b981' }, // Emerald 500
   ];
 
-  // --- Helpers de Status Visual ---
-  const getStatusBadge = (value: number, type: 'IMC' | 'RCQ' | 'RCA' | 'IMG' | 'IMM') => {
-      let status = 'Adequado';
-      let color = 'bg-emerald-500';
-      let icon = CheckCircle;
+  // --- Componentes Visuais ---
 
-      if (type === 'IMC') {
-          if (value > 25) { status = 'Sobrepeso'; color = 'bg-amber-400'; icon = AlertTriangle; }
-          else if (value < 18.5) { status = 'Abaixo'; color = 'bg-blue-400'; icon = AlertTriangle; }
-      }
-      
-      // Lógica simplificada para demonstração
-      if (type === 'IMG' && value > 6) { status = 'Alto'; color = 'bg-amber-400'; icon = AlertTriangle; }
-      if (type === 'RCQ' && value > 0.9) { status = 'Risco Alto'; color = 'bg-rose-500'; icon = AlertTriangle; }
-
-      const Icon = icon;
-
-      return (
-          <div className="flex items-center gap-2">
-              <span className="font-bold text-slate-700">{value.toFixed(2)} Kg/m² - {status}</span>
-              <div className={`p-0.5 rounded text-white ${color}`}>
-                  <Icon size={14} />
-              </div>
+  const MetricRow = ({ label, value, subValue, highlight = false }: any) => (
+      <div className={`flex justify-between items-center py-2 border-b border-slate-100 last:border-0 ${highlight ? 'bg-slate-50 px-2 -mx-2 rounded' : ''}`}>
+          <span className="text-slate-500 text-sm">{label}</span>
+          <div className="text-right">
+              <span className={`block font-bold ${highlight ? 'text-slate-900' : 'text-slate-700'}`}>{value}</span>
+              {subValue && <span className="block text-[10px] text-slate-400">{subValue}</span>}
           </div>
-      );
-  };
-
-  const BarIndicator = ({ value, max = 100, color = 'bg-emerald-500' }: { value: number, max?: number, color?: string }) => (
-      <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden mt-1.5">
-          <div className={`h-full ${color}`} style={{ width: `${Math.min((value/max)*100, 100)}%` }}></div>
       </div>
   );
 
+  const StatusBadge = ({ value, label, type }: { value: number, label: string, type: 'good' | 'warning' | 'danger' }) => {
+    const colors = {
+        good: 'bg-emerald-100 text-emerald-700',
+        warning: 'bg-amber-100 text-amber-700',
+        danger: 'bg-rose-100 text-rose-700'
+    };
+    return (
+        <div className="flex items-center justify-between mt-2">
+            <span className="text-xs text-slate-500">{label}</span>
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${colors[type]}`}>
+                {value.toFixed(1)}
+            </span>
+        </div>
+    );
+  };
+
+  const getStatusColor = (val: number, goodMin: number, goodMax: number) => {
+      if (val >= goodMin && val <= goodMax) return 'good';
+      if (val < goodMin || val > goodMax + 5) return 'danger';
+      return 'warning';
+  };
+
   // Componente de Upload de Foto
-  const PhotoUploadBox = ({ title, photo, onUpload, onClear, inputRef }: any) => (
-    <div className="bg-slate-50/50 rounded-xl p-4 border border-slate-100 flex flex-col items-center justify-center min-h-[250px] relative group">
-        <h4 className="font-bold text-slate-700 mb-4 self-start">{title}</h4>
-        
-        {photo ? (
-            <div className="flex-1 w-full relative bg-black rounded-lg overflow-hidden flex items-center justify-center">
-                <img src={photo} alt={title} className="max-w-full max-h-[200px] object-contain" />
+  const PhotoUploadBox = ({ title, photo, onUpload, onClear, inputRef }: any) => {
+    // Se não tiver foto e estiver imprimindo, não renderiza nada para economizar espaço e tinta
+    if (!photo) {
+        return (
+            <div className="bg-slate-50/50 rounded-xl p-4 border border-dashed border-slate-200 flex flex-col items-center justify-center min-h-[200px] print:hidden cursor-pointer hover:border-emerald-400 transition-colors group" onClick={() => inputRef.current?.click()}>
+                <div className="p-3 bg-white rounded-full mb-2 shadow-sm text-slate-300 group-hover:text-emerald-500 transition-colors">
+                    <Camera size={24} />
+                </div>
+                <span className="text-sm font-medium text-slate-500 group-hover:text-emerald-600">{title}</span>
+                <span className="text-xs text-slate-400 mt-1">Clique para adicionar</span>
+                <input type="file" ref={inputRef} onChange={onUpload} className="hidden" accept="image/*" />
+            </div>
+        );
+    }
+
+    return (
+        <div className="bg-white p-2 rounded-xl border border-slate-100 shadow-sm relative group print:border-none print:shadow-none print:p-0">
+            <h4 className="text-xs font-bold text-slate-500 uppercase mb-2 text-center print:text-left print:mb-1">{title}</h4>
+            <div className="relative bg-black rounded-lg overflow-hidden flex items-center justify-center aspect-[3/4]">
+                <img src={photo} alt={title} className="w-full h-full object-contain" />
                 <button 
                     onClick={onClear}
                     className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity print:hidden"
@@ -133,28 +170,9 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                     <X size={16} />
                 </button>
             </div>
-        ) : (
-            <div 
-                className="flex-1 w-full bg-white border-2 border-dashed border-slate-200 rounded-lg flex flex-col items-center justify-center text-slate-300 cursor-pointer hover:border-emerald-400 hover:text-emerald-500 transition-all group/upload"
-                onClick={() => inputRef.current?.click()}
-            >
-                <div className="p-3 bg-slate-50 rounded-full mb-2 group-hover/upload:bg-emerald-50 transition-colors">
-                    <Camera size={32} />
-                </div>
-                <span className="text-sm font-medium">Adicionar Foto</span>
-                <span className="text-xs mt-1 text-slate-400">Clique para carregar</span>
-            </div>
-        )}
-        
-        <input 
-            type="file" 
-            ref={inputRef}
-            onChange={onUpload}
-            className="hidden"
-            accept="image/*"
-        />
-    </div>
-  );
+        </div>
+    );
+  };
 
   return (
     <div className="bg-slate-50 min-h-screen pb-12 print:bg-white print:pb-0">
@@ -174,235 +192,234 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
       </div>
 
       {/* DOCUMENTO A4 */}
-      <div className="max-w-[210mm] mx-auto bg-white shadow-xl print:shadow-none p-8 md:p-12 print:p-0 min-h-[297mm]">
+      <div className="max-w-[210mm] mx-auto bg-white shadow-xl print:shadow-none p-8 md:p-12 print:p-0 min-h-[297mm] flex flex-col">
         
         {/* Cabeçalho do Relatório */}
-        <div className="bg-slate-50 rounded-xl p-6 mb-8 text-center border border-slate-100 print:border-none print:bg-slate-50">
-            <h1 className="text-2xl font-bold text-slate-900 mb-1">Relatório de Avaliação Antropométrica</h1>
-            <p className="text-slate-600 font-medium">Paciente: {patient.name} ({patient.gender === 'Masculino' ? 'homem' : 'mulher'}, {patient.age} anos)</p>
-        </div>
-
-        {/* Linha 1: Dados e Fotos */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            
-            {/* Coluna 1: Dados Numéricos */}
-            <div className="bg-slate-50/50 rounded-xl p-6 border border-slate-100 text-sm">
-                <h3 className="font-bold text-slate-800 mb-4 text-base">Dados da avaliação</h3>
-                <div className="space-y-3">
-                    <div className="flex justify-between border-b border-slate-200/60 pb-1">
-                        <span className="text-slate-600">Data da avaliação</span>
-                        <span className="font-bold text-slate-800">{new Date(checkIn.date).toLocaleDateString('pt-BR')}</span>
-                    </div>
-                    <div className="flex justify-between border-b border-slate-200/60 pb-1">
-                        <span className="text-slate-600">Peso corporal</span>
-                        <span className="font-bold text-slate-800">{checkIn.weight.toFixed(1)} Kg</span>
-                    </div>
-                    <div className="flex justify-between border-b border-slate-200/60 pb-1">
-                        <span className="text-slate-600">Altura</span>
-                        <span className="font-bold text-slate-800">{(checkIn.height * 100).toFixed(0)} cm</span>
-                    </div>
-                    <div className="flex justify-between border-b border-slate-200/60 pb-1">
-                        <span className="text-slate-600">Circunferência da cintura</span>
-                        <span className="font-bold text-slate-800">{waist > 0 ? waist + ' cm' : '-'}</span>
-                    </div>
-                    <div className="flex justify-between border-b border-slate-200/60 pb-1">
-                        <span className="text-slate-600">Circunferência do quadril</span>
-                        <span className="font-bold text-slate-800">{hip > 0 ? hip + ' cm' : '-'}</span>
-                    </div>
-                    <div className="flex justify-between border-b border-slate-200/60 pb-1">
-                        <span className="text-slate-600">Cintura / altura (RCA)</span>
-                        <span className="font-bold text-slate-800">{rca > 0 ? rca.toFixed(2) : '-'}</span>
-                    </div>
-                     <div className="flex justify-between border-b border-slate-200/60 pb-1">
-                        <span className="text-slate-600">Cintura / quadril (RCQ)</span>
-                        <span className="font-bold text-slate-800">{rcq > 0 ? rcq.toFixed(2) : '-'}</span>
-                    </div>
-                    <div className="flex justify-between border-b border-slate-200/60 pb-1">
-                        <span className="text-slate-600">Gordura corporal</span>
-                        <span className="font-bold text-slate-800">{fatMass.toFixed(1)}Kg ({checkIn.bodyFat}%)</span>
-                    </div>
-                    <div className="flex justify-between border-b border-slate-200/60 pb-1">
-                        <span className="text-slate-600">Massa magra</span>
-                        <span className="font-bold text-slate-800">{muscleMass.toFixed(1)}Kg ({checkIn.muscleMass}%)</span>
-                    </div>
+        <header className="flex justify-between items-end border-b-2 border-slate-100 pb-6 mb-8">
+            <div>
+                <div className="flex items-center gap-2 text-emerald-700 mb-1">
+                    <Activity size={24} />
+                    <span className="font-bold text-xl tracking-tight">NutriVida</span>
                 </div>
+                <p className="text-xs text-slate-400 uppercase tracking-widest font-semibold">Relatório de Avaliação Física</p>
             </div>
+            <div className="text-right">
+                <h1 className="text-xl font-bold text-slate-900">{patient.name}</h1>
+                <p className="text-slate-500 text-sm">
+                    {patient.age} anos • {patient.gender} • {new Date(checkIn.date).toLocaleDateString('pt-BR')}
+                </p>
+            </div>
+        </header>
 
-            {/* Colunas 2 e 3: Fotos Interativas */}
-            <PhotoUploadBox 
-                title="Foto da análise frontal"
-                photo={frontPhoto}
-                inputRef={frontInputRef}
-                onUpload={(e: React.ChangeEvent<HTMLInputElement>) => handlePhotoUpload(e, 'front')}
-                onClear={() => clearPhoto('front')}
-            />
+        {/* Grid Principal */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
             
-            <PhotoUploadBox 
-                title="Foto da análise lateral"
-                photo={sidePhoto}
-                inputRef={sideInputRef}
-                onUpload={(e: React.ChangeEvent<HTMLInputElement>) => handlePhotoUpload(e, 'side')}
-                onClear={() => clearPhoto('side')}
-            />
-        </div>
-
-        {/* Linha 2: Composição e Índices */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            
-            {/* Esquerda: Donut Chart e Cards de Massa */}
-            <div className="bg-slate-50/50 rounded-xl p-6 border border-slate-100">
-                <h3 className="font-bold text-slate-800 mb-6">Composição corporal</h3>
-                <div className="flex items-center gap-6">
-                    <div className="w-32 h-32 relative">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={pieData}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={40}
-                                    outerRadius={60}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                    stroke="none"
-                                >
-                                    {pieData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
-                                </Pie>
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </div>
-                    <div className="flex-1 space-y-3">
-                        <div className="bg-white p-3 rounded-lg border-l-4 border-rose-500 shadow-sm">
-                            <span className="text-xs text-slate-500 block">Massa de gordura</span>
-                            <span className="font-bold text-slate-800">{fatMass.toFixed(1)} Kg ({checkIn.bodyFat}%)</span>
-                        </div>
-                        <div className="bg-white p-3 rounded-lg border-l-4 border-emerald-500 shadow-sm">
-                            <span className="text-xs text-slate-500 block">Massa magra total</span>
-                            <span className="font-bold text-slate-800">{muscleMass.toFixed(1)} Kg ({checkIn.muscleMass}%)</span>
-                        </div>
-                        <div className="bg-white p-3 rounded-lg border-l-4 border-blue-500 shadow-sm">
-                            <span className="text-xs text-slate-500 block">Água / Residual</span>
-                            <span className="font-bold text-slate-800">{residualMass.toFixed(1)} Kg</span>
-                        </div>
-                    </div>
-                </div>
+            {/* Coluna 1: Métricas Detalhadas */}
+            <div className="space-y-6">
                 
-                {/* Score Mock */}
-                <div className="mt-8 pt-6 border-t border-slate-200">
-                    <h3 className="font-bold text-slate-800 mb-2">Pontuação de Saúde</h3>
-                    <div className="flex items-end gap-2">
-                        <span className="text-4xl font-bold text-slate-800">74</span>
-                        <span className="text-slate-500 mb-1.5">pontos / 100</span>
+                {/* Antropometria */}
+                <section>
+                    <h3 className="flex items-center gap-2 font-bold text-emerald-700 mb-3 text-sm uppercase tracking-wide">
+                        <Ruler size={16} /> Antropometria
+                    </h3>
+                    <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 print:bg-white print:border-slate-200">
+                        <MetricRow label="Peso Corporal" value={`${checkIn.weight.toFixed(1)} kg`} highlight />
+                        <MetricRow label="Altura" value={`${(checkIn.height * 100).toFixed(0)} cm`} />
+                        <MetricRow label="IMC" value={`${checkIn.imc.toFixed(1)} kg/m²`} subValue={checkIn.imc < 25 ? 'Eutrofia' : 'Sobrepeso'} />
+                        <MetricRow label="Circunferência Cintura" value={waist > 0 ? `${waist} cm` : '-'} />
+                        <MetricRow label="Circunferência Quadril" value={hip > 0 ? `${hip} cm` : '-'} />
+                        {rcq > 0 && <MetricRow label="Relação Cintura-Quadril" value={rcq.toFixed(2)} />}
+                    </div>
+                </section>
+
+                {/* Composição Corporal (Tabela) */}
+                <section>
+                    <h3 className="flex items-center gap-2 font-bold text-emerald-700 mb-3 text-sm uppercase tracking-wide">
+                        <Scale size={16} /> Composição Corporal
+                    </h3>
+                    <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 print:bg-white print:border-slate-200">
+                        <MetricRow label="Massa Gorda" value={`${fatMass.toFixed(1)} kg`} subValue={`${checkIn.bodyFat}%`} />
+                        <MetricRow label="Massa Magra" value={`${muscleMass.toFixed(1)} kg`} subValue={`${checkIn.muscleMass}%`} />
+                        <MetricRow label="Água / Residual" value={`${residualMass.toFixed(1)} kg`} />
+                        <MetricRow label="Gordura Visceral" value={`Nível ${checkIn.visceralFat}`} />
+                        <MetricRow label="Idade Corporal" value={`${checkIn.bodyAge || '-'} anos`} />
+                    </div>
+                </section>
+            </div>
+
+            {/* Coluna 2: Gráficos e Score */}
+            <div className="flex flex-col gap-6">
+                
+                {/* Health Score Card */}
+                <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-white shadow-lg print:shadow-none print:bg-none print:bg-slate-900 print:text-white relative overflow-hidden">
+                    <div className="relative z-10 flex justify-between items-center">
+                        <div>
+                            <p className="text-slate-300 text-xs font-bold uppercase tracking-wider mb-1">Pontuação de Saúde</p>
+                            <h2 className="text-4xl font-bold">{healthScore} <span className="text-lg font-normal text-slate-400">/ 100</span></h2>
+                        </div>
+                        <div className="h-16 w-16 rounded-full border-4 border-emerald-500 flex items-center justify-center bg-emerald-500/20 backdrop-blur-sm">
+                            <Activity size={32} className="text-emerald-400" />
+                        </div>
+                    </div>
+                    <div className="mt-4 pt-4 border-t border-white/10">
+                        <p className="text-xs text-slate-300">
+                            {healthScore >= 80 ? 'Excelente! Continue assim.' : 
+                             healthScore >= 60 ? 'Bom, mas há espaço para melhorias.' : 
+                             'Atenção necessária a alguns indicadores.'}
+                        </p>
+                    </div>
+                    {/* Decorative Blob */}
+                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-emerald-500/20 rounded-full blur-2xl"></div>
+                </div>
+
+                {/* Gráfico Donut */}
+                <div className="flex-1 bg-white rounded-xl border border-slate-100 p-4 flex flex-col items-center justify-center print:border-slate-200">
+                    <h4 className="font-bold text-slate-700 text-sm mb-4">Distribuição de Massa (Kg)</h4>
+                    <div className="flex items-center justify-center w-full gap-8">
+                        <div className="w-32 h-32 relative">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={pieData}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={35}
+                                        outerRadius={55}
+                                        paddingAngle={5}
+                                        dataKey="value"
+                                        stroke="none"
+                                    >
+                                        {pieData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                        ))}
+                                    </Pie>
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
+                        <div className="space-y-3 text-xs">
+                             <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-rose-500"></div>
+                                <div>
+                                    <span className="block font-bold text-slate-700">{fatMass.toFixed(1)}kg</span>
+                                    <span className="text-slate-400">Gordura ({checkIn.bodyFat}%)</span>
+                                </div>
+                             </div>
+                             <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+                                <div>
+                                    <span className="block font-bold text-slate-700">{muscleMass.toFixed(1)}kg</span>
+                                    <span className="text-slate-400">Músculo ({checkIn.muscleMass}%)</span>
+                                </div>
+                             </div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Direita: Índices Detalhados */}
-            <div className="bg-slate-50/50 rounded-xl p-6 border border-slate-100 space-y-6">
-                <div>
-                    <h3 className="font-bold text-slate-800 mb-1 text-sm">Índice de massa corporal (IMC)</h3>
-                    {getStatusBadge(checkIn.imc, 'IMC')}
-                    <BarIndicator value={checkIn.imc} max={40} color={checkIn.imc > 25 ? 'bg-amber-400' : 'bg-emerald-500'} />
-                </div>
-
-                <div>
-                    <h3 className="font-bold text-slate-800 mb-1 text-sm">Índice de massa magra (IMM)</h3>
-                    {getStatusBadge(imm, 'IMM')}
-                    <BarIndicator value={imm} max={25} color="bg-emerald-500" />
-                </div>
-
-                <div>
-                    <h3 className="font-bold text-slate-800 mb-1 text-sm">Índice de massa gorda (IMG)</h3>
-                    {getStatusBadge(img, 'IMG')}
-                    <BarIndicator value={img} max={15} color="bg-emerald-500" />
-                </div>
-
-                {rcq > 0 && (
-                    <div>
-                        <h3 className="font-bold text-slate-800 mb-1 text-sm">Relação Cintura-Quadril (RCQ)</h3>
-                        {getStatusBadge(rcq, 'RCQ')}
-                        <BarIndicator value={rcq * 100} max={120} color={rcq > 0.9 ? 'bg-rose-500' : 'bg-emerald-500'} />
-                    </div>
-                )}
-            </div>
-        </div>
-
-        {/* Linha 3: Gráficos de Histórico */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-slate-50/50 rounded-xl p-6 border border-slate-100">
-                <h3 className="font-bold text-slate-800 mb-4">Histórico do % de gordura</h3>
-                <div className="h-48 w-full">
-                     <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={historyData} margin={{ top: 20, right: 10, left: 0, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                            <XAxis 
-                                dataKey="date" 
-                                axisLine={false} 
-                                tickLine={false} 
-                                tick={{fontSize: 10, fill: '#64748b'}} 
-                            />
-                            <YAxis 
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{fontSize: 10, fill: '#64748b'}}
-                                domain={['dataMin - 2', 'dataMax + 2']} 
-                                width={30}
-                            />
-                            <Tooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
-                            <Area 
-                                type="monotone" 
-                                dataKey="bodyFat" 
-                                stroke="#10b981" 
-                                fill="#10b981" 
-                                fillOpacity={0.1} 
-                                strokeWidth={2}
-                                label={{ position: 'top', fill: '#059669', fontSize: 10, fontWeight: 600, formatter: (val: any) => `${val}%` }}
-                            />
-                        </AreaChart>
-                     </ResponsiveContainer>
-                </div>
-            </div>
-
-            <div className="bg-slate-50/50 rounded-xl p-6 border border-slate-100">
-                <h3 className="font-bold text-slate-800 mb-4">Histórico do peso corporal</h3>
-                <div className="h-48 w-full">
-                     <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={historyData} margin={{ top: 20, right: 10, left: 0, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                            <XAxis 
-                                dataKey="date" 
-                                axisLine={false} 
-                                tickLine={false} 
-                                tick={{fontSize: 10, fill: '#64748b'}} 
-                            />
-                            <YAxis 
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{fontSize: 10, fill: '#64748b'}}
-                                domain={['dataMin - 2', 'dataMax + 2']} 
-                                width={30}
-                            />
-                            <Tooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
-                            <Area 
-                                type="monotone" 
-                                dataKey="weight" 
-                                stroke="#3b82f6" 
-                                fill="#3b82f6" 
-                                fillOpacity={0.1} 
-                                strokeWidth={2} 
-                                label={{ position: 'top', fill: '#2563eb', fontSize: 10, fontWeight: 600, formatter: (val: any) => `${val}kg` }}
-                            />
-                        </AreaChart>
-                     </ResponsiveContainer>
+                {/* Indicadores Visuais Rápidos */}
+                <div className="bg-white rounded-xl border border-slate-100 p-4 print:border-slate-200">
+                    <StatusBadge label="Índice Massa Corporal (IMC)" value={checkIn.imc} type={getStatusColor(checkIn.imc, 18.5, 24.9)} />
+                    <StatusBadge label="Índice Massa Gorda (IMG)" value={img} type={getStatusColor(img, 3, 8)} />
+                    <StatusBadge label="Índice Massa Magra (IMM)" value={imm} type={getStatusColor(imm, 18, 24)} />
                 </div>
             </div>
         </div>
 
-        {/* Footer do Relatório */}
-        <div className="mt-8 pt-8 border-t border-slate-200 text-center text-slate-400 text-xs">
-            <p>NutriVida - Software de Nutrição Profissional</p>
+        {/* Área de Evolução (Gráficos) */}
+        <div className="mb-8 break-inside-avoid">
+            <h3 className="font-bold text-slate-800 mb-4 text-sm uppercase border-b border-slate-100 pb-2">Evolução Histórica</h3>
+            <div className="grid grid-cols-2 gap-4">
+                <div className="h-40 bg-slate-50 rounded-xl border border-slate-100 p-2 print:bg-white print:border-slate-200">
+                    <p className="text-xs text-center font-semibold text-slate-500 mb-2">% Gordura Corporal</p>
+                    <ResponsiveContainer width="100%" height="80%">
+                        <AreaChart data={historyData}>
+                            <defs>
+                                <linearGradient id="colorFat" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.2}/>
+                                    <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                            <XAxis dataKey="date" hide />
+                            <YAxis hide domain={['dataMin - 2', 'dataMax + 2']} />
+                            <Area type="monotone" dataKey="bodyFat" stroke="#f43f5e" fillOpacity={1} fill="url(#colorFat)" strokeWidth={2} />
+                        </AreaChart>
+                    </ResponsiveContainer>
+                </div>
+                <div className="h-40 bg-slate-50 rounded-xl border border-slate-100 p-2 print:bg-white print:border-slate-200">
+                    <p className="text-xs text-center font-semibold text-slate-500 mb-2">Peso (kg)</p>
+                    <ResponsiveContainer width="100%" height="80%">
+                        <AreaChart data={historyData}>
+                            <defs>
+                                <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/>
+                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                            <XAxis dataKey="date" hide />
+                            <YAxis hide domain={['dataMin - 2', 'dataMax + 2']} />
+                            <Area type="monotone" dataKey="weight" stroke="#3b82f6" fillOpacity={1} fill="url(#colorWeight)" strokeWidth={2} />
+                        </AreaChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
+        </div>
+
+        {/* Fotos (Se existirem) */}
+        {(frontPhoto || sidePhoto) && (
+             <div className="grid grid-cols-2 gap-6 mb-8 break-inside-avoid">
+                <PhotoUploadBox 
+                    title="Análise Frontal"
+                    photo={frontPhoto}
+                    inputRef={frontInputRef}
+                    onUpload={(e: React.ChangeEvent<HTMLInputElement>) => handlePhotoUpload(e, 'front')}
+                    onClear={() => clearPhoto('front')}
+                />
+                <PhotoUploadBox 
+                    title="Análise Lateral"
+                    photo={sidePhoto}
+                    inputRef={sideInputRef}
+                    onUpload={(e: React.ChangeEvent<HTMLInputElement>) => handlePhotoUpload(e, 'side')}
+                    onClear={() => clearPhoto('side')}
+                />
+            </div>
+        )}
+        
+        {/* Se NÃO existirem fotos e NÃO for impressão, mostra o botão de upload */}
+        {(!frontPhoto && !sidePhoto) && (
+            <div className="grid grid-cols-2 gap-6 mb-8 print:hidden">
+                <PhotoUploadBox 
+                    title="Análise Frontal"
+                    photo={frontPhoto}
+                    inputRef={frontInputRef}
+                    onUpload={(e: React.ChangeEvent<HTMLInputElement>) => handlePhotoUpload(e, 'front')}
+                    onClear={() => clearPhoto('front')}
+                />
+                <PhotoUploadBox 
+                    title="Análise Lateral"
+                    photo={sidePhoto}
+                    inputRef={sideInputRef}
+                    onUpload={(e: React.ChangeEvent<HTMLInputElement>) => handlePhotoUpload(e, 'side')}
+                    onClear={() => clearPhoto('side')}
+                />
+            </div>
+        )}
+
+        {/* Rodapé e Assinatura (Apenas Print) */}
+        <div className="mt-auto pt-12">
+            <div className="hidden print:flex justify-between items-end gap-12">
+                <div className="flex-1 border-t border-slate-300 pt-2 text-center">
+                    <p className="font-bold text-slate-800 text-sm">Assinatura do Paciente</p>
+                    <p className="text-xs text-slate-400 mt-1">Declaro ter recebido a avaliação física.</p>
+                </div>
+                <div className="flex-1 border-t border-slate-300 pt-2 text-center">
+                    <p className="font-bold text-slate-800 text-sm">Nutricionista Responsável</p>
+                    <p className="text-xs text-slate-400 mt-1">CRN-3/SP 12345</p>
+                </div>
+            </div>
+            <div className="text-center text-slate-300 text-[10px] mt-8 print:mt-4">
+                Gerado por NutriVida • {new Date().toLocaleString('pt-BR')}
+            </div>
         </div>
 
       </div>
