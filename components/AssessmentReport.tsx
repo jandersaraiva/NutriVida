@@ -1,10 +1,10 @@
 
 import React, { useState, useRef, useMemo } from 'react';
 import { CheckIn, Patient } from '../types';
-import { ChevronLeft, Download, AlertTriangle, CheckCircle, User, Camera, X, Activity, Scale, Ruler } from 'lucide-react';
+import { ChevronLeft, Download, AlertTriangle, CheckCircle, User, Camera, X, Activity, Scale, Ruler, TrendingUp, Flame, Hourglass } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  PieChart, Pie, Cell, Legend 
+  PieChart, Pie, Cell, ComposedChart, Line, LabelList 
 } from 'recharts';
 
 interface AssessmentReportProps {
@@ -94,13 +94,24 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
   }, [checkIn, patient.gender]);
 
 
-  // Dados para gráficos
-  const sortedHistory = [...allCheckIns].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  const historyData = sortedHistory.map(c => ({
-      date: new Date(c.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-      weight: c.weight,
-      bodyFat: c.bodyFat
-  }));
+  // --- DADOS PARA GRÁFICOS ---
+  const chartData = useMemo(() => {
+    return [...allCheckIns]
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .map(c => ({
+        date: new Date(c.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+        weight: c.weight,
+        bodyFat: c.bodyFat,
+        muscleMass: c.muscleMass,
+        imc: c.imc,
+        visceralFat: c.visceralFat,
+        bodyAge: c.bodyAge,
+        age: c.age,
+        // Calculated kg
+        fatMassKg: parseFloat((c.weight * (c.bodyFat / 100)).toFixed(1)),
+        muscleMassKg: parseFloat((c.weight * (c.muscleMass / 100)).toFixed(1))
+      }));
+  }, [allCheckIns]);
 
   const pieData = [
     { name: 'Massa Gorda', value: parseFloat(fatMass.toFixed(1)), color: '#f43f5e' }, // Rose 500
@@ -143,7 +154,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
 
   // Componente de Upload de Foto
   const PhotoUploadBox = ({ title, photo, onUpload, onClear, inputRef }: any) => {
-    // Se não tiver foto e estiver imprimindo, não renderiza nada para economizar espaço e tinta
+    // Se não tiver foto e estiver imprimindo, não renderiza nada
     if (!photo) {
         return (
             <div className="bg-slate-50/50 rounded-xl p-4 border border-dashed border-slate-200 flex flex-col items-center justify-center min-h-[200px] print:hidden cursor-pointer hover:border-emerald-400 transition-colors group" onClick={() => inputRef.current?.click()}>
@@ -171,6 +182,16 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                 </button>
             </div>
         </div>
+    );
+  };
+
+  // Custom Label para os Gráficos
+  const CustomLabel = (props: any) => {
+    const { x, y, value, color, unit } = props;
+    return (
+        <text x={x} y={y} dy={-10} fill={color || "#64748b"} fontSize={10} textAnchor="middle" fontWeight="bold">
+            {value}{unit ? unit : ''}
+        </text>
     );
   };
 
@@ -212,7 +233,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
         </header>
 
         {/* Grid Principal */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 break-inside-avoid">
             
             {/* Coluna 1: Métricas Detalhadas */}
             <div className="space-y-6">
@@ -288,6 +309,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                                         paddingAngle={5}
                                         dataKey="value"
                                         stroke="none"
+                                        isAnimationActive={false}
                                     >
                                         {pieData.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={entry.color} />
@@ -324,44 +346,137 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
             </div>
         </div>
 
-        {/* Área de Evolução (Gráficos) */}
+        {/* --- ÁREA DE GRÁFICOS DE EVOLUÇÃO --- */}
         <div className="mb-8 break-inside-avoid">
-            <h3 className="font-bold text-slate-800 mb-4 text-sm uppercase border-b border-slate-100 pb-2">Evolução Histórica</h3>
-            <div className="grid grid-cols-2 gap-4">
-                <div className="h-40 bg-slate-50 rounded-xl border border-slate-100 p-2 print:bg-white print:border-slate-200">
-                    <p className="text-xs text-center font-semibold text-slate-500 mb-2">% Gordura Corporal</p>
-                    <ResponsiveContainer width="100%" height="80%">
-                        <AreaChart data={historyData}>
-                            <defs>
-                                <linearGradient id="colorFat" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.2}/>
-                                    <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                            <XAxis dataKey="date" hide />
-                            <YAxis hide domain={['dataMin - 2', 'dataMax + 2']} />
-                            <Area type="monotone" dataKey="bodyFat" stroke="#f43f5e" fillOpacity={1} fill="url(#colorFat)" strokeWidth={2} />
-                        </AreaChart>
-                    </ResponsiveContainer>
+            <h3 className="font-bold text-slate-800 mb-4 text-sm uppercase border-b border-slate-100 pb-2 flex items-center gap-2">
+                <TrendingUp size={16} /> Evolução Detalhada
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                {/* 1. Peso e IMC */}
+                <div className="bg-slate-50 rounded-xl border border-slate-100 p-4 print:bg-white print:border-slate-200">
+                    <p className="text-xs text-center font-bold text-slate-600 mb-2">Peso Corporal (kg) e IMC</p>
+                    <div className="h-48 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <ComposedChart data={chartData} margin={{ top: 20, right: 10, left: 10, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                <XAxis dataKey="date" tick={{fontSize: 10, fill: '#64748b'}} axisLine={false} tickLine={false} />
+                                <YAxis yAxisId="left" hide domain={['dataMin - 2', 'dataMax + 2']} />
+                                <YAxis yAxisId="right" hide orientation="right" domain={['dataMin - 1', 'dataMax + 1']} />
+                                
+                                <Area 
+                                    yAxisId="left"
+                                    type="monotone" 
+                                    dataKey="weight" 
+                                    stroke="#3b82f6" 
+                                    fill="#3b82f6" 
+                                    fillOpacity={0.1}
+                                    strokeWidth={2}
+                                    isAnimationActive={false}
+                                >
+                                    <LabelList dataKey="weight" position="top" content={<CustomLabel color="#2563eb" unit="kg" />} />
+                                </Area>
+                                <Line 
+                                    yAxisId="right"
+                                    type="monotone" 
+                                    dataKey="imc" 
+                                    stroke="#8b5cf6" 
+                                    strokeWidth={2} 
+                                    strokeDasharray="4 4"
+                                    dot={false}
+                                    isAnimationActive={false}
+                                />
+                            </ComposedChart>
+                        </ResponsiveContainer>
+                    </div>
                 </div>
-                <div className="h-40 bg-slate-50 rounded-xl border border-slate-100 p-2 print:bg-white print:border-slate-200">
-                    <p className="text-xs text-center font-semibold text-slate-500 mb-2">Peso (kg)</p>
-                    <ResponsiveContainer width="100%" height="80%">
-                        <AreaChart data={historyData}>
-                            <defs>
-                                <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/>
-                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                            <XAxis dataKey="date" hide />
-                            <YAxis hide domain={['dataMin - 2', 'dataMax + 2']} />
-                            <Area type="monotone" dataKey="weight" stroke="#3b82f6" fillOpacity={1} fill="url(#colorWeight)" strokeWidth={2} />
-                        </AreaChart>
-                    </ResponsiveContainer>
+
+                {/* 2. Massas em KG (Gordura vs Músculo) */}
+                <div className="bg-slate-50 rounded-xl border border-slate-100 p-4 print:bg-white print:border-slate-200">
+                    <p className="text-xs text-center font-bold text-slate-600 mb-2">Composição Corporal (Kg)</p>
+                    <div className="h-48 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <ComposedChart data={chartData} margin={{ top: 20, right: 10, left: 10, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                <XAxis dataKey="date" tick={{fontSize: 10, fill: '#64748b'}} axisLine={false} tickLine={false} />
+                                <YAxis hide />
+                                
+                                <Line 
+                                    type="monotone" 
+                                    dataKey="muscleMassKg" 
+                                    stroke="#10b981" 
+                                    strokeWidth={2}
+                                    isAnimationActive={false}
+                                >
+                                    <LabelList dataKey="muscleMassKg" position="top" content={<CustomLabel color="#059669" unit="kg" />} />
+                                </Line>
+                                <Line 
+                                    type="monotone" 
+                                    dataKey="fatMassKg" 
+                                    stroke="#f43f5e" 
+                                    strokeWidth={2}
+                                    isAnimationActive={false}
+                                >
+                                    <LabelList dataKey="fatMassKg" position="bottom" offset={10} content={(props: any) => <text x={props.x} y={props.y} dy={15} fill="#e11d48" fontSize={10} textAnchor="middle" fontWeight="bold">{props.value}kg</text>} />
+                                </Line>
+                            </ComposedChart>
+                        </ResponsiveContainer>
+                    </div>
                 </div>
+
+                {/* 3. Gordura Visceral */}
+                <div className="bg-slate-50 rounded-xl border border-slate-100 p-4 print:bg-white print:border-slate-200">
+                    <p className="text-xs text-center font-bold text-slate-600 mb-2 flex items-center justify-center gap-1"><Flame size={12} className="text-amber-500"/> Nível Visceral</p>
+                    <div className="h-48 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={chartData} margin={{ top: 20, right: 10, left: 10, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                <XAxis dataKey="date" tick={{fontSize: 10, fill: '#64748b'}} axisLine={false} tickLine={false} />
+                                <YAxis hide domain={[0, 'dataMax + 2']} />
+                                <Area 
+                                    type="monotone" 
+                                    dataKey="visceralFat" 
+                                    stroke="#f59e0b" 
+                                    fill="#f59e0b" 
+                                    fillOpacity={0.1} 
+                                    strokeWidth={2}
+                                    isAnimationActive={false}
+                                >
+                                    <LabelList dataKey="visceralFat" position="top" content={<CustomLabel color="#d97706" />} />
+                                </Area>
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* 4. Idade Corporal */}
+                <div className="bg-slate-50 rounded-xl border border-slate-100 p-4 print:bg-white print:border-slate-200">
+                    <p className="text-xs text-center font-bold text-slate-600 mb-2 flex items-center justify-center gap-1"><Hourglass size={12} className="text-indigo-500"/> Idade Corporal (anos)</p>
+                    <div className="h-48 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={chartData} margin={{ top: 20, right: 10, left: 10, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                <XAxis dataKey="date" tick={{fontSize: 10, fill: '#64748b'}} axisLine={false} tickLine={false} />
+                                <YAxis hide domain={['dataMin - 5', 'dataMax + 5']} />
+                                <Area 
+                                    type="monotone" 
+                                    dataKey="bodyAge" 
+                                    stroke="#6366f1" 
+                                    fill="#6366f1" 
+                                    fillOpacity={0.1} 
+                                    strokeWidth={2}
+                                    isAnimationActive={false}
+                                >
+                                    <LabelList dataKey="bodyAge" position="top" content={<CustomLabel color="#4f46e5" unit=" anos" />} />
+                                </Area>
+                                {/* Linha de referência da idade real (apenas visual) */}
+                                <Line type="monotone" dataKey="age" stroke="#cbd5e1" strokeWidth={1} strokeDasharray="4 4" dot={false} isAnimationActive={false} />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
             </div>
         </div>
 
