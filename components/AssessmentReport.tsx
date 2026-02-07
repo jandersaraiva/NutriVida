@@ -1,7 +1,7 @@
 
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { CheckIn, Patient } from '../types';
-import { ChevronLeft, Download, AlertTriangle, CheckCircle, User } from 'lucide-react';
+import { ChevronLeft, Download, AlertTriangle, CheckCircle, User, Camera, X, Plus } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   PieChart, Pie, Cell 
@@ -16,6 +16,36 @@ interface AssessmentReportProps {
 
 export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, patient, allCheckIns, onBack }) => {
   
+  // --- Estados para Fotos ---
+  const [frontPhoto, setFrontPhoto] = useState<string | null>(null);
+  const [sidePhoto, setSidePhoto] = useState<string | null>(null);
+  
+  const frontInputRef = useRef<HTMLInputElement>(null);
+  const sideInputRef = useRef<HTMLInputElement>(null);
+
+  // --- Handlers de Foto ---
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'front' | 'side') => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (type === 'front') setFrontPhoto(reader.result as string);
+        else setSidePhoto(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const clearPhoto = (type: 'front' | 'side') => {
+    if (type === 'front') {
+        setFrontPhoto(null);
+        if (frontInputRef.current) frontInputRef.current.value = '';
+    } else {
+        setSidePhoto(null);
+        if (sideInputRef.current) sideInputRef.current.value = '';
+    }
+  };
+
   // --- Cálculos ---
   const waist = checkIn.waistCircumference || 0;
   const hip = checkIn.hipCircumference || 0;
@@ -85,6 +115,45 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
       <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden mt-1.5">
           <div className={`h-full ${color}`} style={{ width: `${Math.min((value/max)*100, 100)}%` }}></div>
       </div>
+  );
+
+  // Componente de Upload de Foto
+  const PhotoUploadBox = ({ title, photo, onUpload, onClear, inputRef }: any) => (
+    <div className="bg-slate-50/50 rounded-xl p-4 border border-slate-100 flex flex-col items-center justify-center min-h-[250px] relative group">
+        <h4 className="font-bold text-slate-700 mb-4 self-start">{title}</h4>
+        
+        {photo ? (
+            <div className="flex-1 w-full relative bg-black rounded-lg overflow-hidden flex items-center justify-center">
+                <img src={photo} alt={title} className="max-w-full max-h-[200px] object-contain" />
+                <button 
+                    onClick={onClear}
+                    className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity print:hidden"
+                    title="Remover foto"
+                >
+                    <X size={16} />
+                </button>
+            </div>
+        ) : (
+            <div 
+                className="flex-1 w-full bg-white border-2 border-dashed border-slate-200 rounded-lg flex flex-col items-center justify-center text-slate-300 cursor-pointer hover:border-emerald-400 hover:text-emerald-500 transition-all group/upload"
+                onClick={() => inputRef.current?.click()}
+            >
+                <div className="p-3 bg-slate-50 rounded-full mb-2 group-hover/upload:bg-emerald-50 transition-colors">
+                    <Camera size={32} />
+                </div>
+                <span className="text-sm font-medium">Adicionar Foto</span>
+                <span className="text-xs mt-1 text-slate-400">Clique para carregar</span>
+            </div>
+        )}
+        
+        <input 
+            type="file" 
+            ref={inputRef}
+            onChange={onUpload}
+            className="hidden"
+            accept="image/*"
+        />
+    </div>
   );
 
   return (
@@ -159,21 +228,22 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                 </div>
             </div>
 
-            {/* Colunas 2 e 3: Fotos (Placeholders) */}
-            <div className="bg-slate-50/50 rounded-xl p-4 border border-slate-100 flex flex-col items-center justify-center min-h-[250px]">
-                <h4 className="font-bold text-slate-700 mb-4 self-start">Foto da análise frontal</h4>
-                <div className="flex-1 w-full bg-white border-2 border-dashed border-slate-200 rounded-lg flex items-center justify-center text-slate-300">
-                    <User size={64} opacity={0.5} />
-                    <span className="sr-only">Foto Frontal</span>
-                </div>
-            </div>
-             <div className="bg-slate-50/50 rounded-xl p-4 border border-slate-100 flex flex-col items-center justify-center min-h-[250px]">
-                <h4 className="font-bold text-slate-700 mb-4 self-start">Foto da análise lateral</h4>
-                <div className="flex-1 w-full bg-white border-2 border-dashed border-slate-200 rounded-lg flex items-center justify-center text-slate-300">
-                    <User size={64} opacity={0.5} />
-                    <span className="sr-only">Foto Lateral</span>
-                </div>
-            </div>
+            {/* Colunas 2 e 3: Fotos Interativas */}
+            <PhotoUploadBox 
+                title="Foto da análise frontal"
+                photo={frontPhoto}
+                inputRef={frontInputRef}
+                onUpload={(e: React.ChangeEvent<HTMLInputElement>) => handlePhotoUpload(e, 'front')}
+                onClear={() => clearPhoto('front')}
+            />
+            
+            <PhotoUploadBox 
+                title="Foto da análise lateral"
+                photo={sidePhoto}
+                inputRef={sideInputRef}
+                onUpload={(e: React.ChangeEvent<HTMLInputElement>) => handlePhotoUpload(e, 'side')}
+                onClear={() => clearPhoto('side')}
+            />
         </div>
 
         {/* Linha 2: Composição e Índices */}
