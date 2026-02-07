@@ -94,12 +94,12 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({ patients, appointm
         <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
             <div className="flex justify-between items-center mb-6">
                 <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
-                    <Clock size={20} className="text-emerald-500" />
+                    <Clock size={20} className="text-blue-500" />
                     Próximos Agendamentos
                 </h3>
                 <button 
                     onClick={() => onNavigateTo('schedule')}
-                    className="text-sm text-emerald-600 font-medium hover:underline"
+                    className="text-sm text-blue-600 font-medium hover:underline"
                 >
                     Ver agenda completa
                 </button>
@@ -113,7 +113,7 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({ patients, appointm
                 <div className="space-y-4">
                     {upcomingAppointments.map(app => (
                         <div key={app.id} className="flex items-center p-4 bg-slate-50 rounded-xl border border-slate-100">
-                            <div className="flex flex-col items-center justify-center w-14 h-14 bg-white rounded-lg shadow-sm text-emerald-700 mr-4">
+                            <div className="flex flex-col items-center justify-center w-14 h-14 bg-white rounded-lg shadow-sm text-blue-700 mr-4">
                                 <span className="text-sm font-bold">{app.time}</span>
                             </div>
                             <div className="flex-1">
@@ -123,7 +123,7 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({ patients, appointm
                                 </p>
                             </div>
                             <div className="text-right">
-                                <button className="text-xs font-semibold bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg">
+                                <button className="text-xs font-semibold bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg">
                                     Detalhes
                                 </button>
                             </div>
@@ -158,12 +158,12 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({ patients, appointm
                 </div>
             </div>
 
-            <div className="bg-gradient-to-br from-emerald-600 to-emerald-800 p-6 rounded-2xl shadow-lg text-white">
+            <div className="bg-gradient-to-br from-blue-600 to-blue-800 p-6 rounded-2xl shadow-lg text-white">
                 <h3 className="font-bold text-lg mb-2">Dica do Dia</h3>
-                <p className="text-emerald-100 text-sm leading-relaxed mb-4">
+                <p className="text-blue-100 text-sm leading-relaxed mb-4">
                     Lembre-se de verificar o feedback dos pacientes sobre a nova dieta na próxima consulta de retorno.
                 </p>
-                <div className="h-1 w-12 bg-emerald-400 rounded-full"></div>
+                <div className="h-1 w-12 bg-blue-400 rounded-full"></div>
             </div>
         </div>
       </div>

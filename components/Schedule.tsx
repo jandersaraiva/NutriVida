@@ -168,7 +168,7 @@ export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAd
         </div>
         <button 
           onClick={() => handleOpenAddModal()}
-          className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2.5 rounded-xl hover:bg-emerald-700 transition-colors shadow-sm font-medium"
+          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-xl hover:bg-blue-700 transition-colors shadow-sm font-medium"
         >
           <Plus size={20} />
           Novo Agendamento
@@ -185,10 +185,10 @@ export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAd
                         {viewDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
                     </h3>
                     <div className="flex gap-2">
-                        <button onClick={handlePrevMonth} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-emerald-600 transition-colors">
+                        <button onClick={handlePrevMonth} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-blue-600 transition-colors">
                             <ChevronLeft size={20} />
                         </button>
-                        <button onClick={handleNextMonth} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-emerald-600 transition-colors">
+                        <button onClick={handleNextMonth} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-blue-600 transition-colors">
                             <ChevronRight size={20} />
                         </button>
                     </div>
@@ -223,15 +223,15 @@ export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAd
                                 className={`
                                     h-10 w-full flex flex-col items-center justify-center rounded-lg transition-all relative font-medium
                                     ${isSelected 
-                                        ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200' 
-                                        : 'text-slate-700 hover:bg-emerald-50 hover:text-emerald-700'
+                                        ? 'bg-blue-600 text-white shadow-md shadow-blue-200' 
+                                        : 'text-slate-700 hover:bg-blue-50 hover:text-blue-700'
                                     }
-                                    ${isToday && !isSelected ? 'border border-emerald-200 text-emerald-700' : ''}
+                                    ${isToday && !isSelected ? 'border border-blue-200 text-blue-700' : ''}
                                 `}
                             >
                                 <span>{day}</span>
                                 {hasEvents && !isSelected && (
-                                    <span className="absolute bottom-1.5 w-1 h-1 bg-emerald-500 rounded-full"></span>
+                                    <span className="absolute bottom-1.5 w-1 h-1 bg-blue-500 rounded-full"></span>
                                 )}
                             </button>
                         );
@@ -242,13 +242,13 @@ export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAd
             {/* Cartão de Próxima Consulta (Global) */}
             <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-2xl text-white shadow-lg">
                 <h4 className="font-bold text-slate-200 mb-4 flex items-center gap-2 text-sm uppercase tracking-wide">
-                    <Clock size={16} className="text-emerald-400" />
+                    <Clock size={16} className="text-blue-400" />
                     Próximo Atendimento
                 </h4>
                 {nextAppointment ? (
                     <div>
                         <div className="text-4xl font-bold mb-1">{nextAppointment.time}</div>
-                        <div className="text-emerald-400 font-medium mb-3 text-lg">{getPatientName(nextAppointment.patientId)}</div>
+                        <div className="text-blue-400 font-medium mb-3 text-lg">{getPatientName(nextAppointment.patientId)}</div>
                         <div className="inline-flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg text-sm">
                             <Calendar size={14} />
                             <span className="capitalize">{new Date(nextAppointment.date).toLocaleDateString('pt-BR', {weekday: 'long', day: 'numeric', month: 'short'})}</span>
@@ -265,7 +265,7 @@ export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAd
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 min-h-[500px] flex flex-col">
                 <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 rounded-t-2xl">
                     <div>
-                        <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1 block">Visualizando Dia</span>
+                        <span className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1 block">Visualizando Dia</span>
                         <h3 className="font-bold text-slate-800 text-xl capitalize flex items-center gap-2">
                              {selectedDate.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
                         </h3>
@@ -285,7 +285,7 @@ export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAd
                             <p className="text-slate-400 mb-6 max-w-xs">Não há consultas marcadas para este dia.</p>
                             <button 
                                 onClick={() => handleOpenAddModal(selectedDate)}
-                                className="text-emerald-600 font-medium hover:text-emerald-700 hover:bg-emerald-50 px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                                className="text-blue-600 font-medium hover:text-blue-700 hover:bg-blue-50 px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
                             >
                                 <Plus size={18} /> Agendar neste dia
                             </button>
@@ -298,7 +298,7 @@ export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAd
                                 <div key={app.id} className={`p-5 rounded-xl border transition-all group flex gap-4 ${
                                     isCompleted 
                                     ? 'bg-slate-50 border-slate-100' 
-                                    : 'bg-white border-slate-200 hover:border-emerald-300 hover:shadow-md'
+                                    : 'bg-white border-slate-200 hover:border-blue-300 hover:shadow-md'
                                 }`}>
                                     
                                     {/* Botão de Checkbox */}
@@ -307,8 +307,8 @@ export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAd
                                             onClick={() => onUpdateAppointment({ ...app, status: isCompleted ? 'Agendado' : 'Concluído' })}
                                             className={`shrink-0 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
                                                 isCompleted 
-                                                ? 'bg-emerald-500 border-emerald-500 text-white' 
-                                                : 'bg-white border-slate-300 text-transparent hover:border-emerald-400'
+                                                ? 'bg-blue-500 border-blue-500 text-white' 
+                                                : 'bg-white border-slate-300 text-transparent hover:border-blue-400'
                                             }`}
                                             title={isCompleted ? "Marcar como pendente" : "Marcar como concluído"}
                                         >
@@ -383,7 +383,7 @@ export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAd
                         <label className="block text-sm font-medium text-slate-700 mb-1">Paciente</label>
                         <select 
                             required
-                            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                             value={formData.patientId}
                             onChange={(e) => setFormData({...formData, patientId: e.target.value})}
                         >
@@ -400,7 +400,7 @@ export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAd
                             <input 
                                 type="date" 
                                 required
-                                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                 value={formData.date}
                                 onChange={(e) => setFormData({...formData, date: e.target.value})}
                             />
@@ -410,7 +410,7 @@ export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAd
                             <input 
                                 type="time" 
                                 required
-                                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                 value={formData.time}
                                 onChange={(e) => setFormData({...formData, time: e.target.value})}
                             />
@@ -427,7 +427,7 @@ export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAd
                                     onClick={() => setFormData({...formData, type: type as any})}
                                     className={`py-2 rounded-lg text-sm font-medium border transition-all ${
                                         formData.type === type 
-                                        ? 'bg-emerald-50 border-emerald-200 text-emerald-700' 
+                                        ? 'bg-blue-50 border-blue-200 text-blue-700' 
                                         : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                                     }`}
                                 >
@@ -441,7 +441,7 @@ export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAd
                         <label className="block text-sm font-medium text-slate-700 mb-1">Observações</label>
                         <textarea 
                             rows={3}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all resize-none"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none"
                             value={formData.notes}
                             onChange={(e) => setFormData({...formData, notes: e.target.value})}
                             placeholder="Notas adicionais sobre o agendamento..."
@@ -459,7 +459,7 @@ export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAd
                         <button 
                             type="submit"
                             disabled={!formData.patientId}
-                            className="px-5 py-2.5 bg-emerald-600 text-white font-medium rounded-xl hover:bg-emerald-700 disabled:opacity-50 transition-colors shadow-lg shadow-emerald-200"
+                            className="px-5 py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-lg shadow-blue-200"
                         >
                             {editingId ? 'Salvar Alterações' : 'Agendar'}
                         </button>

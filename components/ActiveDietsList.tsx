@@ -42,7 +42,7 @@ export const ActiveDietsList: React.FC<ActiveDietsListProps> = ({ patients, onSe
                     placeholder="Buscar paciente..." 
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full sm:w-64 pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm shadow-sm"
+                    className="w-full sm:w-64 pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm shadow-sm"
                 />
             </div>
         </div>
@@ -65,7 +65,7 @@ export const ActiveDietsList: React.FC<ActiveDietsListProps> = ({ patients, onSe
                         <div 
                             key={patient.id}
                             onClick={() => onSelectPatient(patient.id)}
-                            className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm hover:shadow-md transition-all group cursor-pointer hover:border-emerald-200 flex flex-col justify-between h-full"
+                            className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm hover:shadow-md transition-all group cursor-pointer hover:border-blue-200 flex flex-col justify-between h-full"
                         >
                             <div>
                                 <div className="flex justify-between items-start mb-4">
@@ -74,7 +74,7 @@ export const ActiveDietsList: React.FC<ActiveDietsListProps> = ({ patients, onSe
                                             {patient.name.substring(0,2).toUpperCase()}
                                         </div>
                                         <div className="overflow-hidden">
-                                            <h3 className="font-bold text-slate-800 text-lg truncate group-hover:text-emerald-700 transition-colors">
+                                            <h3 className="font-bold text-slate-800 text-lg truncate group-hover:text-blue-700 transition-colors">
                                                 {patient.name}
                                             </h3>
                                             <p className="text-slate-500 text-xs truncate">{patient.objective}</p>
@@ -84,7 +84,7 @@ export const ActiveDietsList: React.FC<ActiveDietsListProps> = ({ patients, onSe
 
                                 <div className="bg-slate-50 rounded-xl p-4 mb-4 border border-slate-100">
                                     <div className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-3">
-                                        <Utensils size={16} className="text-emerald-500" />
+                                        <Utensils size={16} className="text-blue-500" />
                                         <span>{activeDiet?.name || 'Plano Atual'}</span>
                                     </div>
                                     <div className="space-y-2">
@@ -111,10 +111,10 @@ export const ActiveDietsList: React.FC<ActiveDietsListProps> = ({ patients, onSe
                             </div>
 
                             <div className="flex items-center justify-between pt-4 border-t border-slate-50 mt-auto">
-                                <span className="text-xs font-semibold px-2 py-1 rounded-md bg-emerald-50 text-emerald-700 flex items-center gap-1">
+                                <span className="text-xs font-semibold px-2 py-1 rounded-md bg-blue-50 text-blue-700 flex items-center gap-1">
                                     <CalendarCheck size={12} /> Ativo
                                 </span>
-                                <span className="text-sm font-medium text-emerald-600 group-hover:underline flex items-center gap-1">
+                                <span className="text-sm font-medium text-blue-600 group-hover:underline flex items-center gap-1">
                                     Ver Detalhes <ChevronRight size={16} />
                                 </span>
                             </div>

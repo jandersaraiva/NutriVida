@@ -148,7 +148,7 @@ export const PatientList: React.FC<PatientListProps> = ({
             instagram: formData.instagram,
             address: formData.address,
             objective: 'Saúde e Bem-estar', // Default
-            avatarColor: 'bg-emerald-100 text-emerald-700',
+            avatarColor: 'bg-blue-100 text-blue-700',
             status: 'active',
             checkIns: [],
             dietPlans: [] // Start with empty array
@@ -185,7 +185,7 @@ export const PatientList: React.FC<PatientListProps> = ({
                     </button>
                     <button 
                         onClick={handleOpenAdd}
-                        className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2.5 rounded-xl hover:bg-emerald-700 transition-colors shadow-sm font-medium"
+                        className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-xl hover:bg-blue-700 transition-colors shadow-sm font-medium"
                     >
                         <Plus size={20} />
                         <span className="hidden sm:inline">Novo Paciente</span>
@@ -211,7 +211,7 @@ export const PatientList: React.FC<PatientListProps> = ({
             placeholder="Buscar paciente por nome..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
           />
         </div>
       </div>
@@ -236,7 +236,7 @@ export const PatientList: React.FC<PatientListProps> = ({
             <div 
               key={patient.id}
               onClick={() => viewMode === 'active' && onSelectPatient(patient.id)}
-              className={`bg-white rounded-2xl border border-slate-100 p-6 shadow-sm hover:shadow-md transition-all group relative overflow-hidden flex flex-col justify-between ${viewMode === 'active' ? 'cursor-pointer hover:border-emerald-200' : 'opacity-75'}`}
+              className={`bg-white rounded-2xl border border-slate-100 p-6 shadow-sm hover:shadow-md transition-all group relative overflow-hidden flex flex-col justify-between ${viewMode === 'active' ? 'cursor-pointer hover:border-blue-200' : 'opacity-75'}`}
             >
               <div>
                 <div className="flex justify-between items-start mb-4">
@@ -249,7 +249,7 @@ export const PatientList: React.FC<PatientListProps> = ({
                         <>
                             <button 
                                 onClick={(e) => handleOpenEdit(e, patient)}
-                                className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                                className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                 title="Editar"
                             >
                                 <Pencil size={18} />
@@ -265,7 +265,7 @@ export const PatientList: React.FC<PatientListProps> = ({
                     ) : (
                         <button 
                             onClick={(e) => handleRestoreClick(e, patient.id)}
-                            className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                             title="Restaurar"
                         >
                             <RefreshCcw size={18} />
@@ -279,12 +279,12 @@ export const PatientList: React.FC<PatientListProps> = ({
 
                 <div className="space-y-2 mb-6">
                   <div className="flex items-center gap-2 text-sm text-slate-600">
-                    <Calendar size={14} className="text-emerald-500" />
+                    <Calendar size={14} className="text-blue-500" />
                     {patient.age} anos
                   </div>
                   {patient.phone && (
                     <div className="flex items-center gap-2 text-sm text-slate-600">
-                        <span className="text-emerald-500 font-bold text-xs">Tel:</span>
+                        <span className="text-blue-500 font-bold text-xs">Tel:</span>
                         {patient.phone}
                     </div>
                   )}
@@ -305,7 +305,7 @@ export const PatientList: React.FC<PatientListProps> = ({
               </div>
               
               {viewMode === 'active' && (
-                  <div className="absolute right-4 bottom-4 opacity-0 group-hover:opacity-100 transition-opacity text-emerald-600 pointer-events-none bg-white pl-2">
+                  <div className="absolute right-4 bottom-4 opacity-0 group-hover:opacity-100 transition-opacity text-blue-600 pointer-events-none bg-white pl-2">
                     <ChevronRight size={20} />
                   </div>
               )}
@@ -337,7 +337,7 @@ export const PatientList: React.FC<PatientListProps> = ({
                             placeholder="Ex: João da Silva"
                             value={formData.name}
                             onChange={handleInputChange}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                         />
                     </div>
 
@@ -350,7 +350,7 @@ export const PatientList: React.FC<PatientListProps> = ({
                                 required
                                 value={formData.birthDate}
                                 onChange={handleInputChange}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                             />
                         </div>
                         <div>
@@ -359,7 +359,7 @@ export const PatientList: React.FC<PatientListProps> = ({
                                 name="gender"
                                 value={formData.gender}
                                 onChange={handleInputChange}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                             >
                                 <option value="Masculino">Masculino</option>
                                 <option value="Feminino">Feminino</option>
@@ -376,7 +376,7 @@ export const PatientList: React.FC<PatientListProps> = ({
                                 placeholder="Ex: Advogado"
                                 value={formData.profession}
                                 onChange={handleInputChange}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                             />
                         </div>
                         <div>
@@ -387,7 +387,7 @@ export const PatientList: React.FC<PatientListProps> = ({
                                 placeholder="(00) 00000-0000"
                                 value={formData.phone}
                                 onChange={handleInputChange}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                             />
                         </div>
                     </div>
@@ -403,7 +403,7 @@ export const PatientList: React.FC<PatientListProps> = ({
                                     placeholder="usuario"
                                     value={formData.instagram}
                                     onChange={handleInputChange}
-                                    className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                 />
                             </div>
                         </div>
@@ -418,7 +418,7 @@ export const PatientList: React.FC<PatientListProps> = ({
                                     placeholder="Rua, Número - Cidade/UF"
                                     value={formData.address}
                                     onChange={handleInputChange}
-                                    className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                 />
                             </div>
                         </div>
@@ -434,7 +434,7 @@ export const PatientList: React.FC<PatientListProps> = ({
                         </button>
                         <button 
                             type="submit"
-                            className="px-6 py-3 bg-emerald-600 text-white font-medium rounded-xl hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200 flex items-center gap-2"
+                            className="px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200 flex items-center gap-2"
                         >
                             <User size={18} />
                             {editingId ? 'Salvar Alterações' : 'Cadastrar Paciente'}

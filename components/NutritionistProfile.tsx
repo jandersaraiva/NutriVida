@@ -1,14 +1,15 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Nutritionist } from '../types';
-import { User, Phone, Mail, BadgeCheck, Save, CheckCircle, Camera, Calendar, Cake } from 'lucide-react';
+import { User, Phone, Mail, BadgeCheck, Save, CheckCircle, Camera, Calendar, Cake, Trash2 } from 'lucide-react';
 
 interface NutritionistProfileProps {
   data: Nutritionist;
   onSave: (data: Nutritionist) => void;
+  onResetData?: () => void; // Nova prop
 }
 
-export const NutritionistProfile: React.FC<NutritionistProfileProps> = ({ data, onSave }) => {
+export const NutritionistProfile: React.FC<NutritionistProfileProps> = ({ data, onSave, onResetData }) => {
   const [formData, setFormData] = useState<Nutritionist>(data || {
     name: '',
     crn: '',
@@ -62,18 +63,18 @@ export const NutritionistProfile: React.FC<NutritionistProfileProps> = ({ data, 
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto space-y-8">
       <div className="flex flex-col md:flex-row gap-8">
         {/* Left Column: Avatar & Summary */}
         <div className="w-full md:w-1/3">
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex flex-col items-center text-center">
             
             <div className="relative mb-4 group">
-              <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-sm bg-emerald-100 flex items-center justify-center">
+              <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-sm bg-blue-100 flex items-center justify-center">
                 {formData.photo ? (
                   <img src={formData.photo} alt="Perfil" className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-4xl font-bold text-emerald-600">
+                  <span className="text-4xl font-bold text-blue-600">
                     {formData.name ? formData.name.substring(0, 2).toUpperCase() : 'NU'}
                   </span>
                 )}
@@ -81,7 +82,7 @@ export const NutritionistProfile: React.FC<NutritionistProfileProps> = ({ data, 
               <button 
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="absolute bottom-1 right-1 p-2 bg-emerald-600 text-white rounded-full shadow-lg hover:bg-emerald-700 transition-colors"
+                className="absolute bottom-1 right-1 p-2 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors"
                 title="Alterar foto"
               >
                 <Camera size={18} />
@@ -107,7 +108,7 @@ export const NutritionistProfile: React.FC<NutritionistProfileProps> = ({ data, 
             
             <div className="mt-6 w-full pt-6 border-t border-slate-50">
                 <div className="flex items-center justify-center gap-2 text-slate-500 text-sm">
-                    <CheckCircle size={16} className="text-emerald-500" />
+                    <CheckCircle size={16} className="text-blue-500" />
                     <span>Conta Profissional Ativa</span>
                 </div>
             </div>
@@ -143,7 +144,7 @@ export const NutritionistProfile: React.FC<NutritionistProfileProps> = ({ data, 
                                     name="name"
                                     value={formData.name}
                                     onChange={handleChange}
-                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                     placeholder="Ex: Dr. Fulano de Tal"
                                 />
                             </div>
@@ -160,7 +161,7 @@ export const NutritionistProfile: React.FC<NutritionistProfileProps> = ({ data, 
                                     name="birthDate"
                                     value={formData.birthDate}
                                     onChange={handleChange}
-                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                 />
                             </div>
                         </div>
@@ -187,7 +188,7 @@ export const NutritionistProfile: React.FC<NutritionistProfileProps> = ({ data, 
                                     name="crn"
                                     value={formData.crn}
                                     onChange={handleChange}
-                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                     placeholder="Ex: CRN-3 12345"
                                 />
                             </div>
@@ -201,7 +202,7 @@ export const NutritionistProfile: React.FC<NutritionistProfileProps> = ({ data, 
                                     name="email"
                                     value={formData.email}
                                     onChange={handleChange}
-                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                     placeholder="email@clinica.com"
                                 />
                             </div>
@@ -217,7 +218,7 @@ export const NutritionistProfile: React.FC<NutritionistProfileProps> = ({ data, 
                                 name="phone"
                                 value={formData.phone}
                                 onChange={handleChange}
-                                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                 placeholder="(00) 00000-0000"
                             />
                         </div>
@@ -228,7 +229,7 @@ export const NutritionistProfile: React.FC<NutritionistProfileProps> = ({ data, 
             <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
                 <button 
                     type="submit"
-                    className="flex items-center gap-2 bg-emerald-600 text-white px-6 py-2.5 rounded-xl hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200 font-medium"
+                    className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200 font-medium"
                 >
                     <Save size={18} /> Salvar Alterações
                 </button>
@@ -236,6 +237,23 @@ export const NutritionistProfile: React.FC<NutritionistProfileProps> = ({ data, 
           </form>
         </div>
       </div>
+
+      {/* DANGER ZONE - Only if onResetData is provided */}
+      {onResetData && (
+          <div className="bg-red-50 border border-red-100 rounded-2xl p-6">
+              <h3 className="text-red-800 font-bold text-lg mb-2">Zona de Perigo</h3>
+              <p className="text-red-600 text-sm mb-4">
+                  Ações aqui não podem ser desfeitas. O reset de fábrica apagará todos os dados armazenados localmente no seu navegador e restaurará os dados de demonstração.
+              </p>
+              <button 
+                type="button"
+                onClick={onResetData}
+                className="bg-white border border-red-200 text-red-600 hover:bg-red-600 hover:text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm flex items-center gap-2"
+              >
+                  <Trash2 size={16} /> Resetar Dados de Fábrica
+              </button>
+          </div>
+      )}
     </div>
   );
 };

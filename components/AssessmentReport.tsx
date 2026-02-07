@@ -115,7 +115,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
 
   const pieData = [
     { name: 'Massa Gorda', value: parseFloat(fatMass.toFixed(1)), color: '#f43f5e' }, // Rose 500
-    { name: 'Massa Magra', value: parseFloat(muscleMass.toFixed(1)), color: '#10b981' }, // Emerald 500
+    { name: 'Massa Magra', value: parseFloat(muscleMass.toFixed(1)), color: '#3b82f6' }, // Blue 500 (Atualizado para Azul)
   ];
 
   // --- Componentes Visuais ---
@@ -131,6 +131,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
   );
 
   const StatusBadge = ({ value, label, type }: { value: number, label: string, type: 'good' | 'warning' | 'danger' }) => {
+    // Cores semânticas mantidas (Verde = Bom) para indicadores de saúde
     const colors = {
         good: 'bg-emerald-100 text-emerald-700',
         warning: 'bg-amber-100 text-amber-700',
@@ -157,11 +158,11 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
     // Se não tiver foto e estiver imprimindo, não renderiza nada
     if (!photo) {
         return (
-            <div className="bg-slate-50/50 rounded-xl p-4 border border-dashed border-slate-200 flex flex-col items-center justify-center min-h-[200px] print:hidden cursor-pointer hover:border-emerald-400 transition-colors group" onClick={() => inputRef.current?.click()}>
-                <div className="p-3 bg-white rounded-full mb-2 shadow-sm text-slate-300 group-hover:text-emerald-500 transition-colors">
+            <div className="bg-slate-50/50 rounded-xl p-4 border border-dashed border-slate-200 flex flex-col items-center justify-center min-h-[200px] print:hidden cursor-pointer hover:border-blue-400 transition-colors group" onClick={() => inputRef.current?.click()}>
+                <div className="p-3 bg-white rounded-full mb-2 shadow-sm text-slate-300 group-hover:text-blue-500 transition-colors">
                     <Camera size={24} />
                 </div>
-                <span className="text-sm font-medium text-slate-500 group-hover:text-emerald-600">{title}</span>
+                <span className="text-sm font-medium text-slate-500 group-hover:text-blue-600">{title}</span>
                 <span className="text-xs text-slate-400 mt-1">Clique para adicionar</span>
                 <input type="file" ref={inputRef} onChange={onUpload} className="hidden" accept="image/*" />
             </div>
@@ -205,7 +206,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
           </button>
           <button 
             onClick={() => window.print()} 
-            className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors shadow-sm font-medium"
+            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-medium"
             title="Salvar como PDF usando a janela de impressão"
           >
               <Download size={18} /> Exportar PDF
@@ -218,7 +219,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
         {/* Cabeçalho do Relatório */}
         <header className="flex justify-between items-end border-b-2 border-slate-100 pb-6 mb-8">
             <div>
-                <div className="flex items-center gap-2 text-emerald-700 mb-1">
+                <div className="flex items-center gap-2 text-blue-700 mb-1">
                     <Activity size={24} />
                     <span className="font-bold text-xl tracking-tight">NutriVida</span>
                 </div>
@@ -240,7 +241,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                 
                 {/* Antropometria */}
                 <section>
-                    <h3 className="flex items-center gap-2 font-bold text-emerald-700 mb-3 text-sm uppercase tracking-wide">
+                    <h3 className="flex items-center gap-2 font-bold text-blue-700 mb-3 text-sm uppercase tracking-wide">
                         <Ruler size={16} /> Antropometria
                     </h3>
                     <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 print:bg-white print:border-slate-200">
@@ -255,7 +256,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
 
                 {/* Composição Corporal (Tabela) */}
                 <section>
-                    <h3 className="flex items-center gap-2 font-bold text-emerald-700 mb-3 text-sm uppercase tracking-wide">
+                    <h3 className="flex items-center gap-2 font-bold text-blue-700 mb-3 text-sm uppercase tracking-wide">
                         <Scale size={16} /> Composição Corporal
                     </h3>
                     <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 print:bg-white print:border-slate-200">
@@ -278,8 +279,8 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                             <p className="text-slate-300 text-xs font-bold uppercase tracking-wider mb-1">Pontuação de Saúde</p>
                             <h2 className="text-4xl font-bold">{healthScore} <span className="text-lg font-normal text-slate-400">/ 100</span></h2>
                         </div>
-                        <div className="h-16 w-16 rounded-full border-4 border-emerald-500 flex items-center justify-center bg-emerald-500/20 backdrop-blur-sm">
-                            <Activity size={32} className="text-emerald-400" />
+                        <div className="h-16 w-16 rounded-full border-4 border-blue-500 flex items-center justify-center bg-blue-500/20 backdrop-blur-sm">
+                            <Activity size={32} className="text-blue-400" />
                         </div>
                     </div>
                     <div className="mt-4 pt-4 border-t border-white/10">
@@ -290,7 +291,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                         </p>
                     </div>
                     {/* Decorative Blob */}
-                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-emerald-500/20 rounded-full blur-2xl"></div>
+                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl"></div>
                 </div>
 
                 {/* Gráfico Donut */}
@@ -327,7 +328,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                                 </div>
                              </div>
                              <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+                                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
                                 <div>
                                     <span className="block font-bold text-slate-700">{muscleMass.toFixed(1)}kg</span>
                                     <span className="text-slate-400">Músculo ({checkIn.muscleMass}%)</span>
@@ -405,11 +406,11 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                                 <Line 
                                     type="monotone" 
                                     dataKey="muscleMassKg" 
-                                    stroke="#10b981" 
+                                    stroke="#3b82f6" 
                                     strokeWidth={2}
                                     isAnimationActive={false}
                                 >
-                                    <LabelList dataKey="muscleMassKg" position="top" content={<CustomLabel color="#059669" unit="kg" />} />
+                                    <LabelList dataKey="muscleMassKg" position="top" content={<CustomLabel color="#2563eb" unit="kg" />} />
                                 </Line>
                                 <Line 
                                     type="monotone" 
@@ -452,7 +453,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
 
                 {/* 4. Idade Corporal */}
                 <div className="bg-slate-50 rounded-xl border border-slate-100 p-4 print:bg-white print:border-slate-200">
-                    <p className="text-xs text-center font-bold text-slate-600 mb-2 flex items-center justify-center gap-1"><Hourglass size={12} className="text-indigo-500"/> Idade Corporal (anos)</p>
+                    <p className="text-xs text-center font-bold text-slate-600 mb-2 flex items-center justify-center gap-1"><Hourglass size={12} className="text-blue-500"/> Idade Corporal (anos)</p>
                     <div className="h-48 w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={chartData} margin={{ top: 20, right: 10, left: 10, bottom: 0 }}>
@@ -462,13 +463,13 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                                 <Area 
                                     type="monotone" 
                                     dataKey="bodyAge" 
-                                    stroke="#6366f1" 
-                                    fill="#6366f1" 
+                                    stroke="#3b82f6" 
+                                    fill="#3b82f6" 
                                     fillOpacity={0.1} 
                                     strokeWidth={2}
                                     isAnimationActive={false}
                                 >
-                                    <LabelList dataKey="bodyAge" position="top" content={<CustomLabel color="#4f46e5" unit=" anos" />} />
+                                    <LabelList dataKey="bodyAge" position="top" content={<CustomLabel color="#2563eb" unit=" anos" />} />
                                 </Area>
                                 {/* Linha de referência da idade real (apenas visual) */}
                                 <Line type="monotone" dataKey="age" stroke="#cbd5e1" strokeWidth={1} strokeDasharray="4 4" dot={false} isAnimationActive={false} />

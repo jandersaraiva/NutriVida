@@ -51,7 +51,7 @@ export const AnamnesisForm: React.FC<AnamnesisFormProps> = ({ initialData, onSav
         <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
             <div>
                 <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
-                    <Stethoscope size={20} className="text-emerald-600" />
+                    <Stethoscope size={20} className="text-blue-600" />
                     Anamnese Clínica
                 </h3>
                 <p className="text-slate-500 text-sm">Registro do histórico de saúde e hábitos do paciente.</p>
@@ -73,7 +73,7 @@ export const AnamnesisForm: React.FC<AnamnesisFormProps> = ({ initialData, onSav
                     value={formData.mainComplaint}
                     onChange={handleChange}
                     rows={2}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-emerald-500 outline-none transition-all placeholder-slate-400"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder-slate-400"
                     placeholder="Ex: Sente muito cansaço à tarde; quer perder gordura abdominal..."
                 />
             </div>
@@ -92,7 +92,7 @@ export const AnamnesisForm: React.FC<AnamnesisFormProps> = ({ initialData, onSav
                             value={formData.history}
                             onChange={handleChange}
                             rows={3}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                             placeholder="Diabetes, Hipertensão, Colesterol..."
                         />
                     </div>
@@ -104,7 +104,7 @@ export const AnamnesisForm: React.FC<AnamnesisFormProps> = ({ initialData, onSav
                             name="allergies"
                             value={formData.allergies}
                             onChange={handleChange}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                             placeholder="Glúten, Lactose, Camarão..."
                         />
                     </div>
@@ -118,7 +118,7 @@ export const AnamnesisForm: React.FC<AnamnesisFormProps> = ({ initialData, onSav
                                 value={formData.medications}
                                 onChange={handleChange}
                                 rows={2}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                                 placeholder="Lista de medicamentos..."
                             />
                         </div>
@@ -140,7 +140,7 @@ export const AnamnesisForm: React.FC<AnamnesisFormProps> = ({ initialData, onSav
                                     name="sleepQuality"
                                     value={formData.sleepQuality}
                                     onChange={handleChange}
-                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-3 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 outline-none appearance-none"
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none"
                                 >
                                     <option value="Ruim">Ruim</option>
                                     <option value="Regular">Regular</option>
@@ -155,7 +155,7 @@ export const AnamnesisForm: React.FC<AnamnesisFormProps> = ({ initialData, onSav
                                 name="bowelFunction"
                                 value={formData.bowelFunction}
                                 onChange={handleChange}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                             >
                                 <option value="Constipado">Constipado</option>
                                 <option value="Regular">Regular</option>
@@ -171,7 +171,7 @@ export const AnamnesisForm: React.FC<AnamnesisFormProps> = ({ initialData, onSav
                             name="alcohol"
                             value={formData.alcohol}
                             onChange={handleChange}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                             placeholder="Frequência e quantidade..."
                         />
                     </div>
@@ -183,7 +183,7 @@ export const AnamnesisForm: React.FC<AnamnesisFormProps> = ({ initialData, onSav
                             name="smoker" 
                             checked={formData.smoker}
                             onChange={(e) => setFormData(prev => ({...prev, smoker: e.target.checked}))}
-                            className="w-5 h-5 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300"
+                            className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500 border-slate-300"
                         />
                         <label htmlFor="smoker" className="text-sm font-medium text-slate-700">Tabagismo (Fumante)</label>
                     </div>
@@ -197,7 +197,7 @@ export const AnamnesisForm: React.FC<AnamnesisFormProps> = ({ initialData, onSav
                     value={formData.notes}
                     onChange={handleChange}
                     rows={4}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                     placeholder="Outras informações relevantes..."
                 />
             </div>
@@ -208,7 +208,7 @@ export const AnamnesisForm: React.FC<AnamnesisFormProps> = ({ initialData, onSav
         <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
              <button 
                 type="submit"
-                className="flex items-center gap-2 bg-emerald-600 text-white px-8 py-3 rounded-xl hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200 font-bold"
+                className="flex items-center gap-2 bg-blue-600 text-white px-8 py-3 rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200 font-bold"
             >
                 <Save size={18} /> Salvar Anamnese
             </button>

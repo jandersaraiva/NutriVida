@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { CheckIn } from '../types';
-import { Save, X, Calculator } from 'lucide-react';
+import { Save, X, Calculator, Flame } from 'lucide-react';
 
 interface EntryFormProps {
   onSave: (data: CheckIn) => void;
@@ -9,6 +9,7 @@ interface EntryFormProps {
   lastRecord?: CheckIn;
   patientBirthDate?: string;
   initialData?: CheckIn | null;
+  patientGender?: 'Masculino' | 'Feminino';
 }
 
 // Helper seguro para IDs
@@ -42,7 +43,7 @@ const InputGroup: React.FC<InputGroupProps> = ({ label, name, unit, step = "0.1"
         className={`w-full rounded-lg border px-4 py-2.5 outline-none transition-all ${
             readOnly 
             ? 'bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed'
-            : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500'
+            : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
         }`}
       />
       {unit && (
@@ -54,7 +55,7 @@ const InputGroup: React.FC<InputGroupProps> = ({ label, name, unit, step = "0.1"
   </div>
 );
 
-export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastRecord, patientBirthDate, initialData }) => {
+export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastRecord, patientBirthDate, initialData, patientGender }) => {
   // Calcula idade baseada na data da avaliação vs data de nascimento
   const calculateAgeAtDate = (dob: string, targetDate: string) => {
     if (!dob || !targetDate) return 0;
@@ -91,7 +92,7 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
     }
   }, [initialData]);
 
-  // Recalcula idade se a data da avaliação mudar (apenas se não estiver editando ou se desejar recalcular na edição também)
+  // Recalcula idade se a data da avaliação mudar
   useEffect(() => {
     if (patientBirthDate && formData.date) {
         setFormData(prev => ({ ...prev, age: calculateAgeAtDate(patientBirthDate, prev.date) }));
@@ -105,6 +106,31 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
       setFormData(prev => ({ ...prev, imc: parseFloat(imc.toFixed(1)) }));
     }
   }, [formData.weight, formData.height]);
+
+  // Auto-calculate BMR (Mifflin-St Jeor)
+  useEffect(() => {
+    // Só calcula se tiver peso, altura, idade e não estiver editando um valor manual específico (opcional, aqui sobrescrevemos para ajudar)
+    if (formData.weight > 0 && formData.height > 0 && formData.age > 0 && patientGender) {
+        // Mifflin-St Jeor Equation
+        // Men: (10 × weight) + (6.25 × height_cm) - (5 × age) + 5
+        // Women: (10 × weight) + (6.25 × height_cm) - (5 × age) - 161
+        const weightPart = 10 * formData.weight;
+        const heightPart = 6.25 * (formData.height * 100);
+        const agePart = 5 * formData.age;
+        
+        let bmr = 0;
+        if (patientGender === 'Masculino') {
+            bmr = weightPart + heightPart - agePart + 5;
+        } else {
+            bmr = weightPart + heightPart - agePart - 161;
+        }
+        
+        // Only update if BMR is currently 0 (new form) to avoid overwriting manual edits during session, 
+        // OR update always if we want dynamic calculation (usually better for UX in simplified apps)
+        // Let's update if it's a new entry OR if the user hasn't heavily modified it yet.
+        setFormData(prev => ({ ...prev, bmr: Math.round(bmr) }));
+    }
+  }, [formData.weight, formData.height, formData.age, patientGender]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -151,7 +177,7 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
             <div className="relative">
                <InputGroup label="IMC" name="imc" step="0.1" value={formData.imc} onChange={handleChange} />
                <div className="absolute top-0 right-0">
-                  <span className="text-[10px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <span className="text-[10px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full flex items-center gap-1">
                     <Calculator size={10} /> Auto
                   </span>
                </div>
@@ -171,7 +197,14 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
           <div className="p-4 bg-slate-50 rounded-xl space-y-4 border border-slate-100">
             <h3 className="font-semibold text-slate-700 text-sm uppercase tracking-wide mb-2">Indicadores Metabólicos</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <InputGroup label="Taxa Metabólica Basal" name="bmr" unit="Kcal" step="1" value={formData.bmr} onChange={handleChange} />
+                <div className="relative">
+                    <InputGroup label="Taxa Metabólica Basal" name="bmr" unit="Kcal" step="1" value={formData.bmr} onChange={handleChange} />
+                    <div className="absolute top-0 right-0">
+                        <span className="text-[10px] text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full flex items-center gap-1" title="Calculado via Mifflin-St Jeor">
+                            <Flame size={10} /> Auto
+                        </span>
+                    </div>
+                </div>
                 <InputGroup label="Gordura Visceral" name="visceralFat" step="1" value={formData.visceralFat} onChange={handleChange} />
                 <InputGroup label="Idade Corporal" name="bodyAge" unit="anos" step="1" value={formData.bodyAge} onChange={handleChange} />
             </div>
@@ -187,7 +220,7 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-3 bg-emerald-600 text-white rounded-xl font-medium hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-emerald-200"
+              className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-200"
             >
               <Save size={18} /> {initialData ? 'Salvar Alterações' : 'Salvar Registro'}
             </button>

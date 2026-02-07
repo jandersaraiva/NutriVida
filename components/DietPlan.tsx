@@ -455,7 +455,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                     <Target size={12} /> Meta: {targetCalories}
                                 </span>
                                 <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold mt-1 ${
-                                    Math.abs(diff) < 50 ? 'bg-emerald-100 text-emerald-700' : 
+                                    Math.abs(diff) < 50 ? 'bg-blue-100 text-blue-700' : 
                                     diff > 0 ? 'bg-amber-100 text-amber-700' : 
                                     'bg-blue-100 text-blue-700'
                                 }`}>
@@ -520,7 +520,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
             <p className="text-slate-500 mb-6 max-w-md">Crie o primeiro ciclo de dieta para este paciente.</p>
             <button 
               onClick={handleCreateNewPlan}
-              className="bg-emerald-600 text-white px-6 py-3 rounded-xl hover:bg-emerald-700 transition-colors font-medium shadow-lg shadow-emerald-200 flex items-center gap-2"
+              className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors font-medium shadow-lg shadow-blue-200 flex items-center gap-2"
             >
               <Plus size={20} /> Criar Primeiro Plano
             </button>
@@ -542,7 +542,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden lg:col-span-1 print:hidden">
              <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
                  <h3 className="font-bold text-slate-800 text-sm">Ciclos de Dieta</h3>
-                 <button onClick={handleCreateNewPlan} className="text-emerald-600 hover:bg-emerald-100 p-1.5 rounded-lg transition-colors" title="Novo Ciclo">
+                 <button onClick={handleCreateNewPlan} className="text-blue-600 hover:bg-blue-100 p-1.5 rounded-lg transition-colors" title="Novo Ciclo">
                     <FilePlus size={18} />
                  </button>
              </div>
@@ -558,11 +558,11 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                             }
                         }}
                         className={`p-4 border-b border-slate-50 cursor-pointer transition-colors hover:bg-slate-50 group ${
-                            selectedPlanId === plan.id ? 'bg-emerald-50/50 border-l-4 border-l-emerald-500' : 'border-l-4 border-l-transparent'
+                            selectedPlanId === plan.id ? 'bg-blue-50/50 border-l-4 border-l-blue-500' : 'border-l-4 border-l-transparent'
                         }`}
                      >
                          <div className="flex justify-between items-start mb-1">
-                             <span className={`text-xs font-bold uppercase px-1.5 py-0.5 rounded ${plan.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                             <span className={`text-xs font-bold uppercase px-1.5 py-0.5 rounded ${plan.status === 'active' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-500'}`}>
                                  {plan.status === 'active' ? 'Ativo' : 'Histórico'}
                              </span>
                              <button 
@@ -572,7 +572,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                 <Trash2 size={14} />
                              </button>
                          </div>
-                         <h4 className={`font-semibold text-sm mb-1 ${selectedPlanId === plan.id ? 'text-emerald-900' : 'text-slate-700'}`}>
+                         <h4 className={`font-semibold text-sm mb-1 ${selectedPlanId === plan.id ? 'text-blue-900' : 'text-slate-700'}`}>
                              {plan.name}
                          </h4>
                          <div className="flex items-center gap-1 text-xs text-slate-400">
@@ -603,7 +603,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                     type="text" 
                                     value={editForm?.name || ''}
                                     onChange={(e) => setEditForm({...editForm!, name: e.target.value})}
-                                    className="text-xl font-bold text-slate-900 border-b border-dashed border-slate-300 focus:border-emerald-500 outline-none bg-transparent placeholder-slate-400"
+                                    className="text-xl font-bold text-slate-900 border-b border-dashed border-slate-300 focus:border-blue-500 outline-none bg-transparent placeholder-slate-400"
                                 />
                             ) : (
                                 <h2 className="text-xl font-bold text-slate-800">{currentPlan.name}</h2>
@@ -617,7 +617,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                             {isEditing ? (
                                 <>
                                     <button onClick={() => setIsEditing(false)} className="px-4 py-2 text-slate-500 hover:bg-slate-50 rounded-lg transition-colors font-medium text-sm">Cancelar</button>
-                                    <button onClick={handleSaveEdit} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm font-medium text-sm">
+                                    <button onClick={handleSaveEdit} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-medium text-sm">
                                         <Save size={16} /> Salvar
                                     </button>
                                 </>
@@ -627,10 +627,10 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                         <Printer size={16} /> <span className="hidden sm:inline">Imprimir</span>
                                     </button>
                                     <button onClick={handleCopyDiet} className="flex items-center gap-2 px-3 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors font-medium text-sm">
-                                        {copied ? <Check size={16} className="text-emerald-600" /> : <Copy size={16} />}
+                                        {copied ? <Check size={16} className="text-blue-600" /> : <Copy size={16} />}
                                         <span className="hidden sm:inline">{copied ? 'Copiado' : 'Copiar Texto'}</span>
                                     </button>
-                                    <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm font-medium text-sm">
+                                    <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-medium text-sm">
                                         <Edit2 size={16} /> Editar
                                     </button>
                                 </>
@@ -671,7 +671,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                     {/* Editor / Viewer Body */}
                     <div className="space-y-6 print:space-y-4">
                          {(isEditing ? editForm?.meals : currentPlan.meals)?.map((meal) => (
-                             <div key={meal.id} className={`rounded-xl p-4 border transition-all ${isEditing ? 'bg-slate-50 border-slate-200' : 'bg-white border-slate-100 hover:border-emerald-200 shadow-sm'} print:border-slate-300 print:shadow-none print:break-inside-avoid`}>
+                             <div key={meal.id} className={`rounded-xl p-4 border transition-all ${isEditing ? 'bg-slate-50 border-slate-200' : 'bg-white border-slate-100 hover:border-blue-200 shadow-sm'} print:border-slate-300 print:shadow-none print:break-inside-avoid`}>
                                  {/* Meal Header */}
                                  <div className="flex justify-between items-center mb-3">
                                      <div className="flex items-center gap-3">
@@ -680,10 +680,10 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                                  type="time" 
                                                  value={meal.time} 
                                                  onChange={(e) => handleMealChange(meal.id, 'time', e.target.value)}
-                                                 className="bg-white border border-slate-300 rounded px-2 py-1 text-sm font-bold w-24 text-slate-900 outline-none focus:border-emerald-500"
+                                                 className="bg-white border border-slate-300 rounded px-2 py-1 text-sm font-bold w-24 text-slate-900 outline-none focus:border-blue-500"
                                              />
                                          ) : (
-                                            <div className="flex items-center gap-2 text-emerald-700 font-bold bg-emerald-50 px-3 py-1 rounded-lg print:bg-slate-100 print:text-slate-800 print:border print:border-slate-200">
+                                            <div className="flex items-center gap-2 text-blue-700 font-bold bg-blue-50 px-3 py-1 rounded-lg print:bg-slate-100 print:text-slate-800 print:border print:border-slate-200">
                                                 <Clock size={14} className="print:hidden" />
                                                 {meal.time}
                                             </div>
@@ -694,7 +694,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                                 type="text" 
                                                 value={meal.name}
                                                 onChange={(e) => handleMealChange(meal.id, 'name', e.target.value)}
-                                                className="bg-white border border-slate-300 rounded px-2 py-1 text-sm font-bold w-40 sm:w-64 text-slate-900 outline-none focus:border-emerald-500"
+                                                className="bg-white border border-slate-300 rounded px-2 py-1 text-sm font-bold w-40 sm:w-64 text-slate-900 outline-none focus:border-blue-500"
                                              />
                                          ) : (
                                              <h3 className="font-bold text-slate-800">{meal.name}</h3>
@@ -721,7 +721,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                                  <>
                                                      <div className="flex gap-2 w-full sm:w-auto">
                                                          <input 
-                                                             className="w-20 p-1 border border-slate-300 rounded text-xs bg-white text-slate-900 focus:border-emerald-500 outline-none" 
+                                                             className="w-20 p-1 border border-slate-300 rounded text-xs bg-white text-slate-900 focus:border-blue-500 outline-none" 
                                                              placeholder="Qtd" 
                                                              value={item.quantity} 
                                                              onChange={(e) => handleItemChange(meal.id, item.id, 'quantity', e.target.value)} 
@@ -729,7 +729,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                                          <div className="relative flex-1 sm:w-64">
                                                              <div className="relative">
                                                                 <input 
-                                                                    className="w-full p-1 border border-slate-300 rounded text-xs pr-8 bg-white text-slate-900 focus:border-emerald-500 outline-none" 
+                                                                    className="w-full p-1 border border-slate-300 rounded text-xs pr-8 bg-white text-slate-900 focus:border-blue-500 outline-none" 
                                                                     placeholder="Buscar alimento..." 
                                                                     value={item.name} 
                                                                     onFocus={() => item.name.length >= 2 && setActiveSuggestionId(item.id)}
@@ -746,7 +746,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                                                         <div 
                                                                             key={idx} 
                                                                             onClick={() => handleSelectSuggestion(meal.id, item.id, f)} 
-                                                                            className="p-2.5 hover:bg-emerald-50 cursor-pointer border-b border-slate-50 last:border-0 group"
+                                                                            className="p-2.5 hover:bg-blue-50 cursor-pointer border-b border-slate-50 last:border-0 group"
                                                                         >
                                                                             <div className="font-medium text-slate-700 text-xs">{f.name}</div>
                                                                             <div className="text-[10px] text-slate-400 mt-0.5 flex gap-2">
@@ -754,7 +754,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                                                                 <span>P:{f.protein}</span>
                                                                                 <span>C:{f.carbs}</span>
                                                                                 <span>G:{f.fats}</span>
-                                                                                <span className="ml-auto text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity font-medium">Selecionar</span>
+                                                                                <span className="ml-auto text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity font-medium">Selecionar</span>
                                                                             </div>
                                                                         </div>
                                                                     ))}
@@ -782,7 +782,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                                  // View Mode Item
                                                  <div className="flex justify-between w-full group/item">
                                                      <div className="flex items-center">
-                                                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-2 print:border print:border-slate-400 print:bg-white"></span>
+                                                         <span className="w-1.5 h-1.5 rounded-full bg-blue-400 mr-2 print:border print:border-slate-400 print:bg-white"></span>
                                                          <span className="font-semibold text-slate-700 mr-1.5">{item.quantity}</span>
                                                          <span className="text-slate-600">{item.name}</span>
                                                      </div>
@@ -798,7 +798,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                          </li>
                                      ))}
                                      {isEditing && (
-                                         <button onClick={() => handleAddItem(meal.id)} className="text-xs text-emerald-600 hover:underline flex items-center gap-1 mt-2">
+                                         <button onClick={() => handleAddItem(meal.id)} className="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-2">
                                              <Plus size={12} /> Adicionar Item
                                          </button>
                                      )}
@@ -807,7 +807,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                          ))}
 
                          {isEditing && (
-                             <button onClick={handleAddMeal} className="w-full py-2 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 hover:border-emerald-400 hover:text-emerald-600 transition-colors text-sm font-medium">
+                             <button onClick={handleAddMeal} className="w-full py-2 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 hover:border-blue-400 hover:text-blue-600 transition-colors text-sm font-medium">
                                  + Adicionar Refeição
                              </button>
                          )}
@@ -819,7 +819,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Observações</label>
                                 <textarea 
-                                    className="w-full bg-white text-slate-900 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none placeholder-slate-400" 
+                                    className="w-full bg-white text-slate-900 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none placeholder-slate-400" 
                                     rows={4}
                                     value={editForm?.notes || ''}
                                     onChange={(e) => setEditForm({...editForm!, notes: e.target.value})}
@@ -852,7 +852,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                 type="text" 
                                 value={newPlanName}
                                 onChange={(e) => setNewPlanName(e.target.value)}
-                                className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500"
+                                className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
 
@@ -862,14 +862,14 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                 <button 
                                     onClick={() => setNewPlanType('copy')}
                                     disabled={!currentPlan}
-                                    className={`p-3 rounded-xl border text-left transition-all ${newPlanType === 'copy' ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-slate-200 hover:bg-slate-50'}`}
+                                    className={`p-3 rounded-xl border text-left transition-all ${newPlanType === 'copy' ? 'border-blue-500 bg-blue-50 text-blue-800' : 'border-slate-200 hover:bg-slate-50'}`}
                                 >
                                     <span className="block font-bold text-sm mb-1">Copiar Atual</span>
                                     <span className="block text-xs opacity-70">Usa o plano ativo como base</span>
                                 </button>
                                 <button 
                                     onClick={() => setNewPlanType('blank')}
-                                    className={`p-3 rounded-xl border text-left transition-all ${newPlanType === 'blank' ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-slate-200 hover:bg-slate-50'}`}
+                                    className={`p-3 rounded-xl border text-left transition-all ${newPlanType === 'blank' ? 'border-blue-500 bg-blue-50 text-blue-800' : 'border-slate-200 hover:bg-slate-50'}`}
                                 >
                                     <span className="block font-bold text-sm mb-1">Em Branco</span>
                                     <span className="block text-xs opacity-70">Começar do zero</span>
@@ -885,7 +885,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
 
                     <div className="flex justify-end gap-3 mt-6">
                         <button onClick={() => setShowNewPlanModal(false)} className="px-4 py-2 text-slate-500 hover:bg-slate-50 rounded-lg text-sm font-medium">Cancelar</button>
-                        <button onClick={confirmCreateNewPlan} className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium shadow-sm">Criar Ciclo</button>
+                        <button onClick={confirmCreateNewPlan} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium shadow-sm">Criar Ciclo</button>
                     </div>
                 </div>
             </div>

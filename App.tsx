@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard'; // Patient Dashboard
 import { MainDashboard } from './components/MainDashboard'; // Clinic Dashboard
@@ -202,10 +202,45 @@ const SEED_NUTRITIONIST: Nutritionist = {
 };
 
 const App: React.FC = () => {
-  const [patients, setPatients] = useState<Patient[]>(SEED_PATIENTS);
-  const [appointments, setAppointments] = useState<Appointment[]>(SEED_APPOINTMENTS);
-  const [nutritionist, setNutritionist] = useState<Nutritionist>(SEED_NUTRITIONIST);
+  // --- STATE WITH PERSISTENCE ---
+  const [patients, setPatients] = useState<Patient[]>(() => {
+    const saved = localStorage.getItem('nutrivida_patients');
+    return saved ? JSON.parse(saved) : SEED_PATIENTS;
+  });
+
+  const [appointments, setAppointments] = useState<Appointment[]>(() => {
+    const saved = localStorage.getItem('nutrivida_appointments');
+    return saved ? JSON.parse(saved) : SEED_APPOINTMENTS;
+  });
+
+  const [nutritionist, setNutritionist] = useState<Nutritionist>(() => {
+    const saved = localStorage.getItem('nutrivida_nutritionist');
+    return saved ? JSON.parse(saved) : SEED_NUTRITIONIST;
+  });
   
+  // --- PERSISTENCE EFFECTS ---
+  useEffect(() => {
+    localStorage.setItem('nutrivida_patients', JSON.stringify(patients));
+  }, [patients]);
+
+  useEffect(() => {
+    localStorage.setItem('nutrivida_appointments', JSON.stringify(appointments));
+  }, [appointments]);
+
+  useEffect(() => {
+    localStorage.setItem('nutrivida_nutritionist', JSON.stringify(nutritionist));
+  }, [nutritionist]);
+
+  // --- RESET HANDLER ---
+  const handleResetData = () => {
+    if (window.confirm('ATENÇÃO: Tem certeza que deseja resetar todos os dados? \nIsso apagará todos os pacientes e agendamentos criados e restaurará os dados de demonstração.')) {
+        localStorage.removeItem('nutrivida_patients');
+        localStorage.removeItem('nutrivida_appointments');
+        localStorage.removeItem('nutrivida_nutritionist');
+        window.location.reload();
+    }
+  };
+
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null); // Start with no patient
   const [currentView, setCurrentView] = useState<ViewState>('home'); // Default to dashboard
   const [activeTab, setActiveTab] = useState<PatientTab>('overview');
@@ -389,7 +424,7 @@ const App: React.FC = () => {
             onClick={() => setActiveTab(tab.id as PatientTab)}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${
               isActive 
-                ? 'bg-emerald-50 text-emerald-700 shadow-sm ring-1 ring-emerald-100' 
+                ? 'bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-100' 
                 : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
             }`}
           >
@@ -481,6 +516,7 @@ const App: React.FC = () => {
             <NutritionistProfile 
                 data={nutritionist}
                 onSave={setNutritionist}
+                onResetData={handleResetData}
             />
           )}
 
@@ -563,7 +599,7 @@ const App: React.FC = () => {
 
               {activeTab === 'profile' && (
                 <div className="bg-white rounded-2xl shadow-sm p-8 max-w-4xl mx-auto">
-                  <div className="flex items-center gap-4 mb-6 text-emerald-600">
+                  <div className="flex items-center gap-4 mb-6 text-blue-600">
                     <User size={32} />
                     <h2 className="text-xl font-semibold">Dados Pessoais</h2>
                   </div>
@@ -624,6 +660,7 @@ const App: React.FC = () => {
               lastRecord={activeCheckIns[0]}
               patientBirthDate={activePatient.birthDate}
               initialData={checkInToEdit}
+              patientGender={activePatient.gender} // PASSING GENDER FOR BMR CALCULATION
             />
           )}
 

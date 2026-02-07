@@ -22,10 +22,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) =
       <div>
         <div className="h-20 flex items-center justify-center lg:justify-start lg:px-6 border-b border-slate-100">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-600 rounded-lg text-white">
+            <div className="p-2 bg-blue-600 rounded-lg text-white">
               <Activity size={24} />
             </div>
-            <span className="font-bold text-xl text-emerald-900 hidden lg:block">NutriVida</span>
+            <span className="font-bold text-xl text-blue-900 hidden lg:block">NutriVida</span>
           </div>
         </div>
 
@@ -47,11 +47,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) =
                 onClick={() => onViewChange(item.id as ViewState)}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
                   isActive 
-                    ? 'bg-emerald-50 text-emerald-700 font-medium shadow-sm ring-1 ring-emerald-100' 
-                    : 'text-slate-500 hover:bg-slate-50 hover:text-emerald-600'
+                    ? 'bg-blue-50 text-blue-700 font-medium shadow-sm ring-1 ring-blue-100' 
+                    : 'text-slate-500 hover:bg-slate-50 hover:text-blue-600'
                 }`}
               >
-                <Icon size={22} className={isActive ? 'text-emerald-600' : 'text-slate-400 group-hover:text-emerald-500'} />
+                <Icon size={22} className={isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-blue-500'} />
                 <span className="hidden lg:block">{item.label}</span>
               </button>
             );

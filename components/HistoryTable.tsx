@@ -15,7 +15,7 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, on
     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
       <div className="p-6 border-b border-slate-100 flex justify-between items-center">
         <h3 className="font-bold text-lg text-slate-800">Histórico Completo</h3>
-        <button className="text-sm text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-2">
+        <button className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-2">
           <Download size={16} /> Exportar CSV
         </button>
       </div>
@@ -56,7 +56,7 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, on
                 <td className="px-6 py-4 text-slate-600">{checkIn.muscleMass.toFixed(1)}%</td>
                 <td className="px-6 py-4 text-slate-600">
                     {checkIn.bodyAge ? (
-                        <span className={`${checkIn.bodyAge < checkIn.age ? 'text-emerald-600 font-semibold' : 'text-slate-600'}`}>
+                        <span className={`${checkIn.bodyAge < checkIn.age ? 'text-blue-600 font-semibold' : 'text-slate-600'}`}>
                             {checkIn.bodyAge} anos
                         </span>
                     ) : '-'}
@@ -80,7 +80,7 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, on
                     )}
                     <button 
                       onClick={() => onEdit(checkIn)}
-                      className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                      className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                       title="Editar"
                     >
                       <Pencil size={16} />

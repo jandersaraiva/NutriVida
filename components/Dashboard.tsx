@@ -47,7 +47,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
     if (isNeutral) return <span className="text-slate-400 text-xs flex items-center gap-1">Estável</span>;
     
     const isGood = inverse ? diff < 0 : diff > 0;
-    const colorClass = isGood ? 'text-emerald-600' : 'text-rose-600';
+    const colorClass = isGood ? 'text-blue-600' : 'text-rose-600'; // Azul para bom (antes era verde)
     const sign = diff > 0 ? '+' : '';
 
     return (
@@ -94,11 +94,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
     return null;
   };
 
-  // Custom Dot para o Gráfico de Idade (Verde se bodyAge <= age, Vermelho se >)
+  // Custom Dot para o Gráfico de Idade (Azul se bodyAge <= age, Vermelho se >)
   const CustomBodyAgeDot = (props: any) => {
     const { cx, cy, payload } = props;
     const isGood = payload.bodyAge <= payload.age;
-    const color = isGood ? '#10b981' : '#f43f5e'; // emerald-500 or rose-500
+    const color = isGood ? '#3b82f6' : '#f43f5e'; // blue-500 or rose-500
     
     // Reduzi r de 5 para 4 e strokeWidth de 3 para 2
     return (
@@ -124,12 +124,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
                   
                   <div className="flex justify-between items-center mb-3">
                       <span className="text-slate-500">Idade Corporal</span>
-                      <span className={`font-bold ${isGood ? 'text-emerald-600' : 'text-rose-500'}`}>
+                      <span className={`font-bold ${isGood ? 'text-blue-600' : 'text-rose-500'}`}>
                           {data.bodyAge} anos
                       </span>
                   </div>
 
-                  <div className={`mt-2 p-2 rounded-lg text-center text-xs font-bold flex items-center justify-center gap-1 ${isGood ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+                  <div className={`mt-2 p-2 rounded-lg text-center text-xs font-bold flex items-center justify-center gap-1 ${isGood ? 'bg-blue-50 text-blue-700' : 'bg-rose-50 text-rose-700'}`}>
                       {isGood ? <TrendingDown size={14} /> : <TrendingUp size={14} />}
                       {diff === 0 ? 'Equilibrado' : 
                        diff < 0 ? `${Math.abs(diff)} anos a menos` : 
@@ -142,6 +142,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
   };
 
   // --- Lógica para Gráfico de Gordura Visceral ---
+  // Mantendo cores semânticas (Verde = Bom) para indicadores de saúde
   const getVisceralColor = (value: number) => {
     if (value <= 9) return '#10b981'; // Green (Normal)
     if (value <= 14) return '#f59e0b'; // Amber (Alert)
@@ -152,7 +153,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
     const { cx, cy, payload } = props;
     const color = getVisceralColor(payload.visceralFat);
     // Reduzi r de 5 para 4 e strokeWidth de 3 para 2
-    return <circle cx={cx} cy={cy} r={4} stroke={color} strokeWidth={2} fill="white" />;
+    return <circle cx={cx} cy={cy} r={4} stroke={color} strokeWidth={2} fill="white" />
   };
 
   const CustomVisceralTooltip = ({ active, payload, label }: any) => {
@@ -160,7 +161,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
         const data = payload[0].payload;
         const value = data.visceralFat;
         let status = 'Normal';
-        let statusColor = 'text-emerald-600 bg-emerald-50';
+        let statusColor = 'text-emerald-600 bg-emerald-50'; // Semantic green stays
         let dotColor = '#10b981';
         let Icon = CheckCircle;
 
@@ -200,7 +201,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
     return (
       <div className="flex flex-col items-center justify-center h-96 bg-white rounded-2xl border border-dashed border-slate-300">
         <p className="text-slate-500 mb-4">Nenhuma avaliação registrada para este paciente.</p>
-        <button onClick={onAddEntry} className="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700">
+        <button onClick={onAddEntry} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
           Realizar Primeira Avaliação
         </button>
       </div>
@@ -229,6 +230,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
   );
 
   // Helper para cor do IMC
+  // Semantic colors (Health) stay Green/Yellow/Red
   const getImcColor = (imc: number) => {
     if (imc < 18.5) return 'text-yellow-600 bg-yellow-100';
     if (imc >= 18.5 && imc < 25) return 'text-emerald-600 bg-emerald-100';
@@ -237,7 +239,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
 
   // Helper para cor da Idade Corporal
   const getBodyAgeColor = (bodyAge: number, realAge: number) => {
-      if (bodyAge < realAge) return 'text-emerald-600 bg-emerald-100';
+      if (bodyAge < realAge) return 'text-blue-600 bg-blue-100';
       if (bodyAge > realAge) return 'text-rose-600 bg-rose-100';
       return 'text-blue-600 bg-blue-100';
   };
@@ -403,7 +405,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
-              <Activity size={18} className="text-violet-500" />
+              <Activity size={18} className="text-blue-500" />
               Composição do Peso (kg)
             </h3>
           </div>
@@ -415,9 +417,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
                 <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} domain={['auto', 'auto']} unit="kg" />
                 <Tooltip content={<CustomCompositionTooltip />} cursor={{ opacity: 0.2 }} />
                 <Legend iconType="circle" wrapperStyle={{paddingTop: '20px'}} />
-                <Line type="monotone" dataKey="weight" name="Peso Total" stroke="#3b82f6" strokeWidth={2} dot={{r: 3}} />
-                <Line type="monotone" dataKey="muscleMassKg" name="Massa Magra (kg)" stroke="#10b981" strokeWidth={2} dot={{r: 3}} />
-                <Line type="monotone" dataKey="fatMassKg" name="Massa Gorda (kg)" stroke="#f97316" strokeWidth={2} dot={{r: 3}} />
+                <Line type="monotone" dataKey="weight" name="Peso Total" stroke="#94a3b8" strokeWidth={2} dot={{r: 3}} />
+                {/* Muscle Line is now Blue */}
+                <Line type="monotone" dataKey="muscleMassKg" name="Massa Magra (kg)" stroke="#3b82f6" strokeWidth={2} dot={{r: 3}} />
+                <Line type="monotone" dataKey="fatMassKg" name="Massa Gorda (kg)" stroke="#f43f5e" strokeWidth={2} dot={{r: 3}} />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
@@ -432,7 +435,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
             <div className="flex justify-between items-center mb-6">
                 <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                    <Hourglass size={18} className="text-emerald-500" />
+                    <Hourglass size={18} className="text-blue-500" />
                     Comparativo: Idade Corporal vs. Idade Real
                 </h3>
             </div>
@@ -441,8 +444,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
                 <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                     <defs>
                         <linearGradient id="colorBodyAge" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
-                            <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/>
+                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
                         </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -470,12 +473,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
                         type="monotone" 
                         dataKey="bodyAge" 
                         name="Idade Corporal" 
-                        stroke="#10b981" 
+                        stroke="#3b82f6" 
                         strokeWidth={3} 
                         fillOpacity={1} 
                         fill="url(#colorBodyAge)" 
                         dot={<CustomBodyAgeDot />}
-                        activeDot={{ r: 5, strokeWidth: 0, fill: '#059669' }}
+                        activeDot={{ r: 5, strokeWidth: 0, fill: '#2563eb' }}
                     />
                 </AreaChart>
                 </ResponsiveContainer>

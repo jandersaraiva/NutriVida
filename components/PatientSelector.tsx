@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Patient } from '../types';
 import { UserPlus, Activity, Utensils, Search, ChevronRight, ArrowLeft, User } from 'lucide-react';
@@ -46,9 +47,9 @@ export const PatientSelector: React.FC<PatientSelectorProps> = ({
           {/* Opção 1: Novo Paciente */}
           <button 
             onClick={onCreateNew}
-            className="flex flex-col items-center p-8 bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-xl hover:border-emerald-500 hover:-translate-y-1 transition-all group"
+            className="flex flex-col items-center p-8 bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-xl hover:border-blue-500 hover:-translate-y-1 transition-all group"
           >
-            <div className="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-6 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+            <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-6 group-hover:bg-blue-600 group-hover:text-white transition-colors">
               <UserPlus size={36} />
             </div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">Novo Paciente</h3>
@@ -140,7 +141,7 @@ export const PatientSelector: React.FC<PatientSelectorProps> = ({
                     <p className="text-slate-400">Nenhum paciente encontrado com este nome.</p>
                     <button 
                         onClick={onCreateNew} 
-                        className="mt-2 text-emerald-600 font-medium hover:underline"
+                        className="mt-2 text-blue-600 font-medium hover:underline"
                     >
                         Cadastrar novo paciente?
                     </button>
