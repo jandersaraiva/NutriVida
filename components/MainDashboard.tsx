@@ -13,7 +13,8 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({ patients, appointm
   // KPIs
   const activePatients = patients.filter(p => p.status === 'active');
   const totalActive = activePatients.length;
-  const patientsWithDiet = activePatients.filter(p => p.diet && p.diet.meals.length > 0).length;
+  // Corrigido: Verifica se existe algum plano de dieta ativo na lista de dietPlans
+  const patientsWithDiet = activePatients.filter(p => p.dietPlans && p.dietPlans.some(plan => plan.status === 'active')).length;
   
   const today = new Date().toISOString().split('T')[0];
   const appointmentsToday = appointments.filter(a => a.date === today && a.status !== 'Cancelado');
@@ -74,7 +75,7 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({ patients, appointm
         <Card 
             title="Dietas Ativas" 
             value={patientsWithDiet} 
-            subtext={`${((patientsWithDiet/totalActive || 0)*100).toFixed(0)}% dos pacientes`}
+            subtext={`${totalActive > 0 ? ((patientsWithDiet/totalActive)*100).toFixed(0) : 0}% dos pacientes`}
             icon={Utensils} 
             colorClass="bg-orange-500 text-orange-500"
             onClick={() => onNavigateTo('active_diets')}
@@ -141,19 +142,20 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({ patients, appointm
                     Atenção Necessária
                 </h3>
                 <div className="space-y-3">
-                    {activePatients.filter(p => !p.diet || p.diet.meals.length === 0).slice(0, 3).map(p => (
+                    {/* Corrigido: Filtra pacientes sem planos de dieta ou sem planos ativos */}
+                    {activePatients.filter(p => !p.dietPlans || !p.dietPlans.some(plan => plan.status === 'active')).slice(0, 3).map(p => (
                         <div key={p.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => onNavigateTo('patients')}>
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${p.avatarColor}`}>
                                 {p.name.substring(0,2).toUpperCase()}
                             </div>
                             <div className="flex-1">
                                 <p className="text-sm font-medium text-slate-700 truncate">{p.name}</p>
-                                <p className="text-xs text-orange-500">Sem dieta cadastrada</p>
+                                <p className="text-xs text-orange-500">Sem dieta ativa cadastrada</p>
                             </div>
                         </div>
                     ))}
-                    {activePatients.filter(p => !p.diet || p.diet.meals.length === 0).length === 0 && (
-                        <p className="text-sm text-slate-400">Tudo certo! Todos os pacientes possuem dieta.</p>
+                    {activePatients.filter(p => !p.dietPlans || !p.dietPlans.some(plan => plan.status === 'active')).length === 0 && (
+                        <p className="text-sm text-slate-400">Tudo certo! Todos os pacientes possuem dieta ativa.</p>
                     )}
                 </div>
             </div>
