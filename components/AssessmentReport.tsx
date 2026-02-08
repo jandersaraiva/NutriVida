@@ -97,8 +97,15 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
         let headerHeight = 0;
         let headerData: string | null = null;
 
+        const canvasOptions = {
+            scale: 2, // Alta resolução
+            backgroundColor: backgroundColor,
+            useCORS: true, // Importante para imagens externas
+            logging: false
+        };
+
         if (headerEl) {
-            const headerCanvas = await html2canvas(headerEl, { scale: 2, backgroundColor });
+            const headerCanvas = await html2canvas(headerEl, canvasOptions);
             headerData = headerCanvas.toDataURL('image/png');
             // Calcula a altura proporcional no PDF
             headerHeight = (headerCanvas.height * contentWidth) / headerCanvas.width;
@@ -124,7 +131,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
         // 3. Iterar sobre as seções e paginar
         for (const section of sections) {
             // Captura a seção
-            const canvas = await html2canvas(section, { scale: 2, backgroundColor });
+            const canvas = await html2canvas(section, canvasOptions);
             const imgData = canvas.toDataURL('image/png');
             const imgHeight = (canvas.height * contentWidth) / canvas.width;
 
@@ -461,7 +468,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                         <p className="text-xs text-center font-bold text-slate-600 dark:text-slate-300 mb-2">Peso Corporal (kg) e IMC</p>
                         <div className="h-48 w-full">
                             <ResponsiveContainer width="100%" height="100%">
-                                <ComposedChart data={chartData} margin={{ top: 20, right: 10, left: 10, bottom: 0 }}>
+                                <ComposedChart data={chartData} margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridColor} />
                                     <XAxis dataKey="date" tick={{fontSize: 10, fill: chartTextColor}} axisLine={false} tickLine={false} />
                                     <YAxis yAxisId="left" hide domain={['dataMin - 2', 'dataMax + 2']} />
@@ -499,7 +506,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                         <p className="text-xs text-center font-bold text-slate-600 dark:text-slate-300 mb-2">Composição Corporal (Kg)</p>
                         <div className="h-48 w-full">
                             <ResponsiveContainer width="100%" height="100%">
-                                <ComposedChart data={chartData} margin={{ top: 20, right: 10, left: 10, bottom: 0 }}>
+                                <ComposedChart data={chartData} margin={{ top: 20, right: 20, left: 20, bottom: 30 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridColor} />
                                     <XAxis dataKey="date" tick={{fontSize: 10, fill: chartTextColor}} axisLine={false} tickLine={false} />
                                     <YAxis hide />
@@ -537,7 +544,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                         <p className="text-xs text-center font-bold text-slate-600 dark:text-slate-300 mb-2 flex items-center justify-center gap-1"><Flame size={12} className="text-amber-500"/> Nível Visceral</p>
                         <div className="h-48 w-full">
                             <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={chartData} margin={{ top: 20, right: 10, left: 10, bottom: 0 }}>
+                                <AreaChart data={chartData} margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridColor} />
                                     <XAxis dataKey="date" tick={{fontSize: 10, fill: chartTextColor}} axisLine={false} tickLine={false} />
                                     <YAxis hide domain={[0, 'dataMax + 2']} />
@@ -562,7 +569,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                         <p className="text-xs text-center font-bold text-slate-600 dark:text-slate-300 mb-2 flex items-center justify-center gap-1"><Hourglass size={12} className="text-blue-500"/> Idade Corporal (anos)</p>
                         <div className="h-48 w-full">
                             <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={chartData} margin={{ top: 20, right: 10, left: 10, bottom: 0 }}>
+                                <AreaChart data={chartData} margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridColor} />
                                     <XAxis dataKey="date" tick={{fontSize: 10, fill: chartTextColor}} axisLine={false} tickLine={false} />
                                     <YAxis hide domain={['dataMin - 5', 'dataMax + 5']} />
