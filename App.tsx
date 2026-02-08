@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard'; // Patient Dashboard
@@ -204,6 +203,23 @@ const SEED_NUTRITIONIST: Nutritionist = {
 };
 
 const App: React.FC = () => {
+  // --- THEME STATE ---
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    return localStorage.getItem('nutrivida_theme') === 'dark';
+  });
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('nutrivida_theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('nutrivida_theme', 'light');
+    }
+  }, [isDarkMode]);
+
+  const toggleTheme = () => setIsDarkMode(prev => !prev);
+
   // --- STATE WITH PERSISTENCE ---
   const [patients, setPatients] = useState<Patient[]>(() => {
     const saved = localStorage.getItem('nutrivida_patients');
@@ -410,7 +426,7 @@ const App: React.FC = () => {
 
   // Render Tabs Logic
   const renderTabs = () => (
-    <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 mb-6 w-full max-w-2xl mx-auto print:hidden">
+    <div className="flex items-center gap-1 bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 mb-6 w-full max-w-2xl mx-auto print:hidden">
       {[
         { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard },
         { id: 'anamnesis', label: 'Anamnese', icon: Stethoscope }, // Nova Aba
@@ -426,8 +442,8 @@ const App: React.FC = () => {
             onClick={() => setActiveTab(tab.id as PatientTab)}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${
               isActive 
-                ? 'bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-100' 
-                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
+                ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 shadow-sm ring-1 ring-blue-100 dark:ring-blue-800' 
+                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200'
             }`}
           >
             <Icon size={16} />
@@ -439,9 +455,9 @@ const App: React.FC = () => {
   );
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden font-sans transition-colors duration-200">
       {/* Sidebar Navigation */}
-      <Sidebar currentView={currentView} onViewChange={handleViewChange} />
+      <Sidebar currentView={currentView} onViewChange={handleViewChange} isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
 
       {/* Main Content Area */}
       <main className="flex-1 overflow-y-auto p-4 md:p-8 print:p-0 print:overflow-visible">
@@ -450,7 +466,7 @@ const App: React.FC = () => {
         {currentView !== 'home' && currentView !== 'active_diets' && currentView !== 'assessment_report' && (
           <header className="mb-6 flex justify-between items-center max-w-[1920px] mx-auto print:hidden">
             <div>
-              <h1 className="text-2xl font-bold text-slate-800">
+              <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
                 {currentView === 'patients' && !selectedPatientId && 'Gestão de Pacientes'}
                 {currentView === 'patients' && selectedPatientId && (activePatient?.name || 'Detalhes do Paciente')}
                 {currentView === 'schedule' && 'Agenda'}
@@ -458,7 +474,7 @@ const App: React.FC = () => {
                 {currentView === 'select_patient_for_entry' && 'Menu de Ações'}
                 {currentView === 'profile_settings' && 'Meu Perfil'}
               </h1>
-              <p className="text-slate-500 text-sm mt-1">
+              <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
                 {currentView === 'patients' && !selectedPatientId && 'Gerencie o acompanhamento dos seus alunos'}
                 {currentView === 'patients' && selectedPatientId && 'Acompanhe a evolução e gerencie o plano'}
                 {currentView === 'schedule' && 'Visualize seus próximos atendimentos'}
@@ -468,12 +484,12 @@ const App: React.FC = () => {
             </div>
             
             {activePatient && selectedPatientId && (
-              <div className="flex items-center gap-3 bg-white p-2 pr-4 rounded-full shadow-sm border border-slate-100">
-                 <div className={`h-10 w-10 ${activePatient.avatarColor} rounded-full flex items-center justify-center font-bold border-2 border-white shadow-sm`}>
+              <div className="flex items-center gap-3 bg-white dark:bg-slate-800 p-2 pr-4 rounded-full shadow-sm border border-slate-100 dark:border-slate-700">
+                 <div className={`h-10 w-10 ${activePatient.avatarColor} rounded-full flex items-center justify-center font-bold border-2 border-white dark:border-slate-700 shadow-sm`}>
                     {activePatient.name.substring(0,2).toUpperCase()}
                  </div>
                  <div className="text-right hidden sm:block">
-                    <p className="text-sm font-semibold text-slate-700 leading-tight">{activePatient.name}</p>
+                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 leading-tight">{activePatient.name}</p>
                     <p className="text-sm text-slate-400">
                        {activePatient.age} anos • {activePatient.profession}
                     </p>
@@ -603,61 +619,61 @@ const App: React.FC = () => {
               )}
 
               {activeTab === 'profile' && (
-                <div className="bg-white rounded-2xl shadow-sm p-8 max-w-4xl mx-auto">
-                  <div className="flex items-center gap-4 mb-6 text-blue-600">
+                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-8 max-w-4xl mx-auto border border-slate-100 dark:border-slate-700">
+                  <div className="flex items-center gap-4 mb-6 text-blue-600 dark:text-blue-400">
                     <User size={32} />
                     <h2 className="text-xl font-semibold">Dados Pessoais</h2>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-slate-500 mb-1">Nome Completo</label>
-                      <input type="text" value={activePatient.name} disabled className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-slate-700" />
+                      <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Nome Completo</label>
+                      <input type="text" value={activePatient.name} disabled className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 text-slate-700 dark:text-slate-300" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-500 mb-1">Email</label>
-                      <input type="text" value={activePatient.email} disabled className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-slate-700" />
+                      <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Email</label>
+                      <input type="text" value={activePatient.email} disabled className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 text-slate-700 dark:text-slate-300" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-500 mb-1">Idade</label>
-                      <input type="text" value={activePatient.age} disabled className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-slate-700" />
+                      <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Idade</label>
+                      <input type="text" value={activePatient.age} disabled className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 text-slate-700 dark:text-slate-300" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-500 mb-1">Profissão</label>
-                      <input type="text" value={activePatient.profession} disabled className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-slate-700" />
+                      <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Profissão</label>
+                      <input type="text" value={activePatient.profession} disabled className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 text-slate-700 dark:text-slate-300" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-500 mb-1">Telefone</label>
-                      <input type="text" value={activePatient.phone} disabled className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-slate-700" />
+                      <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Telefone</label>
+                      <input type="text" value={activePatient.phone} disabled className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 text-slate-700 dark:text-slate-300" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-500 mb-1">Instagram</label>
-                      <input type="text" value={activePatient.instagram} disabled className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-slate-700" />
+                      <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Instagram</label>
+                      <input type="text" value={activePatient.instagram} disabled className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 text-slate-700 dark:text-slate-300" />
                     </div>
                     <div className="md:col-span-2 lg:col-span-3">
-                      <label className="block text-sm font-medium text-slate-500 mb-1">Endereço</label>
-                      <input type="text" value={activePatient.address || ''} disabled className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-slate-700" />
+                      <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Endereço</label>
+                      <input type="text" value={activePatient.address || ''} disabled className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 text-slate-700 dark:text-slate-300" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-500 mb-1">Objetivo</label>
-                      <input type="text" value={activePatient.objective} disabled className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-slate-700" />
+                      <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Objetivo</label>
+                      <input type="text" value={activePatient.objective} disabled className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 text-slate-700 dark:text-slate-300" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-500 mb-1">Gênero</label>
-                      <select disabled value={activePatient.gender} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-slate-700">
+                      <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Gênero</label>
+                      <select disabled value={activePatient.gender} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 text-slate-700 dark:text-slate-300">
                         <option value="Masculino">Masculino</option>
                         <option value="Feminino">Feminino</option>
                       </select>
                     </div>
                     {/* Exibição do Fator de Atividade no Perfil */}
                     <div>
-                      <label className="block text-sm font-medium text-slate-500 mb-1">Fator de Atividade (FA)</label>
+                      <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Fator de Atividade (FA)</label>
                       <input type="text" value={
                           activePatient.activityFactor === 1.2 ? '1.2 - Sedentário' :
                           activePatient.activityFactor === 1.375 ? '1.375 - Levemente Ativo' :
                           activePatient.activityFactor === 1.55 ? '1.55 - Moderadamente Ativo' :
                           activePatient.activityFactor === 1.725 ? '1.725 - Muito Ativo' :
                           '1.9 - Extremamente Ativo'
-                      } disabled className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-slate-700" />
+                      } disabled className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 text-slate-700 dark:text-slate-300" />
                     </div>
                   </div>
                 </div>

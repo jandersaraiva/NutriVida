@@ -1,12 +1,11 @@
-
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Nutritionist } from '../types';
-import { User, Phone, Mail, BadgeCheck, Save, CheckCircle, Camera, Calendar, Cake, Trash2 } from 'lucide-react';
+import { User, Phone, Mail, BadgeCheck, Save, Camera, Calendar, Trash2, Upload } from 'lucide-react';
 
 interface NutritionistProfileProps {
   data: Nutritionist;
   onSave: (data: Nutritionist) => void;
-  onResetData?: () => void; // Nova prop
+  onResetData?: () => void;
 }
 
 export const NutritionistProfile: React.FC<NutritionistProfileProps> = ({ data, onSave, onResetData }) => {
@@ -43,18 +42,6 @@ export const NutritionistProfile: React.FC<NutritionistProfileProps> = ({ data, 
     }
   };
 
-  const calculateAge = useMemo(() => {
-    if (!formData.birthDate) return null;
-    const birth = new Date(formData.birthDate);
-    const today = new Date();
-    let age = today.getFullYear() - birth.getFullYear();
-    const m = today.getMonth() - birth.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
-        age--;
-    }
-    return age;
-  }, [formData.birthDate]);
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave(formData);
@@ -64,29 +51,36 @@ export const NutritionistProfile: React.FC<NutritionistProfileProps> = ({ data, 
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
+      {/* Success Notification */}
+      {showSuccess && (
+        <div className="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 px-4 py-3 rounded-xl border border-emerald-100 dark:border-emerald-800 flex items-center justify-center animate-in fade-in slide-in-from-top-4 fixed top-6 right-6 z-50 shadow-lg">
+          <BadgeCheck className="mr-2" size={20} />
+          <span className="font-medium">Perfil atualizado com sucesso!</span>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row gap-8">
-        {/* Left Column: Avatar & Summary */}
+        
+        {/* Left Column: Identity Card */}
         <div className="w-full md:w-1/3">
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex flex-col items-center text-center">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 flex flex-col items-center text-center h-full">
             
-            <div className="relative mb-4 group">
-              <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-sm bg-blue-100 flex items-center justify-center">
+            <div className="relative mb-6 group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+              <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-slate-50 dark:border-slate-700 shadow-inner bg-slate-100 dark:bg-slate-900 flex items-center justify-center relative">
                 {formData.photo ? (
                   <img src={formData.photo} alt="Perfil" className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-4xl font-bold text-blue-600">
-                    {formData.name ? formData.name.substring(0, 2).toUpperCase() : 'NU'}
-                  </span>
+                  <User size={48} className="text-slate-300 dark:text-slate-600" />
                 )}
+                
+                {/* Hover Overlay */}
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Camera className="text-white" size={24} />
+                </div>
               </div>
-              <button 
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="absolute bottom-1 right-1 p-2 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors"
-                title="Alterar foto"
-              >
-                <Camera size={18} />
-              </button>
+              <div className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full shadow-lg border-2 border-white dark:border-slate-800">
+                <Upload size={14} />
+              </div>
               <input 
                 type="file" 
                 ref={fileInputRef} 
@@ -96,164 +90,118 @@ export const NutritionistProfile: React.FC<NutritionistProfileProps> = ({ data, 
               />
             </div>
 
-            <h2 className="text-xl font-bold text-slate-800 mb-1">{formData.name || 'Seu Nome'}</h2>
-            <p className="text-slate-500 text-sm mb-2">{formData.crn || 'CRN não informado'}</p>
-            
-            {calculateAge !== null && (
-               <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-medium">
-                  <Cake size={14} className="text-pink-500" />
-                  {calculateAge} anos
-               </div>
-            )}
-            
-            <div className="mt-6 w-full pt-6 border-t border-slate-50">
-                <div className="flex items-center justify-center gap-2 text-slate-500 text-sm">
-                    <CheckCircle size={16} className="text-blue-500" />
-                    <span>Conta Profissional Ativa</span>
-                </div>
-            </div>
-          </div>
-        </div>
+            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-1">{formData.name || 'Seu Nome'}</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mb-6">{formData.crn || 'CRN não informado'}</p>
 
-        {/* Right Column: Form */}
-        <div className="w-full md:w-2/3">
-          <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-            <div className="p-6 border-b border-slate-50 flex justify-between items-center">
-                <h3 className="font-bold text-lg text-slate-800">Dados do Profissional</h3>
-                {showSuccess && (
-                    <span className="text-sm font-medium text-emerald-600 flex items-center gap-1 animate-pulse">
-                        <CheckCircle size={16} /> Salvo com sucesso!
-                    </span>
+            <div className="w-full pt-6 border-t border-slate-100 dark:border-slate-700 mt-auto">
+                <div className="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold mb-3">Ações da Conta</div>
+                {onResetData && (
+                    <button 
+                        onClick={onResetData}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-xl hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors text-sm font-medium"
+                    >
+                        <Trash2 size={16} /> Resetar Todos os Dados
+                    </button>
                 )}
             </div>
-            
-            <div className="p-6 space-y-6">
-                {/* Personal Info */}
-                <div className="space-y-4">
-                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                        <User size={14} /> Informações Pessoais
-                    </h4>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Nome Completo</label>
-                            <div className="relative">
-                                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                <input
-                                    type="text"
-                                    name="name"
-                                    value={formData.name}
-                                    onChange={handleChange}
-                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                    placeholder="Ex: Dr. Fulano de Tal"
-                                />
-                            </div>
-                        </div>
-                    </div>
+          </div>
+        </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Data de Nascimento</label>
-                            <div className="relative">
-                                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                <input
-                                    type="date"
-                                    name="birthDate"
-                                    value={formData.birthDate}
-                                    onChange={handleChange}
-                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Idade</label>
-                            <div className="relative">
-                                <input
-                                    type="text"
-                                    disabled
-                                    value={calculateAge !== null ? `${calculateAge} anos` : '-'}
-                                    className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 cursor-not-allowed"
-                                />
-                            </div>
-                        </div>
-                    </div>
+        {/* Right Column: Form Details */}
+        <div className="w-full md:w-2/3">
+            <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 md:p-8">
+                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-2">
+                    <User size={20} className="text-blue-600 dark:text-blue-400" />
+                    Informações Profissionais
+                </h3>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">CRN / Registro</label>
-                            <div className="relative">
-                                <BadgeCheck className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                <input
-                                    type="text"
-                                    name="crn"
-                                    value={formData.crn}
-                                    onChange={handleChange}
-                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                    placeholder="Ex: CRN-3 12345"
-                                />
-                            </div>
-                        </div>
-                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Email Profissional</label>
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                <input
-                                    type="email"
-                                    name="email"
-                                    value={formData.email}
-                                    onChange={handleChange}
-                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                    placeholder="email@clinica.com"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                    
+                <div className="space-y-5">
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Telefone / WhatsApp</label>
-                        <div className="relative">
-                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                            <input
-                                type="text"
-                                name="phone"
-                                value={formData.phone}
-                                onChange={handleChange}
-                                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                placeholder="(00) 00000-0000"
-                            />
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Nome Completo</label>
+                        <input 
+                            type="text" 
+                            name="name"
+                            value={formData.name} 
+                            onChange={handleChange}
+                            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                            placeholder="Dr(a). Exemplo da Silva"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Registro Profissional (CRN)</label>
+                            <div className="relative">
+                                <BadgeCheck className="absolute left-3.5 top-3.5 text-slate-400" size={18} />
+                                <input 
+                                    type="text" 
+                                    name="crn"
+                                    value={formData.crn} 
+                                    onChange={handleChange}
+                                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-3 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                                    placeholder="CRN-3 12345"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Data de Nascimento</label>
+                            <div className="relative">
+                                <Calendar className="absolute left-3.5 top-3.5 text-slate-400" size={18} />
+                                <input 
+                                    type="date" 
+                                    name="birthDate"
+                                    value={formData.birthDate} 
+                                    onChange={handleChange}
+                                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-3 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">E-mail Profissional</label>
+                            <div className="relative">
+                                <Mail className="absolute left-3.5 top-3.5 text-slate-400" size={18} />
+                                <input 
+                                    type="email" 
+                                    name="email"
+                                    value={formData.email} 
+                                    onChange={handleChange}
+                                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-3 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                                    placeholder="email@clinica.com.br"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Telefone / WhatsApp</label>
+                            <div className="relative">
+                                <Phone className="absolute left-3.5 top-3.5 text-slate-400" size={18} />
+                                <input 
+                                    type="text" 
+                                    name="phone"
+                                    value={formData.phone} 
+                                    onChange={handleChange}
+                                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-3 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                                    placeholder="(11) 99999-9999"
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
-                <button 
-                    type="submit"
-                    className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200 font-medium"
-                >
-                    <Save size={18} /> Salvar Alterações
-                </button>
-            </div>
-          </form>
+                <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-700 flex justify-end">
+                    <button 
+                        type="submit"
+                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-200 dark:shadow-none hover:shadow-xl hover:-translate-y-0.5"
+                    >
+                        <Save size={18} />
+                        Salvar Alterações
+                    </button>
+                </div>
+            </form>
         </div>
       </div>
-
-      {/* DANGER ZONE - Only if onResetData is provided */}
-      {onResetData && (
-          <div className="bg-red-50 border border-red-100 rounded-2xl p-6">
-              <h3 className="text-red-800 font-bold text-lg mb-2">Zona de Perigo</h3>
-              <p className="text-red-600 text-sm mb-4">
-                  Ações aqui não podem ser desfeitas. O reset de fábrica apagará todos os dados armazenados localmente no seu navegador e restaurará os dados de demonstração.
-              </p>
-              <button 
-                type="button"
-                onClick={onResetData}
-                className="bg-white border border-red-200 text-red-600 hover:bg-red-600 hover:text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm flex items-center gap-2"
-              >
-                  <Trash2 size={16} /> Resetar Dados de Fábrica
-              </button>
-          </div>
-      )}
     </div>
   );
 };

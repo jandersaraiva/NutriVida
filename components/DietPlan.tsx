@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { DietPlan as DietPlanType, Meal, FoodItem } from '../types';
 import { Clock, Plus, Trash2, Edit2, Save, X, ChefHat, Copy, Check, PieChart, Search, Calendar, Archive, FilePlus, ChevronLeft, Zap, Target, Droplets, Printer } from 'lucide-react';
@@ -433,31 +432,31 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
     const diff = targetCalories ? totals.kcal - targetCalories : 0;
 
     return (
-        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-6 print:border print:border-slate-300">
+        <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 mb-6 print:border print:border-slate-300">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4">
-                <div className="bg-indigo-100 p-2 rounded-lg text-indigo-600 self-start print:hidden">
+                <div className="bg-indigo-100 dark:bg-indigo-900/40 p-2 rounded-lg text-indigo-600 dark:text-indigo-400 self-start print:hidden">
                     <PieChart size={20} />
                 </div>
                 
                 <div className="flex-1 w-full">
                      <div className="flex justify-between items-start">
                         <div>
-                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Diário</span>
-                            <div className="text-xl font-bold text-slate-800 flex items-baseline gap-1">
+                            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Diário</span>
+                            <div className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-baseline gap-1">
                                 {Math.round(totals.kcal).toLocaleString()} 
-                                <span className="text-sm font-medium text-slate-500">kcal</span>
+                                <span className="text-sm font-medium text-slate-500 dark:text-slate-400">kcal</span>
                             </div>
                         </div>
                         
                         {targetCalories && targetCalories > 0 && (
                              <div className="text-right print:hidden">
-                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center justify-end gap-1">
+                                <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center justify-end gap-1">
                                     <Target size={12} /> Meta: {targetCalories}
                                 </span>
                                 <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold mt-1 ${
-                                    Math.abs(diff) < 50 ? 'bg-blue-100 text-blue-700' : 
-                                    diff > 0 ? 'bg-amber-100 text-amber-700' : 
-                                    'bg-blue-100 text-blue-700'
+                                    Math.abs(diff) < 50 ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 
+                                    diff > 0 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300' : 
+                                    'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
                                 }`}>
                                     {diff > 0 ? '+' : ''}{diff.toFixed(0)} kcal
                                     <span className="opacity-75 font-medium">
@@ -470,38 +469,38 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                 </div>
             </div>
 
-            <div className="h-4 w-full bg-slate-200 rounded-full overflow-hidden flex mb-4 relative group print:border print:border-slate-300">
+            <div className="h-4 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden flex mb-4 relative group print:border print:border-slate-300">
                 <div style={{ width: `${pctP}%` }} className="h-full bg-rose-500 print:bg-slate-400" title="Proteínas"></div>
                 <div style={{ width: `${pctC}%` }} className="h-full bg-blue-500 print:bg-slate-600" title="Carboidratos"></div>
-                <div style={{ width: `${pctF}%` }} className="h-full bg-amber-400 print:bg-slate-800" title="Gorduras"></div>
+                <div style={{ width: `${pctF}%` }} className="h-full bg-amber-400 print:bg-slate-800" title="Lipídios"></div>
             </div>
 
             <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="flex flex-col items-center">
                     <div className="flex items-center gap-1.5 mb-1">
                         <div className="w-2 h-2 rounded-full bg-rose-500 print:bg-slate-400"></div>
-                        <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Proteína</span>
+                        <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Proteína</span>
                     </div>
-                    <div className="text-slate-800 font-bold text-lg leading-none">{totals.p.toFixed(0)}g</div>
-                    <div className="text-slate-400 text-[10px] mt-0.5">{(totals.p / patientWeight).toFixed(1)}g/kg</div>
+                    <div className="text-slate-800 dark:text-slate-100 font-bold text-lg leading-none">{totals.p.toFixed(0)}g</div>
+                    <div className="text-slate-400 dark:text-slate-500 text-[10px] mt-0.5">{(totals.p / patientWeight).toFixed(1)}g/kg</div>
                 </div>
                 
-                <div className="flex flex-col items-center border-x border-slate-200">
+                <div className="flex flex-col items-center border-x border-slate-200 dark:border-slate-700">
                     <div className="flex items-center gap-1.5 mb-1">
                         <div className="w-2 h-2 rounded-full bg-blue-500 print:bg-slate-600"></div>
-                        <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Carbo</span>
+                        <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Carbo</span>
                     </div>
-                    <div className="text-slate-800 font-bold text-lg leading-none">{totals.c.toFixed(0)}g</div>
-                    <div className="text-slate-400 text-[10px] mt-0.5">{(totals.c / patientWeight).toFixed(1)}g/kg</div>
+                    <div className="text-slate-800 dark:text-slate-100 font-bold text-lg leading-none">{totals.c.toFixed(0)}g</div>
+                    <div className="text-slate-400 dark:text-slate-500 text-[10px] mt-0.5">{(totals.c / patientWeight).toFixed(1)}g/kg</div>
                 </div>
                 
                 <div className="flex flex-col items-center">
                     <div className="flex items-center gap-1.5 mb-1">
                         <div className="w-2 h-2 rounded-full bg-amber-400 print:bg-slate-800"></div>
-                        <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Gordura</span>
+                        <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Lipídios</span>
                     </div>
-                    <div className="text-slate-800 font-bold text-lg leading-none">{totals.f.toFixed(0)}g</div>
-                    <div className="text-slate-400 text-[10px] mt-0.5">{(totals.f / patientWeight).toFixed(1)}g/kg</div>
+                    <div className="text-slate-800 dark:text-slate-100 font-bold text-lg leading-none">{totals.f.toFixed(0)}g</div>
+                    <div className="text-slate-400 dark:text-slate-500 text-[10px] mt-0.5">{(totals.f / patientWeight).toFixed(1)}g/kg</div>
                 </div>
             </div>
         </div>
@@ -512,15 +511,15 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
   // --- VIEW: EMPTY ---
   if (plans.length === 0 && !showNewPlanModal) {
     return (
-        <div className="flex flex-col items-center justify-center h-96 bg-white rounded-2xl border border-dashed border-slate-300 text-center p-8">
-            <div className="bg-slate-50 p-4 rounded-full mb-4 text-slate-400">
+        <div className="flex flex-col items-center justify-center h-96 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 text-center p-8">
+            <div className="bg-slate-50 dark:bg-slate-700 p-4 rounded-full mb-4 text-slate-400 dark:text-slate-500">
               <ChefHat size={48} />
             </div>
-            <h3 className="text-lg font-bold text-slate-700 mb-2">Nenhum plano alimentar</h3>
-            <p className="text-slate-500 mb-6 max-w-md">Crie o primeiro ciclo de dieta para este paciente.</p>
+            <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200 mb-2">Nenhum plano alimentar</h3>
+            <p className="text-slate-500 dark:text-slate-400 mb-6 max-w-md">Crie o primeiro ciclo de dieta para este paciente.</p>
             <button 
               onClick={handleCreateNewPlan}
-              className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors font-medium shadow-lg shadow-blue-200 flex items-center gap-2"
+              className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors font-medium shadow-lg shadow-blue-200 dark:shadow-none flex items-center gap-2"
             >
               <Plus size={20} /> Criar Primeiro Plano
             </button>
@@ -539,14 +538,14 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
         
         {/* SIDEBAR: HISTORY (Hidden in Print) */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden lg:col-span-1 print:hidden">
-             <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-                 <h3 className="font-bold text-slate-800 text-sm">Ciclos de Dieta</h3>
-                 <button onClick={handleCreateNewPlan} className="text-blue-600 hover:bg-blue-100 p-1.5 rounded-lg transition-colors" title="Novo Ciclo">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden lg:col-span-1 print:hidden">
+             <div className="p-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex justify-between items-center">
+                 <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Ciclos de Dieta</h3>
+                 <button onClick={handleCreateNewPlan} className="text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 p-1.5 rounded-lg transition-colors" title="Novo Ciclo">
                     <FilePlus size={18} />
                  </button>
              </div>
-             <div className="max-h-[500px] overflow-y-auto">
+             <div className="max-h-[500px] overflow-y-auto custom-scrollbar">
                  {plans.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map(plan => (
                      <div 
                         key={plan.id}
@@ -557,25 +556,25 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                 setSelectedPlanId(plan.id);
                             }
                         }}
-                        className={`p-4 border-b border-slate-50 cursor-pointer transition-colors hover:bg-slate-50 group ${
-                            selectedPlanId === plan.id ? 'bg-blue-50/50 border-l-4 border-l-blue-500' : 'border-l-4 border-l-transparent'
+                        className={`p-4 border-b border-slate-50 dark:border-slate-700/50 cursor-pointer transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/50 group ${
+                            selectedPlanId === plan.id ? 'bg-blue-50/50 dark:bg-blue-900/20 border-l-4 border-l-blue-500' : 'border-l-4 border-l-transparent'
                         }`}
                      >
                          <div className="flex justify-between items-start mb-1">
-                             <span className={`text-xs font-bold uppercase px-1.5 py-0.5 rounded ${plan.status === 'active' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-500'}`}>
+                             <span className={`text-xs font-bold uppercase px-1.5 py-0.5 rounded ${plan.status === 'active' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'}`}>
                                  {plan.status === 'active' ? 'Ativo' : 'Histórico'}
                              </span>
                              <button 
                                 onClick={(e) => { e.stopPropagation(); handleDeletePlan(plan.id); }}
-                                className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="text-slate-300 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
                             >
                                 <Trash2 size={14} />
                              </button>
                          </div>
-                         <h4 className={`font-semibold text-sm mb-1 ${selectedPlanId === plan.id ? 'text-blue-900' : 'text-slate-700'}`}>
+                         <h4 className={`font-semibold text-sm mb-1 ${selectedPlanId === plan.id ? 'text-blue-900 dark:text-blue-300' : 'text-slate-700 dark:text-slate-300'}`}>
                              {plan.name}
                          </h4>
-                         <div className="flex items-center gap-1 text-xs text-slate-400">
+                         <div className="flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500">
                              <Calendar size={10} />
                              {new Date(plan.createdAt).toLocaleDateString('pt-BR')}
                          </div>
@@ -587,7 +586,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
         {/* MAIN: CONTENT */}
         <div className="lg:col-span-3 w-full">
             {currentPlan && (
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 print:border-none print:shadow-none print:p-0 print:w-full">
+                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 print:border-none print:shadow-none print:p-0 print:w-full">
                     
                     {/* Header Impressão */}
                     <div className="hidden print:block mb-8 text-center border-b border-slate-300 pb-4">
@@ -596,19 +595,19 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                     </div>
 
                     {/* Header Tela */}
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b border-slate-100 pb-4 print:hidden">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b border-slate-100 dark:border-slate-700 pb-4 print:hidden">
                         <div>
                             {isEditing ? (
                                 <input 
                                     type="text" 
                                     value={editForm?.name || ''}
                                     onChange={(e) => setEditForm({...editForm!, name: e.target.value})}
-                                    className="text-xl font-bold text-slate-900 border-b border-dashed border-slate-300 focus:border-blue-500 outline-none bg-transparent placeholder-slate-400"
+                                    className="text-xl font-bold text-slate-900 dark:text-slate-100 border-b border-dashed border-slate-300 dark:border-slate-600 focus:border-blue-500 outline-none bg-transparent placeholder-slate-400"
                                 />
                             ) : (
-                                <h2 className="text-xl font-bold text-slate-800">{currentPlan.name}</h2>
+                                <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">{currentPlan.name}</h2>
                             )}
-                            <p className="text-xs text-slate-500 mt-1">
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                                 Criado em {new Date(currentPlan.createdAt).toLocaleDateString('pt-BR')} • {currentPlan.meals.length} refeições
                             </p>
                         </div>
@@ -616,18 +615,18 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                         <div className="flex gap-2">
                             {isEditing ? (
                                 <>
-                                    <button onClick={() => setIsEditing(false)} className="px-4 py-2 text-slate-500 hover:bg-slate-50 rounded-lg transition-colors font-medium text-sm">Cancelar</button>
+                                    <button onClick={() => setIsEditing(false)} className="px-4 py-2 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors font-medium text-sm">Cancelar</button>
                                     <button onClick={handleSaveEdit} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-medium text-sm">
                                         <Save size={16} /> Salvar
                                     </button>
                                 </>
                             ) : (
                                 <>
-                                    <button onClick={handlePrint} className="flex items-center gap-2 px-3 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors font-medium text-sm">
+                                    <button onClick={handlePrint} className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors font-medium text-sm">
                                         <Printer size={16} /> <span className="hidden sm:inline">Imprimir</span>
                                     </button>
-                                    <button onClick={handleCopyDiet} className="flex items-center gap-2 px-3 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors font-medium text-sm">
-                                        {copied ? <Check size={16} className="text-blue-600" /> : <Copy size={16} />}
+                                    <button onClick={handleCopyDiet} className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors font-medium text-sm">
+                                        {copied ? <Check size={16} className="text-blue-600 dark:text-blue-400" /> : <Copy size={16} />}
                                         <span className="hidden sm:inline">{copied ? 'Copiado' : 'Copiar Texto'}</span>
                                     </button>
                                     <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-medium text-sm">
@@ -639,14 +638,14 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                     </div>
 
                     {/* Water Tracker Section */}
-                    <div className="mb-6 bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center justify-between print:border-slate-300 print:bg-slate-50">
+                    <div className="mb-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl p-4 flex items-center justify-between print:border-slate-300 print:bg-slate-50">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 bg-blue-200 text-blue-700 rounded-full print:hidden">
+                            <div className="p-2 bg-blue-200 dark:bg-blue-800 text-blue-700 dark:text-blue-200 rounded-full print:hidden">
                                 <Droplets size={20} />
                             </div>
                             <div>
-                                <h4 className="font-bold text-blue-900 text-sm">Meta de Hidratação</h4>
-                                <p className="text-xs text-blue-700 print:text-slate-600">Calculado base 35ml/kg</p>
+                                <h4 className="font-bold text-blue-900 dark:text-blue-300 text-sm">Meta de Hidratação</h4>
+                                <p className="text-xs text-blue-700 dark:text-blue-400 print:text-slate-600">Calculado base 35ml/kg</p>
                             </div>
                         </div>
                         {isEditing ? (
@@ -657,10 +656,10 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                     onChange={(e) => setEditForm({...editForm!, waterTarget: Number(e.target.value)})}
                                     className="w-20 text-right font-bold text-blue-900 bg-white border border-blue-200 rounded px-2 py-1 outline-none focus:ring-2 focus:ring-blue-400"
                                 />
-                                <span className="text-sm font-bold text-blue-900">ml</span>
+                                <span className="text-sm font-bold text-blue-900 dark:text-blue-300">ml</span>
                              </div>
                         ) : (
-                            <div className="text-xl font-bold text-blue-800 print:text-slate-800">
+                            <div className="text-xl font-bold text-blue-800 dark:text-blue-200 print:text-slate-800">
                                 {((currentPlan.waterTarget || 2000) / 1000).toFixed(1)} <span className="text-sm">Litros/dia</span>
                             </div>
                         )}
@@ -671,7 +670,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                     {/* Editor / Viewer Body */}
                     <div className="space-y-6 print:space-y-4">
                          {(isEditing ? editForm?.meals : currentPlan.meals)?.map((meal) => (
-                             <div key={meal.id} className={`rounded-xl p-4 border transition-all ${isEditing ? 'bg-slate-50 border-slate-200' : 'bg-white border-slate-100 hover:border-blue-200 shadow-sm'} print:border-slate-300 print:shadow-none print:break-inside-avoid`}>
+                             <div key={meal.id} className={`rounded-xl p-4 border transition-all ${isEditing ? 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 hover:border-blue-200 dark:hover:border-blue-800 shadow-sm'} print:border-slate-300 print:shadow-none print:break-inside-avoid`}>
                                  {/* Meal Header */}
                                  <div className="flex justify-between items-center mb-3">
                                      <div className="flex items-center gap-3">
@@ -683,7 +682,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                                  className="bg-white border border-slate-300 rounded px-2 py-1 text-sm font-bold w-24 text-slate-900 outline-none focus:border-blue-500"
                                              />
                                          ) : (
-                                            <div className="flex items-center gap-2 text-blue-700 font-bold bg-blue-50 px-3 py-1 rounded-lg print:bg-slate-100 print:text-slate-800 print:border print:border-slate-200">
+                                            <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 font-bold bg-blue-50 dark:bg-blue-900/30 px-3 py-1 rounded-lg print:bg-slate-100 print:text-slate-800 print:border print:border-slate-200">
                                                 <Clock size={14} className="print:hidden" />
                                                 {meal.time}
                                             </div>
@@ -697,13 +696,13 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                                 className="bg-white border border-slate-300 rounded px-2 py-1 text-sm font-bold w-40 sm:w-64 text-slate-900 outline-none focus:border-blue-500"
                                              />
                                          ) : (
-                                             <h3 className="font-bold text-slate-800">{meal.name}</h3>
+                                             <h3 className="font-bold text-slate-800 dark:text-slate-200">{meal.name}</h3>
                                          )}
                                      </div>
                                      
                                      <div className="flex items-center gap-2">
                                          {!isEditing && (
-                                             <span className="text-xs font-medium text-slate-400 print:hidden">
+                                             <span className="text-xs font-medium text-slate-400 dark:text-slate-500 print:hidden">
                                                  {meal.items.reduce((acc, i) => acc + (Number(i.calories) || 0), 0).toFixed(0)} kcal
                                              </span>
                                          )}
@@ -783,11 +782,11 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                                  <div className="flex justify-between w-full group/item">
                                                      <div className="flex items-center">
                                                          <span className="w-1.5 h-1.5 rounded-full bg-blue-400 mr-2 print:border print:border-slate-400 print:bg-white"></span>
-                                                         <span className="font-semibold text-slate-700 mr-1.5">{item.quantity}</span>
-                                                         <span className="text-slate-600">{item.name}</span>
+                                                         <span className="font-semibold text-slate-700 dark:text-slate-300 mr-1.5">{item.quantity}</span>
+                                                         <span className="text-slate-600 dark:text-slate-400">{item.name}</span>
                                                      </div>
                                                      {(item.calories > 0) && (
-                                                         <div className="text-xs text-slate-400 opacity-0 group-hover/item:opacity-100 transition-opacity print:hidden">
+                                                         <div className="text-xs text-slate-400 dark:text-slate-500 opacity-0 group-hover/item:opacity-100 transition-opacity print:hidden">
                                                              <span className="mr-2 text-rose-400 font-medium">P:{item.protein}</span>
                                                              <span className="mr-2 text-blue-400 font-medium">C:{item.carbs}</span>
                                                              <span className="font-semibold">{item.calories?.toFixed(0)}kcal</span>
@@ -807,7 +806,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                          ))}
 
                          {isEditing && (
-                             <button onClick={handleAddMeal} className="w-full py-2 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 hover:border-blue-400 hover:text-blue-600 transition-colors text-sm font-medium">
+                             <button onClick={handleAddMeal} className="w-full py-2 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl text-slate-400 dark:text-slate-500 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-sm font-medium">
                                  + Adicionar Refeição
                              </button>
                          )}
@@ -817,7 +816,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                     <div className="mt-8">
                         {isEditing ? (
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Observações</label>
+                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Observações</label>
                                 <textarea 
                                     className="w-full bg-white text-slate-900 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none placeholder-slate-400" 
                                     rows={4}
@@ -827,9 +826,9 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                             </div>
                         ) : (
                             currentPlan.notes && (
-                                <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 print:bg-white print:border-slate-300">
-                                    <h4 className="font-bold text-amber-900 text-sm mb-1 print:text-slate-800">Observações</h4>
-                                    <p className="text-amber-800 text-sm whitespace-pre-wrap print:text-slate-600">{currentPlan.notes}</p>
+                                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-xl p-4 print:bg-white print:border-slate-300">
+                                    <h4 className="font-bold text-amber-900 dark:text-amber-200 text-sm mb-1 print:text-slate-800">Observações</h4>
+                                    <p className="text-amber-800 dark:text-amber-300 text-sm whitespace-pre-wrap print:text-slate-600">{currentPlan.notes}</p>
                                 </div>
                             )
                         )}
@@ -842,34 +841,34 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
         {/* MODAL: NEW PLAN */}
         {showNewPlanModal && (
             <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-                <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
-                    <h3 className="text-lg font-bold text-slate-800 mb-4">Novo Ciclo de Dieta</h3>
+                <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-xl border border-slate-200 dark:border-slate-700">
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">Novo Ciclo de Dieta</h3>
                     
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Nome do Plano</label>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nome do Plano</label>
                             <input 
                                 type="text" 
                                 value={newPlanName}
                                 onChange={(e) => setNewPlanName(e.target.value)}
-                                className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">Base do Plano</label>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Base do Plano</label>
                             <div className="grid grid-cols-2 gap-3">
                                 <button 
                                     onClick={() => setNewPlanType('copy')}
                                     disabled={!currentPlan}
-                                    className={`p-3 rounded-xl border text-left transition-all ${newPlanType === 'copy' ? 'border-blue-500 bg-blue-50 text-blue-800' : 'border-slate-200 hover:bg-slate-50'}`}
+                                    className={`p-3 rounded-xl border text-left transition-all ${newPlanType === 'copy' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300' : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'}`}
                                 >
                                     <span className="block font-bold text-sm mb-1">Copiar Atual</span>
                                     <span className="block text-xs opacity-70">Usa o plano ativo como base</span>
                                 </button>
                                 <button 
                                     onClick={() => setNewPlanType('blank')}
-                                    className={`p-3 rounded-xl border text-left transition-all ${newPlanType === 'blank' ? 'border-blue-500 bg-blue-50 text-blue-800' : 'border-slate-200 hover:bg-slate-50'}`}
+                                    className={`p-3 rounded-xl border text-left transition-all ${newPlanType === 'blank' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300' : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'}`}
                                 >
                                     <span className="block font-bold text-sm mb-1">Em Branco</span>
                                     <span className="block text-xs opacity-70">Começar do zero</span>
@@ -877,14 +876,14 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                             </div>
                         </div>
 
-                        <div className="bg-blue-50 p-3 rounded-lg text-xs text-blue-700 flex gap-2 items-start">
+                        <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg text-xs text-blue-700 dark:text-blue-300 flex gap-2 items-start">
                             <Archive size={16} className="shrink-0 mt-0.5" />
                             <p>Ao criar um novo ciclo, o plano "Ativo" atual será movido automaticamente para o histórico.</p>
                         </div>
                     </div>
 
                     <div className="flex justify-end gap-3 mt-6">
-                        <button onClick={() => setShowNewPlanModal(false)} className="px-4 py-2 text-slate-500 hover:bg-slate-50 rounded-lg text-sm font-medium">Cancelar</button>
+                        <button onClick={() => setShowNewPlanModal(false)} className="px-4 py-2 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg text-sm font-medium">Cancelar</button>
                         <button onClick={confirmCreateNewPlan} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium shadow-sm">Criar Ciclo</button>
                     </div>
                 </div>

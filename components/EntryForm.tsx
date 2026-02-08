@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { CheckIn } from '../types';
 import { Save, X, Calculator, Flame } from 'lucide-react';
@@ -29,7 +28,7 @@ interface InputGroupProps {
 // Componente extraído para fora para evitar re-renderização e perda de foco
 const InputGroup: React.FC<InputGroupProps> = ({ label, name, unit, step = "0.1", type = "number", value, onChange, readOnly }) => (
   <div className="flex flex-col">
-    <label htmlFor={name} className="text-sm font-medium text-slate-700 mb-1">{label}</label>
+    <label htmlFor={name} className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{label}</label>
     <div className="relative">
       <input
         required
@@ -42,8 +41,8 @@ const InputGroup: React.FC<InputGroupProps> = ({ label, name, unit, step = "0.1"
         onChange={onChange}
         className={`w-full rounded-lg border px-4 py-2.5 outline-none transition-all ${
             readOnly 
-            ? 'bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed'
-            : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+            ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed'
+            : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
         }`}
       />
       {unit && (
@@ -150,15 +149,15 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
-        <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-50">
-          <h2 className="text-xl font-bold text-slate-800">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 md:p-8">
+        <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-50 dark:border-slate-700">
+          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
             {initialData ? 'Editar Avaliação' : 'Nova Avaliação Física'}
           </h2>
           <button 
             type="button" 
             onClick={onCancel}
-            className="text-slate-400 hover:text-slate-600"
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
           >
             <X size={24} />
           </button>
@@ -177,7 +176,7 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
             <div className="relative">
                <InputGroup label="IMC" name="imc" step="0.1" value={formData.imc} onChange={handleChange} />
                <div className="absolute top-0 right-0">
-                  <span className="text-[10px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <span className="text-[10px] text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/40 px-2 py-0.5 rounded-full flex items-center gap-1">
                     <Calculator size={10} /> Auto
                   </span>
                </div>
@@ -186,21 +185,21 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
             <InputGroup label="Massa Muscular" name="muscleMass" unit="%" value={formData.muscleMass} onChange={handleChange} />
           </div>
 
-          <div className="p-4 bg-slate-50 rounded-xl space-y-4 border border-slate-100">
-            <h3 className="font-semibold text-slate-700 text-sm uppercase tracking-wide mb-2">Medidas de Circunferência</h3>
+          <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl space-y-4 border border-slate-100 dark:border-slate-700">
+            <h3 className="font-semibold text-slate-700 dark:text-slate-300 text-sm uppercase tracking-wide mb-2">Medidas de Circunferência</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <InputGroup label="Cintura" name="waistCircumference" unit="cm" step="0.5" value={formData.waistCircumference || 0} onChange={handleChange} />
                 <InputGroup label="Quadril" name="hipCircumference" unit="cm" step="0.5" value={formData.hipCircumference || 0} onChange={handleChange} />
             </div>
           </div>
 
-          <div className="p-4 bg-slate-50 rounded-xl space-y-4 border border-slate-100">
-            <h3 className="font-semibold text-slate-700 text-sm uppercase tracking-wide mb-2">Indicadores Metabólicos</h3>
+          <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl space-y-4 border border-slate-100 dark:border-slate-700">
+            <h3 className="font-semibold text-slate-700 dark:text-slate-300 text-sm uppercase tracking-wide mb-2">Indicadores Metabólicos</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="relative">
                     <InputGroup label="Taxa Metabólica Basal" name="bmr" unit="Kcal" step="1" value={formData.bmr} onChange={handleChange} />
                     <div className="absolute top-0 right-0">
-                        <span className="text-[10px] text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full flex items-center gap-1" title="Calculado via Mifflin-St Jeor">
+                        <span className="text-[10px] text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/40 px-2 py-0.5 rounded-full flex items-center gap-1" title="Calculado via Mifflin-St Jeor">
                             <Flame size={10} /> Auto
                         </span>
                     </div>
@@ -214,13 +213,13 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
             <button
               type="button"
               onClick={onCancel}
-              className="flex-1 px-4 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-medium hover:bg-slate-50 transition-colors"
+              className="flex-1 px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-200"
+              className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-200 dark:shadow-none"
             >
               <Save size={18} /> {initialData ? 'Salvar Alterações' : 'Salvar Registro'}
             </button>
