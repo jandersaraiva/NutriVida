@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
-import { CheckIn, Patient } from '../types';
+import { CheckIn, Patient, Nutritionist } from '../types';
 import { ChevronLeft, Download, AlertTriangle, CheckCircle, User, Camera, X, Activity, Scale, Ruler, TrendingUp, Flame, Hourglass, Loader2, Info } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -13,9 +13,10 @@ interface AssessmentReportProps {
   patient: Patient;
   allCheckIns: CheckIn[];
   onBack: () => void;
+  nutritionist: Nutritionist;
 }
 
-export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, patient, allCheckIns, onBack }) => {
+export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, patient, allCheckIns, onBack, nutritionist }) => {
   
   // --- Estados para Fotos e Tema ---
   const [frontPhoto, setFrontPhoto] = useState<string | null>(null);
@@ -636,8 +637,8 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                         <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Declaro ter recebido a avaliação física.</p>
                     </div>
                     <div className="flex-1 border-t border-slate-300 dark:border-slate-700 pt-2 text-center">
-                        <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">Nutricionista Responsável</p>
-                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">CRN-3/SP 12345</p>
+                        <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">{nutritionist.name || 'Nutricionista Responsável'}</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{nutritionist.crn || 'CRN não informado'}</p>
                     </div>
                 </div>
                 <div className="text-center text-slate-300 dark:text-slate-600 text-[10px] mt-8">

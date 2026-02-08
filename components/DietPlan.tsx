@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { DietPlan as DietPlanType, Meal, FoodItem } from '../types';
+import { DietPlan as DietPlanType, Meal, FoodItem, Nutritionist } from '../types';
 import { Clock, Plus, Trash2, Edit2, Save, X, ChefHat, Copy, Check, PieChart, Search, Calendar, Archive, FilePlus, ChevronLeft, Zap, Target, Droplets, Printer } from 'lucide-react';
 
 interface DietPlanProps {
@@ -8,6 +8,7 @@ interface DietPlanProps {
   patientName: string;
   patientWeight?: number;
   targetCalories?: number; // Nova Prop para Meta
+  nutritionist: Nutritionist;
 }
 
 // --- BANCO DE DADOS DE ALIMENTOS (Baseado na TACO/TBCA - Por 100g) ---
@@ -100,7 +101,7 @@ const createDefaultMeals = (): Meal[] => [
     { id: generateId(), name: 'Jantar', time: '20:00', items: [] },
 ];
 
-export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, patientName, patientWeight = 70, targetCalories }) => {
+export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, patientName, patientWeight = 70, targetCalories, nutritionist }) => {
   // State for which plan is currently being viewed
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   
@@ -590,8 +591,16 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                     
                     {/* Header Impressão */}
                     <div className="hidden print:block mb-8 text-center border-b border-slate-300 pb-4">
-                        <h1 className="text-2xl font-bold text-slate-900">Plano Alimentar</h1>
-                        <p className="text-slate-600">{patientName}</p>
+                        <div className="flex justify-between items-center mb-4">
+                            <div className="text-left">
+                                <h1 className="text-2xl font-bold text-slate-900">Plano Alimentar</h1>
+                                <p className="text-slate-600">Paciente: {patientName}</p>
+                            </div>
+                            <div className="text-right text-sm">
+                                <p className="font-bold">{nutritionist.name}</p>
+                                <p>{nutritionist.crn}</p>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Header Tela */}

@@ -12,186 +12,13 @@ import { NutritionistProfile } from './components/NutritionistProfile';
 import { ActiveDietsList } from './components/ActiveDietsList';
 import { AnamnesisForm } from './components/AnamnesisForm';
 import { AssessmentReport } from './components/AssessmentReport';
+import { LoginScreen } from './components/LoginScreen';
 import { CheckIn, ViewState, Patient, DietPlan as DietPlanType, PatientTab, Appointment, Nutritionist, Anamnesis } from './types';
 import { User, Activity, Utensils, FileText, LayoutDashboard, Stethoscope } from 'lucide-react';
+import { supabase } from './lib/supabase';
 
 // Helper seguro para IDs
 const generateId = () => Math.random().toString(36).substr(2, 9);
-
-// Seed Data for initial demo
-const SEED_CHECKINS: CheckIn[] = [
-  {
-    id: '1',
-    date: '2026-01-31',
-    height: 1.72,
-    weight: 70.9,
-    imc: 24.0,
-    bodyFat: 24.0,
-    muscleMass: 38.5,
-    bmr: 1649,
-    age: 29,
-    bodyAge: 27, // Nova propriedade
-    visceralFat: 7,
-    waistCircumference: 84,
-    hipCircumference: 100
-  },
-  {
-    id: '0',
-    date: '2025-12-31',
-    height: 1.72,
-    weight: 70.2, 
-    imc: 23.7,
-    bodyFat: 23.7,
-    muscleMass: 38.7,
-    bmr: 1640,
-    age: 29,
-    bodyAge: 28, // Nova propriedade
-    visceralFat: 7,
-    waistCircumference: 85,
-    hipCircumference: 101
-  },
-  {
-    id: 'old',
-    date: '2025-05-25',
-    height: 1.72,
-    weight: 61.6, 
-    imc: 20.8,
-    bodyFat: 17.8,
-    muscleMass: 40.0,
-    bmr: 1550,
-    age: 28,
-    bodyAge: 25, // Nova propriedade
-    visceralFat: 4,
-    waistCircumference: 78,
-    hipCircumference: 95
-  }
-];
-
-const SEED_DIET: DietPlanType = {
-  id: 'd1',
-  name: 'Plano Hipertrofia Inicial',
-  status: 'active',
-  createdAt: '2026-01-01T10:00:00Z',
-  lastUpdated: new Date().toISOString(),
-  waterTarget: 2500,
-  meals: [
-    {
-      id: 'm1',
-      name: 'Café da Manhã',
-      time: '07:30',
-      items: [
-        { id: 'i1', name: 'Ovos mexidos', quantity: '3 unidades', calories: 240, protein: 18, carbs: 2, fats: 16 },
-        { id: 'i2', name: 'Pão integral', quantity: '2 fatias', calories: 120, protein: 6, carbs: 22, fats: 2 },
-        { id: 'i3', name: 'Mamão papaya', quantity: '1/2 unidade', calories: 60, protein: 1, carbs: 14, fats: 0 },
-        { id: 'i4', name: 'Café preto s/ açúcar', quantity: '200ml', calories: 5, protein: 0, carbs: 1, fats: 0 }
-      ]
-    },
-    {
-      id: 'm2',
-      name: 'Almoço',
-      time: '12:30',
-      items: [
-        { id: 'i5', name: 'Arroz branco', quantity: '150g', calories: 190, protein: 4, carbs: 42, fats: 0 },
-        { id: 'i6', name: 'Feijão carioca', quantity: '100g', calories: 76, protein: 5, carbs: 14, fats: 0.5 },
-        { id: 'i7', name: 'Peito de frango grelhado', quantity: '150g', calories: 240, protein: 46, carbs: 0, fats: 5 },
-        { id: 'i8', name: 'Salada de folhas verdes', quantity: 'À vontade', calories: 20, protein: 1, carbs: 3, fats: 0 },
-        { id: 'i9', name: 'Azeite de oliva', quantity: '1 col. sopa', calories: 119, protein: 0, carbs: 0, fats: 13.5 }
-      ]
-    },
-    {
-      id: 'm3',
-      name: 'Lanche da Tarde',
-      time: '16:00',
-      items: [
-        { id: 'i10', name: 'Iogurte Natural', quantity: '170g', calories: 100, protein: 6, carbs: 10, fats: 6 },
-        { id: 'i11', name: 'Whey Protein', quantity: '30g', calories: 120, protein: 24, carbs: 3, fats: 1 },
-        { id: 'i12', name: 'Aveia em flocos', quantity: '20g', calories: 70, protein: 3, carbs: 12, fats: 1.5 }
-      ]
-    },
-    {
-      id: 'm4',
-      name: 'Jantar',
-      time: '20:00',
-      items: [
-        { id: 'i13', name: 'Batata doce cozida', quantity: '150g', calories: 115, protein: 2, carbs: 27, fats: 0 },
-        { id: 'i14', name: 'Patinho moído', quantity: '150g', calories: 330, protein: 36, carbs: 0, fats: 20 },
-        { id: 'i15', name: 'Legumes cozidos (Brócolis/Cenoura)', quantity: '100g', calories: 40, protein: 3, carbs: 7, fats: 0 }
-      ]
-    }
-  ],
-  notes: 'Beber pelo menos 3 litros de água por dia.\nEvitar frituras e doces durante a semana.\nRefeição livre permitida: 1x na semana.'
-};
-
-const SEED_PATIENTS: Patient[] = [
-  {
-    id: 'p1',
-    name: 'Jander Rabelo Saraiva',
-    email: 'janderrabelosaraiva@gmail.com',
-    gender: 'Masculino',
-    age: 29,
-    profession: 'Desenvolvedor',
-    phone: '(11) 99999-9999',
-    instagram: '@jander',
-    address: 'Rua das Flores, 123 - São Paulo, SP',
-    birthDate: '1997-01-01',
-    objective: 'Hipertrofia',
-    avatarColor: 'bg-blue-100 text-blue-700',
-    status: 'active',
-    activityFactor: 1.55, // Moderadamente Ativo
-    checkIns: SEED_CHECKINS,
-    dietPlans: [SEED_DIET],
-    anamnesis: {
-        mainComplaint: 'Gostaria de ganhar massa muscular e definir o abdômen.',
-        history: 'Sem histórico de doenças crônicas na família.',
-        allergies: 'Nenhuma conhecida.',
-        medications: 'Nenhum.',
-        sleepQuality: 'Bom',
-        bowelFunction: 'Regular',
-        alcohol: 'Socialmente, 2x no mês.',
-        smoker: false,
-        notes: 'Pratica musculação 5x na semana.'
-    }
-  },
-  {
-    id: 'p2',
-    name: 'Maria Silva',
-    email: 'maria.silva@email.com',
-    gender: 'Feminino',
-    age: 34,
-    profession: 'Arquiteta',
-    phone: '(11) 98888-8888',
-    instagram: '@mariasilva.arq',
-    address: 'Av. Paulista, 2000 - São Paulo, SP',
-    birthDate: '1990-05-15',
-    objective: 'Emagrecimento',
-    avatarColor: 'bg-rose-100 text-rose-700',
-    status: 'active',
-    activityFactor: 1.2, // Sedentário
-    checkIns: [],
-    dietPlans: []
-  }
-];
-
-const SEED_APPOINTMENTS: Appointment[] = [
-  {
-    id: '1',
-    patientId: 'p1',
-    date: new Date().toISOString().split('T')[0],
-    time: '09:00',
-    type: 'Consulta',
-    status: 'Agendado',
-    notes: 'Primeira consulta de rotina'
-  },
-  {
-    id: '2',
-    patientId: 'p2',
-    date: new Date(Date.now() + 86400000).toISOString().split('T')[0], // Tomorrow
-    time: '14:30',
-    type: 'Avaliação',
-    status: 'Agendado',
-    notes: 'Avaliação física completa'
-  }
-];
 
 const SEED_NUTRITIONIST: Nutritionist = {
   name: 'Dr. João Nutri',
@@ -203,6 +30,22 @@ const SEED_NUTRITIONIST: Nutritionist = {
 };
 
 const App: React.FC = () => {
+  // --- AUTH STATE ---
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return localStorage.getItem('nutrivida_auth') === 'true';
+  });
+
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+    localStorage.setItem('nutrivida_auth', 'true');
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    localStorage.removeItem('nutrivida_auth');
+    setCurrentView('home'); // Reset view on logout
+  };
+
   // --- THEME STATE ---
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     return localStorage.getItem('nutrivida_theme') === 'dark';
@@ -220,41 +63,98 @@ const App: React.FC = () => {
 
   const toggleTheme = () => setIsDarkMode(prev => !prev);
 
-  // --- STATE WITH PERSISTENCE ---
-  const [patients, setPatients] = useState<Patient[]>(() => {
-    const saved = localStorage.getItem('nutrivida_patients');
-    return saved ? JSON.parse(saved) : SEED_PATIENTS;
-  });
+  // --- DATA STATE (Supabase) ---
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [nutritionist, setNutritionist] = useState<Nutritionist>(SEED_NUTRITIONIST);
+  const [isLoadingData, setIsLoadingData] = useState(false);
 
-  const [appointments, setAppointments] = useState<Appointment[]>(() => {
-    const saved = localStorage.getItem('nutrivida_appointments');
-    return saved ? JSON.parse(saved) : SEED_APPOINTMENTS;
-  });
+  // Carregar dados do Supabase
+  const fetchData = async () => {
+    if (!isAuthenticated) return;
+    setIsLoadingData(true);
+    try {
+        // 1. Fetch Patients
+        const { data: patientsData, error: patientsError } = await supabase
+            .from('patients')
+            .select('*');
+        
+        if (patientsError) throw patientsError;
 
-  const [nutritionist, setNutritionist] = useState<Nutritionist>(() => {
-    const saved = localStorage.getItem('nutrivida_nutritionist');
-    return saved ? JSON.parse(saved) : SEED_NUTRITIONIST;
-  });
-  
-  // --- PERSISTENCE EFFECTS ---
+        // 2. Fetch CheckIns
+        const { data: checkInsData, error: checkInsError } = await supabase
+            .from('check_ins')
+            .select('*');
+        
+        if (checkInsError) throw checkInsError;
+
+        // 3. Fetch Diet Plans
+        const { data: dietsData, error: dietsError } = await supabase
+            .from('diet_plans')
+            .select('*');
+        
+        if (dietsError) throw dietsError;
+
+        // 4. Fetch Appointments
+        const { data: apptData, error: apptError } = await supabase
+            .from('appointments')
+            .select('*');
+        
+        if (apptError) throw apptError;
+
+        // 5. Fetch Nutritionist Profile (Single Row)
+        const { data: profileData, error: profileError } = await supabase
+            .from('nutritionist_profile')
+            .select('*')
+            .single();
+        
+        // Se der erro (ex: tabela vazia), não trava o app, usa o default
+        if (profileData && !profileError) {
+             setNutritionist(profileData);
+        } else if (profileError && profileError.code !== 'PGRST116') {
+             // PGRST116 é o código para "nenhuma linha encontrada", o que é aceitável no primeiro uso
+             console.error("Erro ao buscar perfil:", profileError);
+        }
+
+        // Montar a estrutura de objeto aninhado que o frontend espera
+        const assembledPatients: Patient[] = (patientsData || []).map(p => {
+            return {
+                ...p,
+                checkIns: (checkInsData || []).filter(c => c.patientId === p.id),
+                dietPlans: (dietsData || []).filter(d => d.patientId === p.id),
+                // Anamnesis já vem como JSONB no objeto do paciente se configurado no banco
+                anamnesis: p.anamnesis || undefined
+            };
+        });
+
+        setPatients(assembledPatients);
+        setAppointments(apptData || []);
+
+    } catch (error) {
+        console.error("Erro ao buscar dados do Supabase:", error);
+        alert("Erro de conexão com o banco de dados.");
+    } finally {
+        setIsLoadingData(false);
+    }
+  };
+
   useEffect(() => {
-    localStorage.setItem('nutrivida_patients', JSON.stringify(patients));
-  }, [patients]);
-
-  useEffect(() => {
-    localStorage.setItem('nutrivida_appointments', JSON.stringify(appointments));
-  }, [appointments]);
-
-  useEffect(() => {
-    localStorage.setItem('nutrivida_nutritionist', JSON.stringify(nutritionist));
-  }, [nutritionist]);
+    fetchData();
+  }, [isAuthenticated]);
 
   // --- RESET HANDLER ---
-  const handleResetData = () => {
-    if (window.confirm('ATENÇÃO: Tem certeza que deseja resetar todos os dados? \nIsso apagará todos os pacientes e agendamentos criados e restaurará os dados de demonstração.')) {
-        localStorage.removeItem('nutrivida_patients');
-        localStorage.removeItem('nutrivida_appointments');
-        localStorage.removeItem('nutrivida_nutritionist');
+  const handleResetData = async () => {
+    if (window.confirm('ATENÇÃO: Isso apagará TODOS os dados do banco de dados (Pacientes, Dietas, etc). Deseja continuar?')) {
+        // Limpar tabelas
+        await supabase.from('check_ins').delete().neq('id', '0');
+        await supabase.from('diet_plans').delete().neq('id', '0');
+        await supabase.from('appointments').delete().neq('id', '0');
+        await supabase.from('patients').delete().neq('id', '0');
+        // Resetar perfil para valores padrão (mas manter o registro)
+        await supabase.from('nutritionist_profile').update({
+             name: '', crn: '', email: '', phone: '', birthDate: '', photo: ''
+        }).eq('id', 'profile_1');
+        
         window.location.reload();
     }
   };
@@ -279,46 +179,114 @@ const App: React.FC = () => {
   }, [activePatient]);
 
   // Actions
-  const handleAddPatient = (newPatient: Patient) => {
+  const handleAddPatient = async (newPatient: Patient) => {
+    // Remover campos relacionais (arrays) antes de salvar na tabela 'patients'
+    const { checkIns, dietPlans, ...patientData } = newPatient;
+    
+    const { error } = await supabase.from('patients').insert(patientData);
+    
+    if (error) {
+        console.error("Erro ao salvar paciente:", error);
+        alert("Erro ao salvar paciente no banco.");
+        return;
+    }
+
+    // Atualiza estado local para refletir na UI imediatamente
     setPatients(prev => [...prev, newPatient]);
     setSelectedPatientId(newPatient.id);
     setActiveTab('overview');
-    // Keep ViewState as 'patients' to show the patient details context
     setCurrentView('patients');
     setShouldOpenAddPatientModal(false);
   };
 
-  const handleUpdatePatient = (updatedPatient: Patient) => {
+  const handleUpdatePatient = async (updatedPatient: Patient) => {
+    const { checkIns, dietPlans, ...patientData } = updatedPatient;
+
+    const { error } = await supabase
+        .from('patients')
+        .update(patientData)
+        .eq('id', updatedPatient.id);
+
+    if (error) {
+        console.error("Erro ao atualizar paciente:", error);
+        return;
+    }
+    
     setPatients(prev => prev.map(p => p.id === updatedPatient.id ? updatedPatient : p));
   };
 
-  const handleUpdateDietPlans = (newDietPlans: DietPlanType[]) => {
+  const handleUpdateDietPlans = async (newDietPlans: DietPlanType[]) => {
     if (!activePatient) return;
+
+    for (const plan of newDietPlans) {
+        const { error } = await supabase
+            .from('diet_plans')
+            .upsert({
+                ...plan,
+                patientId: activePatient.id
+            });
+        
+        if (error) console.error("Erro ao salvar dieta:", error);
+    }
+
+    const currentIds = newDietPlans.map(d => d.id);
+    const idsToDelete = activePatient.dietPlans.filter(d => !currentIds.includes(d.id)).map(d => d.id);
+    
+    if (idsToDelete.length > 0) {
+        await supabase.from('diet_plans').delete().in('id', idsToDelete);
+    }
+
     const updatedPatient: Patient = {
         ...activePatient,
         dietPlans: newDietPlans
     };
-    handleUpdatePatient(updatedPatient);
+    
+    setPatients(prev => prev.map(p => p.id === updatedPatient.id ? updatedPatient : p));
   };
 
-  const handleUpdateAnamnesis = (newAnamnesis: Anamnesis) => {
+  const handleUpdateAnamnesis = async (newAnamnesis: Anamnesis) => {
     if (!activePatient) return;
+    
+    const { error } = await supabase
+        .from('patients')
+        .update({ anamnesis: newAnamnesis })
+        .eq('id', activePatient.id);
+
+    if (error) {
+        console.error("Erro ao salvar anamnese:", error);
+        return;
+    }
+
     const updatedPatient: Patient = {
         ...activePatient,
         anamnesis: newAnamnesis
     };
-    handleUpdatePatient(updatedPatient);
+    setPatients(prev => prev.map(p => p.id === updatedPatient.id ? updatedPatient : p));
   };
 
-  const handleTrashPatient = (id: string) => {
-    setPatients(prev => prev.map(p => p.id === id ? { ...p, status: 'trash' } : p));
-    if (selectedPatientId === id) {
-      setSelectedPatientId(null);
+  const handleTrashPatient = async (id: string) => {
+    const { error } = await supabase
+        .from('patients')
+        .update({ status: 'trash' })
+        .eq('id', id);
+
+    if (!error) {
+        setPatients(prev => prev.map(p => p.id === id ? { ...p, status: 'trash' } : p));
+        if (selectedPatientId === id) {
+            setSelectedPatientId(null);
+        }
     }
   };
 
-  const handleRestorePatient = (id: string) => {
-    setPatients(prev => prev.map(p => p.id === id ? { ...p, status: 'active' } : p));
+  const handleRestorePatient = async (id: string) => {
+    const { error } = await supabase
+        .from('patients')
+        .update({ status: 'active' })
+        .eq('id', id);
+
+    if (!error) {
+        setPatients(prev => prev.map(p => p.id === id ? { ...p, status: 'active' } : p));
+    }
   };
 
   const handleSelectPatient = (id: string) => {
@@ -327,24 +295,35 @@ const App: React.FC = () => {
     setCurrentView('patients'); // Ensure we are in the "Patients" section
   };
 
-  // Specific handler to go from active diet list directly to diet tab
   const handleSelectPatientDiet = (id: string) => {
     setSelectedPatientId(id);
     setActiveTab('diet');
     setCurrentView('patients');
   };
 
-  // Specific handler for the selector screen to go straight to entry
   const handleSelectPatientForEntry = (id: string) => {
     setSelectedPatientId(id);
     setCheckInToEdit(null); // Ensure clean form
     setCurrentView('add_entry');
   };
 
-  const handleSaveCheckIn = (checkIn: CheckIn) => {
+  const handleSaveCheckIn = async (checkIn: CheckIn) => {
     if (!activePatient) return;
 
-    // Verificar se é uma atualização ou inserção
+    // Salvar no Supabase
+    const { error } = await supabase
+        .from('check_ins')
+        .upsert({
+            ...checkIn,
+            patientId: activePatient.id
+        });
+
+    if (error) {
+        console.error("Erro ao salvar avaliação:", error);
+        alert("Erro ao salvar avaliação.");
+        return;
+    }
+
     const isUpdate = activePatient.checkIns.some(c => c.id === checkIn.id);
     let updatedCheckIns;
 
@@ -362,7 +341,6 @@ const App: React.FC = () => {
     setPatients(prev => prev.map(p => p.id === updatedPatient.id ? updatedPatient : p));
     setCurrentView('patients');
     
-    // Se estava editando, provavelmente quer ver o histórico. Se é novo, quer ver o dashboard.
     if (isUpdate) {
         setActiveTab('history');
     } else {
@@ -371,9 +349,16 @@ const App: React.FC = () => {
     setCheckInToEdit(null);
   };
 
-  const handleDeleteCheckIn = (id: string) => {
+  const handleDeleteCheckIn = async (id: string) => {
     if (!activePatient) return;
     if (!window.confirm("Tem certeza que deseja excluir esta avaliação?")) return;
+
+    const { error } = await supabase.from('check_ins').delete().eq('id', id);
+
+    if (error) {
+        console.error("Erro ao deletar:", error);
+        return;
+    }
 
     const updatedCheckIns = activePatient.checkIns.filter(c => c.id !== id);
     const updatedPatient = { ...activePatient, checkIns: updatedCheckIns };
@@ -386,24 +371,45 @@ const App: React.FC = () => {
     setCurrentView('add_entry');
   };
 
-  // --- Handler para Visualizar Relatório ---
   const handleViewReport = (checkIn: CheckIn) => {
       setReportCheckIn(checkIn);
       setCurrentView('assessment_report');
   };
 
-  const handleAddAppointment = (newAppointment: Appointment) => {
-    setAppointments(prev => [...prev, newAppointment]);
+  const handleAddAppointment = async (newAppointment: Appointment) => {
+    const { error } = await supabase.from('appointments').insert(newAppointment);
+    if (!error) {
+        setAppointments(prev => [...prev, newAppointment]);
+    }
   };
 
-  const handleUpdateAppointment = (updatedAppointment: Appointment) => {
-    setAppointments(prev => prev.map(a => a.id === updatedAppointment.id ? updatedAppointment : a));
+  const handleUpdateAppointment = async (updatedAppointment: Appointment) => {
+    const { error } = await supabase
+        .from('appointments')
+        .update(updatedAppointment)
+        .eq('id', updatedAppointment.id);
+        
+    if (!error) {
+        setAppointments(prev => prev.map(a => a.id === updatedAppointment.id ? updatedAppointment : a));
+    }
+  };
+
+  const handleSaveProfile = async (data: Nutritionist) => {
+      // Usa um ID fixo para o perfil único da clínica
+      const { error } = await supabase
+        .from('nutritionist_profile')
+        .upsert({ ...data, id: 'profile_1' });
+      
+      if (error) {
+          console.error("Erro ao salvar perfil:", error);
+          alert("Erro ao salvar perfil.");
+          return;
+      }
+      setNutritionist(data);
   };
 
   const handleViewChange = (view: ViewState) => {
-    // Reset states when changing main sections
     if (view === 'patients') {
-      // If clicking "Patients" in sidebar, we go back to list, deselect patient
       setSelectedPatientId(null);
     }
     
@@ -412,7 +418,6 @@ const App: React.FC = () => {
         setSelectedPatientId(null);
     }
     
-    // Ensure entry form state is clean when navigating away
     if (view !== 'add_entry') {
         setCheckInToEdit(null);
     }
@@ -429,7 +434,7 @@ const App: React.FC = () => {
     <div className="flex items-center gap-1 bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 mb-6 w-full max-w-2xl mx-auto print:hidden">
       {[
         { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard },
-        { id: 'anamnesis', label: 'Anamnese', icon: Stethoscope }, // Nova Aba
+        { id: 'anamnesis', label: 'Anamnese', icon: Stethoscope },
         { id: 'history', label: 'Histórico', icon: FileText },
         { id: 'diet', label: 'Dieta', icon: Utensils },
         { id: 'profile', label: 'Perfil', icon: User },
@@ -454,15 +459,33 @@ const App: React.FC = () => {
     </div>
   );
 
+  // --- RENDER CONDICIONAL (AUTH vs APP) ---
+  if (!isAuthenticated) {
+    return <LoginScreen onLogin={handleLogin} />;
+  }
+
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden font-sans transition-colors duration-200">
-      {/* Sidebar Navigation */}
-      <Sidebar currentView={currentView} onViewChange={handleViewChange} isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
+      <Sidebar 
+        currentView={currentView} 
+        onViewChange={handleViewChange} 
+        isDarkMode={isDarkMode} 
+        toggleTheme={toggleTheme} 
+        onLogout={handleLogout}
+      />
 
-      {/* Main Content Area */}
       <main className="flex-1 overflow-y-auto p-4 md:p-8 print:p-0 print:overflow-visible">
         
-        {/* Dynamic Header (Only show if NOT in Home/Main Dashboard because it has its own header) */}
+        {/* Loading Indicator for Data Fetching */}
+        {isLoadingData && (
+            <div className="fixed inset-0 bg-white/80 dark:bg-slate-950/80 z-50 flex flex-col items-center justify-center backdrop-blur-sm">
+                <div className="animate-spin text-blue-600 dark:text-blue-400 mb-4">
+                    <Activity size={48} />
+                </div>
+                <p className="text-slate-600 dark:text-slate-300 font-medium">Sincronizando com Supabase...</p>
+            </div>
+        )}
+
         {currentView !== 'home' && currentView !== 'active_diets' && currentView !== 'assessment_report' && (
           <header className="mb-6 flex justify-between items-center max-w-[1920px] mx-auto print:hidden">
             <div>
@@ -517,7 +540,6 @@ const App: React.FC = () => {
              />
           )}
 
-          {/* VIEW: RELATÓRIO DE AVALIAÇÃO */}
           {currentView === 'assessment_report' && reportCheckIn && activePatient && (
              <AssessmentReport 
                 checkIn={reportCheckIn}
@@ -527,13 +549,14 @@ const App: React.FC = () => {
                     setCurrentView('patients');
                     setActiveTab('history');
                 }}
+                nutritionist={nutritionist}
              />
           )}
 
           {currentView === 'profile_settings' && (
             <NutritionistProfile 
                 data={nutritionist}
-                onSave={setNutritionist}
+                onSave={handleSaveProfile}
                 onResetData={handleResetData}
             />
           )}
@@ -571,7 +594,6 @@ const App: React.FC = () => {
             />
           )}
 
-          {/* PATIENT DETAILS VIEW (TABS) */}
           {currentView === 'patients' && activePatient && (
             <div className="space-y-6">
               {renderTabs()}
@@ -580,13 +602,12 @@ const App: React.FC = () => {
                 <Dashboard 
                   checkIns={activeCheckIns} 
                   onAddEntry={() => {
-                      setCheckInToEdit(null); // Ensure clean form
+                      setCheckInToEdit(null);
                       setCurrentView('add_entry');
                   }}
                   onViewReport={handleViewReport}
                   age={activePatient.age}
                   gender={activePatient.gender}
-                  // Passamos o fator de atividade para calcular o GET no Dashboard
                   activityFactor={activePatient.activityFactor || 1.2}
                 />
               )}
@@ -612,9 +633,9 @@ const App: React.FC = () => {
                     plans={activePatient.dietPlans} 
                     onUpdatePlans={handleUpdateDietPlans}
                     patientName={activePatient.name}
-                    patientWeight={activeCheckIns[0]?.weight || 70} // Passando peso para calculo de g/kg
-                    // CALCULA O GET: BMR * ActivityFactor (Se não houver checkin, usa 0)
+                    patientWeight={activeCheckIns[0]?.weight || 70}
                     targetCalories={(activeCheckIns[0]?.bmr || 0) * (activePatient.activityFactor || 1.2)} 
+                    nutritionist={nutritionist}
                 />
               )}
 
@@ -664,7 +685,6 @@ const App: React.FC = () => {
                         <option value="Feminino">Feminino</option>
                       </select>
                     </div>
-                    {/* Exibição do Fator de Atividade no Perfil */}
                     <div>
                       <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Fator de Atividade (FA)</label>
                       <input type="text" value={
@@ -685,14 +705,14 @@ const App: React.FC = () => {
             <EntryForm 
               onSave={handleSaveCheckIn} 
               onCancel={() => {
-                setCheckInToEdit(null); // Limpa estado de edição
-                setCurrentView('patients'); // Back to patient details
-                setActiveTab(checkInToEdit ? 'history' : 'overview'); // Retorna para onde estava logicamente
+                setCheckInToEdit(null);
+                setCurrentView('patients');
+                setActiveTab(checkInToEdit ? 'history' : 'overview');
               }}
               lastRecord={activeCheckIns[0]}
               patientBirthDate={activePatient.birthDate}
               initialData={checkInToEdit}
-              patientGender={activePatient.gender} // PASSING GENDER FOR BMR CALCULATION
+              patientGender={activePatient.gender}
             />
           )}
 
