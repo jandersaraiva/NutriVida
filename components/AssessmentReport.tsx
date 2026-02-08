@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useMemo } from 'react';
 import { CheckIn, Patient } from '../types';
-import { ChevronLeft, Download, AlertTriangle, CheckCircle, User, Camera, X, Activity, Scale, Ruler, TrendingUp, Flame, Hourglass, Loader2 } from 'lucide-react';
+import { ChevronLeft, Download, AlertTriangle, CheckCircle, User, Camera, X, Activity, Scale, Ruler, TrendingUp, Flame, Hourglass, Loader2, Info } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   PieChart, Pie, Cell, ComposedChart, Line, LabelList 
@@ -22,10 +22,13 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
   const [frontPhoto, setFrontPhoto] = useState<string | null>(null);
   const [sidePhoto, setSidePhoto] = useState<string | null>(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [showScoreInfo, setShowScoreInfo] = useState(false); // Novo estado para o modal de info
   
   const frontInputRef = useRef<HTMLInputElement>(null);
   const sideInputRef = useRef<HTMLInputElement>(null);
-  const reportRef = useRef<HTMLDivElement>(null);
+  
+  // Ref para o container principal para escopo de seletores
+  const reportContainerRef = useRef<HTMLDivElement>(null);
 
   // --- Handlers de Foto ---
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'front' | 'side') => {
@@ -50,48 +53,64 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
     }
   };
 
-  // --- GERAÇÃO DE PDF ---
+  // --- GERAÇÃO DE PDF INTELIGENTE ---
   const handleDownloadPDF = async () => {
-    if (!reportRef.current) return;
+    if (!reportContainerRef.current) return;
     setIsGeneratingPdf(true);
 
     try {
-        const element = reportRef.current;
-        
-        // Captura o elemento como Canvas
-        const canvas = await html2canvas(element, {
-            scale: 2, // Melhor resolução
-            useCORS: true, // Para imagens externas se houver
-            backgroundColor: '#ffffff', // Garante fundo branco
-            logging: false
-        });
-
-        const imgData = canvas.toDataURL('image/png');
-        
-        // Dimensões A4 em mm
+        const pdf = new jsPDF('p', 'mm', 'a4');
         const pdfWidth = 210;
         const pdfHeight = 297;
-        
-        // Criação do PDF
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const imgProps = pdf.getImageProperties(imgData);
-        
-        // Calcula a altura da imagem no PDF mantendo a proporção
-        const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
-        
-        let heightLeft = imgHeight;
-        let position = 0;
+        const margin = 10; // 10mm de margem
+        const contentWidth = pdfWidth - (margin * 2);
 
-        // Primeira página
-        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-        heightLeft -= pdfHeight;
+        // 1. Capturar Cabeçalho
+        const headerEl = reportContainerRef.current.querySelector('.report-header') as HTMLElement;
+        let headerHeight = 0;
+        let headerData: string | null = null;
 
-        // Páginas subsequentes (se o relatório for maior que uma A4)
-        while (heightLeft > 0) {
-            position = heightLeft - imgHeight;
-            pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-            heightLeft -= pdfHeight;
+        if (headerEl) {
+            const headerCanvas = await html2canvas(headerEl, { scale: 2, backgroundColor: '#ffffff' });
+            headerData = headerCanvas.toDataURL('image/png');
+            // Calcula a altura proporcional no PDF
+            headerHeight = (headerCanvas.height * contentWidth) / headerCanvas.width;
+        }
+
+        // 2. Identificar Seções do Relatório
+        const sections = Array.from(reportContainerRef.current.querySelectorAll('.report-section')) as HTMLElement[];
+        
+        let currentY = margin;
+
+        // Função para adicionar cabeçalho na página atual
+        const addHeaderToPage = () => {
+            if (headerData && headerHeight > 0) {
+                pdf.addImage(headerData, 'PNG', margin, margin, contentWidth, headerHeight);
+                return margin + headerHeight + 5; // Retorna nova posição Y com espaçamento
+            }
+            return margin;
+        };
+
+        // Adiciona cabeçalho na primeira página
+        currentY = addHeaderToPage();
+
+        // 3. Iterar sobre as seções e paginar
+        for (const section of sections) {
+            // Captura a seção
+            const canvas = await html2canvas(section, { scale: 2, backgroundColor: '#ffffff' });
+            const imgData = canvas.toDataURL('image/png');
+            const imgHeight = (canvas.height * contentWidth) / canvas.width;
+
+            // Verifica se a seção cabe na página atual
+            // Se (posição atual + altura da seção) > (altura da página - margem inferior)
+            if (currentY + imgHeight > pdfHeight - margin) {
+                pdf.addPage(); // Nova página
+                currentY = addHeaderToPage(); // Adiciona cabeçalho e reseta Y
+            }
+
+            // Adiciona a seção
+            pdf.addImage(imgData, 'PNG', margin, currentY, contentWidth, imgHeight);
+            currentY += imgHeight + 5; // Espaçamento entre seções
         }
 
         pdf.save(`Avaliacao-${patient.name.replace(/\s+/g, '_')}-${checkIn.date}.pdf`);
@@ -107,10 +126,6 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
   // --- Cálculos ---
   const waist = checkIn.waistCircumference || 0;
   const hip = checkIn.hipCircumference || 0;
-  const heightCm = checkIn.height * 100;
-  
-  // RCA: Cintura / Altura
-  const rca = waist > 0 && heightCm > 0 ? waist / heightCm : 0;
   
   // RCQ: Cintura / Quadril
   const rcq = waist > 0 && hip > 0 ? waist / hip : 0;
@@ -256,7 +271,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
   return (
     <div className="bg-slate-50 min-h-screen pb-12">
       
-      {/* Header de Ação (Apenas UI) */}
+      {/* Header de Ação (Apenas UI, oculto no PDF via controle de seleção) */}
       <div className="max-w-5xl mx-auto pt-6 px-4 mb-6 flex justify-between items-center print:hidden">
           <button onClick={onBack} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors">
               <ChevronLeft size={20} /> Voltar
@@ -271,154 +286,166 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
           </button>
       </div>
 
-      {/* ÁREA DE IMPRESSÃO / CAPTURA */}
-      {/* Definimos uma largura fixa para o container durante a captura para garantir proporção A4 */}
+      {/* ÁREA DO RELATÓRIO */}
+      {/* Este container é a referência para o seletor querySelectorAll */}
       <div className="flex justify-center overflow-auto p-4 md:p-0">
           <div 
-            ref={reportRef}
+            ref={reportContainerRef}
             className="w-[210mm] min-h-[297mm] bg-white shadow-xl p-8 md:p-12"
-            style={{ margin: '0 auto' }} // Centraliza
+            style={{ margin: '0 auto' }} 
           >
             
-            {/* Cabeçalho do Relatório */}
-            <header className="flex justify-between items-end border-b-2 border-slate-100 pb-6 mb-8">
-                <div>
-                    <div className="flex items-center gap-2 text-blue-700 mb-1">
-                        <Activity size={24} />
-                        <span className="font-bold text-xl tracking-tight">NutriVida</span>
+            {/* 1. CABEÇALHO (Marcado para captura) */}
+            <div className="report-header bg-white pb-6 mb-2 border-b-2 border-slate-100">
+                <div className="flex justify-between items-end">
+                    <div>
+                        <div className="flex items-center gap-2 text-blue-700 mb-1">
+                            <Activity size={24} />
+                            <span className="font-bold text-xl tracking-tight">NutriVida</span>
+                        </div>
+                        <p className="text-xs text-slate-400 uppercase tracking-widest font-semibold">Relatório de Avaliação Física</p>
                     </div>
-                    <p className="text-xs text-slate-400 uppercase tracking-widest font-semibold">Relatório de Avaliação Física</p>
-                </div>
-                <div className="text-right">
-                    <h1 className="text-xl font-bold text-slate-900">{patient.name}</h1>
-                    <p className="text-slate-500 text-sm">
-                        {patient.age} anos • {patient.gender} • {new Date(checkIn.date).toLocaleDateString('pt-BR')}
-                    </p>
-                </div>
-            </header>
-
-            {/* Grid Principal */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                
-                {/* Coluna 1: Métricas Detalhadas */}
-                <div className="space-y-6">
-                    
-                    {/* Antropometria */}
-                    <section>
-                        <h3 className="flex items-center gap-2 font-bold text-blue-700 mb-3 text-sm uppercase tracking-wide">
-                            <Ruler size={16} /> Antropometria
-                        </h3>
-                        <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                            <MetricRow label="Peso Corporal" value={`${checkIn.weight.toFixed(1)} kg`} highlight />
-                            <MetricRow label="Altura" value={`${(checkIn.height * 100).toFixed(0)} cm`} />
-                            <MetricRow label="IMC" value={`${checkIn.imc.toFixed(1)} kg/m²`} subValue={checkIn.imc < 25 ? 'Eutrofia' : 'Sobrepeso'} />
-                            <MetricRow label="Circunferência Cintura" value={waist > 0 ? `${waist} cm` : '-'} />
-                            <MetricRow label="Circunferência Quadril" value={hip > 0 ? `${hip} cm` : '-'} />
-                            {rcq > 0 && <MetricRow label="Relação Cintura-Quadril" value={rcq.toFixed(2)} />}
-                        </div>
-                    </section>
-
-                    {/* Composição Corporal (Tabela) */}
-                    <section>
-                        <h3 className="flex items-center gap-2 font-bold text-blue-700 mb-3 text-sm uppercase tracking-wide">
-                            <Scale size={16} /> Composição Corporal
-                        </h3>
-                        <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                            <MetricRow label="Massa Gorda" value={`${fatMass.toFixed(1)} kg`} subValue={`${checkIn.bodyFat}%`} />
-                            <MetricRow label="Massa Magra" value={`${muscleMass.toFixed(1)} kg`} subValue={`${checkIn.muscleMass}%`} />
-                            <MetricRow label="Água / Residual" value={`${residualMass.toFixed(1)} kg`} />
-                            <MetricRow label="Gordura Visceral" value={`Nível ${checkIn.visceralFat}`} />
-                            <MetricRow label="Idade Corporal" value={`${checkIn.bodyAge || '-'} anos`} />
-                        </div>
-                    </section>
-                </div>
-
-                {/* Coluna 2: Gráficos e Score */}
-                <div className="flex flex-col gap-6">
-                    
-                    {/* Health Score Card */}
-                    <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
-                        <div className="relative z-10 flex justify-between items-center">
-                            <div>
-                                <p className="text-slate-300 text-xs font-bold uppercase tracking-wider mb-1">Pontuação de Saúde</p>
-                                <h2 className="text-4xl font-bold">{healthScore} <span className="text-lg font-normal text-slate-400">/ 100</span></h2>
-                            </div>
-                            <div className="h-16 w-16 rounded-full border-4 border-blue-500 flex items-center justify-center bg-blue-500/20 backdrop-blur-sm">
-                                <Activity size={32} className="text-blue-400" />
-                            </div>
-                        </div>
-                        <div className="mt-4 pt-4 border-t border-white/10">
-                            <p className="text-xs text-slate-300">
-                                {healthScore >= 80 ? 'Excelente! Continue assim.' : 
-                                healthScore >= 60 ? 'Bom, mas há espaço para melhorias.' : 
-                                'Atenção necessária a alguns indicadores.'}
-                            </p>
-                        </div>
-                        {/* Decorative Blob */}
-                        <div className="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl"></div>
-                    </div>
-
-                    {/* Gráfico Donut */}
-                    <div className="flex-1 bg-white rounded-xl border border-slate-100 p-4 flex flex-col items-center justify-center">
-                        <h4 className="font-bold text-slate-700 text-sm mb-4">Distribuição de Massa (Kg)</h4>
-                        <div className="flex items-center justify-center w-full gap-8">
-                            <div className="w-32 h-32 relative">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie
-                                            data={pieData}
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={35}
-                                            outerRadius={55}
-                                            paddingAngle={5}
-                                            dataKey="value"
-                                            stroke="none"
-                                            isAnimationActive={false}
-                                        >
-                                            {pieData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={entry.color} />
-                                            ))}
-                                        </Pie>
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            </div>
-                            <div className="space-y-3 text-xs">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded-full bg-rose-500"></div>
-                                    <div>
-                                        <span className="block font-bold text-slate-700">{fatMass.toFixed(1)}kg</span>
-                                        <span className="text-slate-400">Gordura ({checkIn.bodyFat}%)</span>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                                    <div>
-                                        <span className="block font-bold text-slate-700">{muscleMass.toFixed(1)}kg</span>
-                                        <span className="text-slate-400">Músculo ({checkIn.muscleMass}%)</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Indicadores Visuais Rápidos */}
-                    <div className="bg-white rounded-xl border border-slate-100 p-4">
-                        <StatusBadge label="Índice Massa Corporal (IMC)" value={checkIn.imc} type={getStatusColor(checkIn.imc, 18.5, 24.9)} />
-                        <StatusBadge label="Índice Massa Gorda (IMG)" value={img} type={getStatusColor(img, 3, 8)} />
-                        <StatusBadge label="Índice Massa Magra (IMM)" value={imm} type={getStatusColor(imm, 18, 24)} />
+                    <div className="text-right">
+                        <h1 className="text-xl font-bold text-slate-900">{patient.name}</h1>
+                        <p className="text-slate-500 text-sm">
+                            {patient.age} anos • {patient.gender} • {new Date(checkIn.date).toLocaleDateString('pt-BR')}
+                        </p>
                     </div>
                 </div>
             </div>
 
-            {/* --- ÁREA DE GRÁFICOS DE EVOLUÇÃO --- */}
-            <div className="mb-8">
-                <h3 className="font-bold text-slate-800 mb-4 text-sm uppercase border-b border-slate-100 pb-2 flex items-center gap-2">
+            {/* 2. GRID PRINCIPAL (Métricas e Score) - Section */}
+            <div className="report-section bg-white mb-6 pt-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Coluna 1: Métricas Detalhadas */}
+                    <div className="space-y-6">
+                        {/* Antropometria */}
+                        <section>
+                            <h3 className="flex items-center gap-2 font-bold text-blue-700 mb-3 text-sm uppercase tracking-wide">
+                                <Ruler size={16} /> Antropometria
+                            </h3>
+                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                                <MetricRow label="Peso Corporal" value={`${checkIn.weight.toFixed(1)} kg`} highlight />
+                                <MetricRow label="Altura" value={`${(checkIn.height * 100).toFixed(0)} cm`} />
+                                <MetricRow label="IMC" value={`${checkIn.imc.toFixed(1)} kg/m²`} subValue={checkIn.imc < 25 ? 'Eutrofia' : 'Sobrepeso'} />
+                                <MetricRow label="Circunferência Cintura" value={waist > 0 ? `${waist} cm` : '-'} />
+                                <MetricRow label="Circunferência Quadril" value={hip > 0 ? `${hip} cm` : '-'} />
+                                {rcq > 0 && <MetricRow label="Relação Cintura-Quadril" value={rcq.toFixed(2)} />}
+                            </div>
+                        </section>
+
+                        {/* Composição Corporal (Tabela) */}
+                        <section>
+                            <h3 className="flex items-center gap-2 font-bold text-blue-700 mb-3 text-sm uppercase tracking-wide">
+                                <Scale size={16} /> Composição Corporal
+                            </h3>
+                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                                <MetricRow label="Massa Gorda" value={`${fatMass.toFixed(1)} kg`} subValue={`${checkIn.bodyFat}%`} />
+                                <MetricRow label="Massa Magra" value={`${muscleMass.toFixed(1)} kg`} subValue={`${checkIn.muscleMass}%`} />
+                                <MetricRow label="Água / Residual" value={`${residualMass.toFixed(1)} kg`} />
+                                <MetricRow label="Gordura Visceral" value={`Nível ${checkIn.visceralFat}`} />
+                                <MetricRow label="Idade Corporal" value={`${checkIn.bodyAge || '-'} anos`} />
+                            </div>
+                        </section>
+                    </div>
+
+                    {/* Coluna 2: Health Score + Donut */}
+                    <div className="flex flex-col gap-6">
+                        
+                        {/* Health Score Card */}
+                        <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden group">
+                            <div className="relative z-10 flex justify-between items-center">
+                                <div>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <p className="text-slate-300 text-xs font-bold uppercase tracking-wider">Pontuação de Saúde</p>
+                                        <button 
+                                            onClick={() => setShowScoreInfo(true)}
+                                            className="text-slate-400 hover:text-white transition-colors print:hidden"
+                                            title="Como é calculado?"
+                                        >
+                                            <Info size={14} />
+                                        </button>
+                                    </div>
+                                    <h2 className="text-4xl font-bold">{healthScore} <span className="text-lg font-normal text-slate-400">/ 100</span></h2>
+                                </div>
+                                <div className="h-16 w-16 rounded-full border-4 border-blue-500 flex items-center justify-center bg-blue-500/20 backdrop-blur-sm">
+                                    <Activity size={32} className="text-blue-400" />
+                                </div>
+                            </div>
+                            <div className="mt-4 pt-4 border-t border-white/10">
+                                <p className="text-xs text-slate-300">
+                                    {healthScore >= 80 ? 'Excelente! Continue assim.' : 
+                                    healthScore >= 60 ? 'Bom, mas há espaço para melhorias.' : 
+                                    'Atenção necessária a alguns indicadores.'}
+                                </p>
+                            </div>
+                            <div className="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl"></div>
+                        </div>
+
+                        {/* Gráfico Donut */}
+                        <div className="flex-1 bg-white rounded-xl border border-slate-100 p-4 flex flex-col items-center justify-center">
+                            <h4 className="font-bold text-slate-700 text-sm mb-4">Distribuição de Massa (Kg)</h4>
+                            <div className="flex items-center justify-center w-full gap-8">
+                                <div className="w-32 h-32 relative">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie
+                                                data={pieData}
+                                                cx="50%"
+                                                cy="50%"
+                                                innerRadius={35}
+                                                outerRadius={55}
+                                                paddingAngle={5}
+                                                dataKey="value"
+                                                stroke="none"
+                                                isAnimationActive={false}
+                                            >
+                                                {pieData.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                                ))}
+                                            </Pie>
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                </div>
+                                <div className="space-y-3 text-xs">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 rounded-full bg-rose-500"></div>
+                                        <div>
+                                            <span className="block font-bold text-slate-700">{fatMass.toFixed(1)}kg</span>
+                                            <span className="text-slate-400">Gordura ({checkIn.bodyFat}%)</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                                        <div>
+                                            <span className="block font-bold text-slate-700">{muscleMass.toFixed(1)}kg</span>
+                                            <span className="text-slate-400">Músculo ({checkIn.muscleMass}%)</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Indicadores Visuais Rápidos */}
+                        <div className="bg-white rounded-xl border border-slate-100 p-4">
+                            <StatusBadge label="Índice Massa Corporal (IMC)" value={checkIn.imc} type={getStatusColor(checkIn.imc, 18.5, 24.9)} />
+                            <StatusBadge label="Índice Massa Gorda (IMG)" value={img} type={getStatusColor(img, 3, 8)} />
+                            <StatusBadge label="Índice Massa Magra (IMM)" value={imm} type={getStatusColor(imm, 18, 24)} />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* 3. TÍTULO EVOLUÇÃO - Section */}
+            <div className="report-section bg-white pt-4 pb-2">
+                <h3 className="font-bold text-slate-800 mb-2 text-sm uppercase border-b border-slate-100 pb-2 flex items-center gap-2">
                     <TrendingUp size={16} /> Evolução Detalhada
                 </h3>
-                
+            </div>
+            
+            {/* 4. LINHA 1 DE GRÁFICOS - Section */}
+            <div className="report-section bg-white mb-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    
                     {/* 1. Peso e IMC */}
                     <div className="bg-slate-50 rounded-xl border border-slate-100 p-4">
                         <p className="text-xs text-center font-bold text-slate-600 mb-2">Peso Corporal (kg) e IMC</p>
@@ -457,7 +484,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                         </div>
                     </div>
 
-                    {/* 2. Massas em KG (Gordura vs Músculo) */}
+                    {/* 2. Massas em KG */}
                     <div className="bg-slate-50 rounded-xl border border-slate-100 p-4">
                         <p className="text-xs text-center font-bold text-slate-600 mb-2">Composição Corporal (Kg)</p>
                         <div className="h-48 w-full">
@@ -489,7 +516,12 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                             </ResponsiveContainer>
                         </div>
                     </div>
-
+                </div>
+            </div>
+            
+            {/* 5. LINHA 2 DE GRÁFICOS - Section */}
+            <div className="report-section bg-white mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* 3. Gordura Visceral */}
                     <div className="bg-slate-50 rounded-xl border border-slate-100 p-4">
                         <p className="text-xs text-center font-bold text-slate-600 mb-2 flex items-center justify-center gap-1"><Flame size={12} className="text-amber-500"/> Nível Visceral</p>
@@ -541,52 +573,55 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                             </ResponsiveContainer>
                         </div>
                     </div>
-
                 </div>
             </div>
 
-            {/* Fotos (Se existirem) */}
+            {/* 6. FOTOS - Section */}
             {(frontPhoto || sidePhoto) && (
-                <div className="grid grid-cols-2 gap-6 mb-8">
-                    <PhotoUploadBox 
-                        title="Análise Frontal"
-                        photo={frontPhoto}
-                        inputRef={frontInputRef}
-                        onUpload={(e: React.ChangeEvent<HTMLInputElement>) => handlePhotoUpload(e, 'front')}
-                        onClear={() => clearPhoto('front')}
-                    />
-                    <PhotoUploadBox 
-                        title="Análise Lateral"
-                        photo={sidePhoto}
-                        inputRef={sideInputRef}
-                        onUpload={(e: React.ChangeEvent<HTMLInputElement>) => handlePhotoUpload(e, 'side')}
-                        onClear={() => clearPhoto('side')}
-                    />
-                </div>
-            )}
-            
-            {/* Se NÃO existirem fotos, mostra o botão de upload (escondido durante captura via lógica se necessário, mas aqui deixamos visível para edição) */}
-            {(!frontPhoto && !sidePhoto) && !isGeneratingPdf && (
-                <div className="grid grid-cols-2 gap-6 mb-8">
-                    <PhotoUploadBox 
-                        title="Análise Frontal"
-                        photo={frontPhoto}
-                        inputRef={frontInputRef}
-                        onUpload={(e: React.ChangeEvent<HTMLInputElement>) => handlePhotoUpload(e, 'front')}
-                        onClear={() => clearPhoto('front')}
-                    />
-                    <PhotoUploadBox 
-                        title="Análise Lateral"
-                        photo={sidePhoto}
-                        inputRef={sideInputRef}
-                        onUpload={(e: React.ChangeEvent<HTMLInputElement>) => handlePhotoUpload(e, 'side')}
-                        onClear={() => clearPhoto('side')}
-                    />
+                <div className="report-section bg-white mb-8">
+                    <div className="grid grid-cols-2 gap-6">
+                        <PhotoUploadBox 
+                            title="Análise Frontal"
+                            photo={frontPhoto}
+                            inputRef={frontInputRef}
+                            onUpload={(e: React.ChangeEvent<HTMLInputElement>) => handlePhotoUpload(e, 'front')}
+                            onClear={() => clearPhoto('front')}
+                        />
+                        <PhotoUploadBox 
+                            title="Análise Lateral"
+                            photo={sidePhoto}
+                            inputRef={sideInputRef}
+                            onUpload={(e: React.ChangeEvent<HTMLInputElement>) => handlePhotoUpload(e, 'side')}
+                            onClear={() => clearPhoto('side')}
+                        />
+                    </div>
                 </div>
             )}
 
-            {/* Rodapé e Assinatura */}
-            <div className="mt-auto pt-12">
+            {/* Caso de edição sem fotos ainda (para visualização apenas) */}
+            {(!frontPhoto && !sidePhoto) && !isGeneratingPdf && (
+                 <div className="report-section bg-white mb-8">
+                    <div className="grid grid-cols-2 gap-6">
+                        <PhotoUploadBox 
+                            title="Análise Frontal"
+                            photo={frontPhoto}
+                            inputRef={frontInputRef}
+                            onUpload={(e: React.ChangeEvent<HTMLInputElement>) => handlePhotoUpload(e, 'front')}
+                            onClear={() => clearPhoto('front')}
+                        />
+                        <PhotoUploadBox 
+                            title="Análise Lateral"
+                            photo={sidePhoto}
+                            inputRef={sideInputRef}
+                            onUpload={(e: React.ChangeEvent<HTMLInputElement>) => handlePhotoUpload(e, 'side')}
+                            onClear={() => clearPhoto('side')}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {/* 7. RODAPÉ - Section */}
+            <div className="report-section bg-white pt-12 mt-auto">
                 <div className="flex justify-between items-end gap-12">
                     <div className="flex-1 border-t border-slate-300 pt-2 text-center">
                         <p className="font-bold text-slate-800 text-sm">Assinatura do Paciente</p>
@@ -604,6 +639,97 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
 
           </div>
       </div>
+
+      {/* MODAL DE EXPLICAÇÃO DA PONTUAÇÃO */}
+      {showScoreInfo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm print:hidden">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative animate-in fade-in zoom-in duration-200">
+                <button 
+                    onClick={() => setShowScoreInfo(false)}
+                    className="absolute top-4 right-4 p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+                >
+                    <X size={20} />
+                </button>
+                
+                <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <Activity size={20} className="text-blue-600" />
+                    Como funciona o cálculo?
+                </h3>
+                
+                <p className="text-slate-600 text-sm mb-4">
+                    A pontuação de saúde é um algoritmo heurístico que começa com 100 pontos e aplica penalidades ou bônus.
+                </p>
+
+                <div className="space-y-4">
+                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 flex justify-between items-center">
+                        <div className="flex flex-col">
+                            <span className="font-bold text-slate-700 text-sm">Base Inicial</span>
+                            <span className="text-[10px] text-slate-500">Valor de partida</span>
+                        </div>
+                        <span className="font-bold text-blue-600 text-lg">100 pts</span>
+                    </div>
+
+                    <div>
+                        <h4 className="font-bold text-xs text-rose-500 uppercase tracking-wider mb-2 border-b border-rose-100 pb-1">Penalidades</h4>
+                        <ul className="space-y-3">
+                            <li className="text-sm text-slate-600">
+                                <div className="flex justify-between font-bold text-slate-700 text-xs mb-1">
+                                    <span>IMC (Peso/Altura²)</span>
+                                    <span className="text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded">-2 pts / unidade</span>
+                                </div>
+                                <p className="text-xs text-slate-500 leading-snug">
+                                    Descontado para cada ponto acima de 25 ou abaixo de 18.5.
+                                </p>
+                            </li>
+                            <li className="text-sm text-slate-600">
+                                <div className="flex justify-between font-bold text-slate-700 text-xs mb-1">
+                                    <span>Gordura Visceral</span>
+                                    <span className="text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded">-4 pts / nível</span>
+                                </div>
+                                <p className="text-xs text-slate-500 leading-snug">
+                                    Descontado severamente para cada nível acima de 9.
+                                </p>
+                            </li>
+                            <li className="text-sm text-slate-600">
+                                <div className="flex justify-between font-bold text-slate-700 text-xs mb-1">
+                                    <span>% de Gordura Corporal</span>
+                                    <span className="text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded">-1 pt / %</span>
+                                </div>
+                                <p className="text-xs text-slate-500 leading-snug">
+                                    Descontado se acima de 25% (homens) ou 32% (mulheres).
+                                </p>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h4 className="font-bold text-xs text-emerald-500 uppercase tracking-wider mb-2 border-b border-emerald-100 pb-1">Bônus</h4>
+                        <ul className="space-y-2">
+                            <li className="text-sm text-slate-600">
+                                <div className="flex justify-between font-bold text-slate-700 text-xs mb-1">
+                                    <span>Massa Muscular</span>
+                                    <span className="text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">+0.5 pt / %</span>
+                                </div>
+                                <p className="text-xs text-slate-500 leading-snug">
+                                    Adicionado para cada % acima de 35% (homens) ou 30% (mulheres).
+                                </p>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-slate-100 text-center">
+                    <button 
+                        onClick={() => setShowScoreInfo(false)}
+                        className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-2 rounded-lg font-medium text-sm transition-colors"
+                    >
+                        Entendi
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
+
     </div>
   );
 };
