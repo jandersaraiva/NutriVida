@@ -16,6 +16,7 @@ import { LoginScreen } from './components/LoginScreen';
 import { CheckIn, ViewState, Patient, DietPlan as DietPlanType, PatientTab, Appointment, Nutritionist, Anamnesis } from './types';
 import { User, Activity, Utensils, FileText, LayoutDashboard, Stethoscope } from 'lucide-react';
 import { supabase } from './lib/supabase';
+import { Session } from '@supabase/supabase-js';
 
 // Helper seguro para IDs
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -30,20 +31,41 @@ const SEED_NUTRITIONIST: Nutritionist = {
 };
 
 const App: React.FC = () => {
-  // --- AUTH STATE ---
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return localStorage.getItem('nutrivida_auth') === 'true';
-  });
+  // --- AUTH STATE (Supabase) ---
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoadingSession, setIsLoadingSession] = useState(true);
 
-  const handleLogin = () => {
-    setIsAuthenticated(true);
-    localStorage.setItem('nutrivida_auth', 'true');
+  useEffect(() => {
+    // 1. Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setIsLoadingSession(false);
+    });
+
+    // 2. Listen for changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setIsLoadingSession(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogin = async (email: string, pass: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
+    if (error) throw error;
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    localStorage.removeItem('nutrivida_auth');
-    setCurrentView('home'); // Reset view on logout
+  const handleSignUp = async (email: string, pass: string) => {
+    const { error } = await supabase.auth.signUp({ email, password: pass });
+    if (error) throw error;
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setCurrentView('home');
   };
 
   // --- THEME STATE ---
@@ -71,7 +93,7 @@ const App: React.FC = () => {
 
   // Carregar dados do Supabase
   const fetchData = async () => {
-    if (!isAuthenticated) return;
+    if (!session) return; // Só busca se estiver autenticado
     setIsLoadingData(true);
     try {
         // 1. Fetch Patients
@@ -132,15 +154,17 @@ const App: React.FC = () => {
 
     } catch (error) {
         console.error("Erro ao buscar dados do Supabase:", error);
-        alert("Erro de conexão com o banco de dados.");
+        // Não alerte em erros de autenticação silenciosos durante load
     } finally {
         setIsLoadingData(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
-  }, [isAuthenticated]);
+    if (session) {
+        fetchData();
+    }
+  }, [session]);
 
   // --- RESET HANDLER ---
   const handleResetData = async () => {
@@ -460,8 +484,25 @@ const App: React.FC = () => {
   );
 
   // --- RENDER CONDICIONAL (AUTH vs APP) ---
-  if (!isAuthenticated) {
-    return <LoginScreen onLogin={handleLogin} />;
+  if (isLoadingSession) {
+      return (
+          <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
+              <div className="animate-spin text-blue-600 dark:text-blue-400">
+                  <Activity size={48} />
+              </div>
+          </div>
+      );
+  }
+
+  if (!session) {
+    return (
+      <LoginScreen 
+        onLogin={handleLogin} 
+        onSignUp={handleSignUp}
+        isDarkMode={isDarkMode} 
+        toggleTheme={toggleTheme} 
+      />
+    );
   }
 
   return (
