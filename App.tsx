@@ -14,7 +14,7 @@ import { AnamnesisForm } from './components/AnamnesisForm';
 import { AssessmentReport } from './components/AssessmentReport';
 import { LoginScreen } from './components/LoginScreen';
 import { CheckIn, ViewState, Patient, DietPlan as DietPlanType, PatientTab, Appointment, Nutritionist, Anamnesis } from './types';
-import { User, Activity, Utensils, FileText, LayoutDashboard, Stethoscope } from 'lucide-react';
+import { User, Activity, Utensils, FileText, LayoutDashboard, Stethoscope, Sun, Moon, LogOut } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { Session } from '@supabase/supabase-js';
 
@@ -455,7 +455,7 @@ const App: React.FC = () => {
 
   // Render Tabs Logic
   const renderTabs = () => (
-    <div className="flex items-center gap-1 bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 mb-6 w-full max-w-2xl mx-auto print:hidden">
+    <div className="flex items-center gap-1 bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 mb-6 w-full max-w-2xl mx-auto print:hidden overflow-x-auto">
       {[
         { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard },
         { id: 'anamnesis', label: 'Anamnese', icon: Stethoscope },
@@ -469,14 +469,14 @@ const App: React.FC = () => {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as PatientTab)}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-sm font-medium transition-all min-w-[100px] ${
               isActive 
                 ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 shadow-sm ring-1 ring-blue-100 dark:ring-blue-800' 
                 : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200'
             }`}
           >
-            <Icon size={16} />
-            <span className="hidden sm:inline">{tab.label}</span>
+            <Icon size={16} className="shrink-0" />
+            <span>{tab.label}</span>
           </button>
         )
       })}
@@ -515,7 +515,8 @@ const App: React.FC = () => {
         onLogout={handleLogout}
       />
 
-      <main className="flex-1 overflow-y-auto p-4 md:p-8 print:p-0 print:overflow-visible">
+      {/* Main Content Area: Added pb-24 for mobile nav clearance */}
+      <main className="flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-8 print:p-0 print:overflow-visible">
         
         {/* Loading Indicator for Data Fetching */}
         {isLoadingData && (
@@ -528,23 +529,35 @@ const App: React.FC = () => {
         )}
 
         {currentView !== 'home' && currentView !== 'active_diets' && currentView !== 'assessment_report' && (
-          <header className="mb-6 flex justify-between items-center max-w-[1920px] mx-auto print:hidden">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
-                {currentView === 'patients' && !selectedPatientId && 'Gestão de Pacientes'}
-                {currentView === 'patients' && selectedPatientId && (activePatient?.name || 'Detalhes do Paciente')}
-                {currentView === 'schedule' && 'Agenda'}
-                {currentView === 'add_entry' && (checkInToEdit ? 'Editar Avaliação' : 'Nova Avaliação')}
-                {currentView === 'select_patient_for_entry' && 'Menu de Ações'}
-                {currentView === 'profile_settings' && 'Meu Perfil'}
-              </h1>
-              <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-                {currentView === 'patients' && !selectedPatientId && 'Gerencie o acompanhamento dos seus alunos'}
-                {currentView === 'patients' && selectedPatientId && 'Acompanhe a evolução e gerencie o plano'}
-                {currentView === 'schedule' && 'Visualize seus próximos atendimentos'}
-                {currentView === 'select_patient_for_entry' && 'Selecione o que deseja criar ou gerenciar'}
-                {currentView === 'profile_settings' && 'Gerencie seus dados e informações da clínica'}
-              </p>
+          <header className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 max-w-[1920px] mx-auto print:hidden">
+            <div className="flex justify-between w-full sm:w-auto items-center">
+              <div>
+                <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+                  {currentView === 'patients' && !selectedPatientId && 'Gestão de Pacientes'}
+                  {currentView === 'patients' && selectedPatientId && (activePatient?.name || 'Detalhes do Paciente')}
+                  {currentView === 'schedule' && 'Agenda'}
+                  {currentView === 'add_entry' && (checkInToEdit ? 'Editar Avaliação' : 'Nova Avaliação')}
+                  {currentView === 'select_patient_for_entry' && 'Menu de Ações'}
+                  {currentView === 'profile_settings' && 'Meu Perfil'}
+                </h1>
+                <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
+                  {currentView === 'patients' && !selectedPatientId && 'Gerencie o acompanhamento dos seus alunos'}
+                  {currentView === 'patients' && selectedPatientId && 'Acompanhe a evolução e gerencie o plano'}
+                  {currentView === 'schedule' && 'Visualize seus próximos atendimentos'}
+                  {currentView === 'select_patient_for_entry' && 'Selecione o que deseja criar ou gerenciar'}
+                  {currentView === 'profile_settings' && 'Gerencie seus dados e informações da clínica'}
+                </p>
+              </div>
+
+              {/* Mobile Header Buttons (since Sidebar is gone) */}
+              <div className="flex gap-2 lg:hidden">
+                 <button onClick={toggleTheme} className="p-2 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+                 </button>
+                 <button onClick={handleLogout} className="p-2 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors">
+                    <LogOut size={20} />
+                 </button>
+              </div>
             </div>
             
             {activePatient && selectedPatientId && (
@@ -762,5 +775,4 @@ const App: React.FC = () => {
     </div>
   );
 };
-
 export default App;
