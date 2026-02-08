@@ -61,6 +61,9 @@ export interface Anamnesis {
   notes: string;
 }
 
+// 1.2 (Sedentário) a 1.9 (Extremamente ativo)
+export type ActivityLevel = 1.2 | 1.375 | 1.55 | 1.725 | 1.9;
+
 export interface Patient {
   id: string;
   name: string;
@@ -75,9 +78,10 @@ export interface Patient {
   objective: string;
   avatarColor: string;
   status: 'active' | 'trash';
+  activityFactor: ActivityLevel; // Nova Propriedade Nutricional
   checkIns: CheckIn[];
   dietPlans: DietPlan[];
-  anamnesis?: Anamnesis; // Nova propriedade
+  anamnesis?: Anamnesis;
 }
 
 export interface Appointment {

@@ -138,6 +138,7 @@ const SEED_PATIENTS: Patient[] = [
     objective: 'Hipertrofia',
     avatarColor: 'bg-blue-100 text-blue-700',
     status: 'active',
+    activityFactor: 1.55, // Moderadamente Ativo
     checkIns: SEED_CHECKINS,
     dietPlans: [SEED_DIET],
     anamnesis: {
@@ -166,6 +167,7 @@ const SEED_PATIENTS: Patient[] = [
     objective: 'Emagrecimento',
     avatarColor: 'bg-rose-100 text-rose-700',
     status: 'active',
+    activityFactor: 1.2, // Sedentário
     checkIns: [],
     dietPlans: []
   }
@@ -568,6 +570,8 @@ const App: React.FC = () => {
                   onViewReport={handleViewReport}
                   age={activePatient.age}
                   gender={activePatient.gender}
+                  // Passamos o fator de atividade para calcular o GET no Dashboard
+                  activityFactor={activePatient.activityFactor || 1.2}
                 />
               )}
 
@@ -593,7 +597,9 @@ const App: React.FC = () => {
                     onUpdatePlans={handleUpdateDietPlans}
                     patientName={activePatient.name}
                     patientWeight={activeCheckIns[0]?.weight || 70} // Passando peso para calculo de g/kg
-                    targetCalories={activeCheckIns[0]?.bmr} // Passando BMR como Meta
+                    // CALCULA O GET: BMR * ActivityFactor (Se não houver checkin, usa 0)
+                    targetCalories={(activeCheckIns[0]?.bmr || 0) * (activePatient.activityFactor || 1.2)} 
+                    nutritionist={nutritionist} // PASSANDO DADOS DO NUTRICIONISTA
                 />
               )}
 
@@ -642,6 +648,17 @@ const App: React.FC = () => {
                         <option value="Masculino">Masculino</option>
                         <option value="Feminino">Feminino</option>
                       </select>
+                    </div>
+                    {/* Exibição do Fator de Atividade no Perfil */}
+                    <div>
+                      <label className="block text-sm font-medium text-slate-500 mb-1">Fator de Atividade (FA)</label>
+                      <input type="text" value={
+                          activePatient.activityFactor === 1.2 ? '1.2 - Sedentário' :
+                          activePatient.activityFactor === 1.375 ? '1.375 - Levemente Ativo' :
+                          activePatient.activityFactor === 1.55 ? '1.55 - Moderadamente Ativo' :
+                          activePatient.activityFactor === 1.725 ? '1.725 - Muito Ativo' :
+                          '1.9 - Extremamente Ativo'
+                      } disabled className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-slate-700" />
                     </div>
                   </div>
                 </div>

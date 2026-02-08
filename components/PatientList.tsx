@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { Patient } from '../types';
-import { Search, Plus, User, ChevronRight, Calendar, X, Pencil, Trash2, RefreshCcw, Archive, MapPin } from 'lucide-react';
+import { Patient, ActivityLevel } from '../types';
+import { Search, Plus, User, ChevronRight, Calendar, X, Pencil, Trash2, RefreshCcw, Archive, MapPin, Zap } from 'lucide-react';
 
 interface PatientListProps {
   patients: Patient[];
@@ -45,7 +45,8 @@ export const PatientList: React.FC<PatientListProps> = ({
     profession: '',
     phone: '',
     instagram: '',
-    address: ''
+    address: '',
+    activityFactor: 1.2 as ActivityLevel
   });
 
   const filteredPatients = patients.filter(p => 
@@ -67,7 +68,10 @@ export const PatientList: React.FC<PatientListProps> = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ 
+        ...prev, 
+        [name]: name === 'activityFactor' ? parseFloat(value) : value 
+    }));
   };
 
   const handleOpenAdd = () => {
@@ -79,7 +83,8 @@ export const PatientList: React.FC<PatientListProps> = ({
       profession: '',
       phone: '',
       instagram: '',
-      address: ''
+      address: '',
+      activityFactor: 1.2
     });
     setShowModal(true);
   };
@@ -94,7 +99,8 @@ export const PatientList: React.FC<PatientListProps> = ({
       profession: patient.profession,
       phone: patient.phone,
       instagram: patient.instagram,
-      address: patient.address || ''
+      address: patient.address || '',
+      activityFactor: patient.activityFactor || 1.2 // Default to 1.2 if missing
     });
     setShowModal(true);
   };
@@ -131,6 +137,7 @@ export const PatientList: React.FC<PatientListProps> = ({
                 phone: formData.phone,
                 instagram: formData.instagram,
                 address: formData.address,
+                activityFactor: formData.activityFactor,
             };
             onUpdatePatient(updated);
         }
@@ -150,6 +157,7 @@ export const PatientList: React.FC<PatientListProps> = ({
             objective: 'Saúde e Bem-estar', // Default
             avatarColor: 'bg-blue-100 text-blue-700',
             status: 'active',
+            activityFactor: formData.activityFactor,
             checkIns: [],
             dietPlans: [] // Start with empty array
         };
@@ -364,6 +372,27 @@ export const PatientList: React.FC<PatientListProps> = ({
                                 <option value="Masculino">Masculino</option>
                                 <option value="Feminino">Feminino</option>
                             </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-2">
+                           <Zap size={14} className="text-amber-500" /> Nível de Atividade Física (Fator GET)
+                        </label>
+                        <div className="relative">
+                            <select 
+                                name="activityFactor"
+                                value={formData.activityFactor}
+                                onChange={handleInputChange}
+                                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                            >
+                                <option value={1.2}>Sedentário (Pouco ou nenhum exercício)</option>
+                                <option value={1.375}>Levemente Ativo (Exercício leve 1-3 dias/sem)</option>
+                                <option value={1.55}>Moderadamente Ativo (Exercício moderado 3-5 dias/sem)</option>
+                                <option value={1.725}>Muito Ativo (Exercício pesado 6-7 dias/sem)</option>
+                                <option value={1.9}>Extremamente Ativo (Trabalho físico pesado ou treino 2x dia)</option>
+                            </select>
+                            <p className="text-xs text-slate-500 mt-1">Usado para calcular o Gasto Energético Total (GET) e planejar a dieta.</p>
                         </div>
                     </div>
 

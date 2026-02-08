@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { CheckIn } from '../types';
+import { CheckIn, ActivityLevel } from '../types';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   AreaChart, Area, ComposedChart, Legend 
@@ -13,12 +13,13 @@ import {
 interface DashboardProps {
   checkIns: CheckIn[];
   onAddEntry: () => void;
-  onViewReport?: (checkIn: CheckIn) => void; // Nova prop
+  onViewReport?: (checkIn: CheckIn) => void;
   age: number; // Current calculated age of the patient
   gender: 'Masculino' | 'Feminino';
+  activityFactor: ActivityLevel; // Novo prop para calcular GET
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onViewReport, age, gender }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onViewReport, age, gender, activityFactor }) => {
   // We assume checkIns is already sorted (newest first) for card display
   const current = checkIns[0];
   const previous = checkIns[1];
@@ -244,6 +245,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
       return 'text-blue-600 bg-blue-100';
   };
 
+  // Cálculo do Gasto Energético Total (GET)
+  const calculatedGET = Math.round(current.bmr * activityFactor);
+
   return (
     <div className="space-y-6">
       
@@ -316,6 +320,42 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
           colorClass={current.visceralFat > 9 ? 'text-orange-600 bg-orange-100' : 'text-emerald-600 bg-emerald-100'}
           delta={renderDelta(current.visceralFat, previous?.visceralFat, true)}
         />
+        
+         <Card 
+            title="Taxa Metabólica (TMB)"
+            value={current.bmr}
+            unit="kcal"
+            icon={Flame}
+            colorClass="text-slate-600 bg-slate-100"
+            delta={renderDelta(current.bmr, previous?.bmr, false)}
+        />
+        
+        {/* NOVO CARD: GET (Gasto Energético Total) */}
+        <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 p-5 rounded-2xl shadow-sm flex flex-col justify-between h-full text-white relative overflow-hidden group">
+            <div className="relative z-10">
+                <div className="flex justify-between items-start mb-2">
+                    <div>
+                        <p className="text-indigo-200 text-xs font-semibold uppercase tracking-wider mb-1">Gasto Total (GET)</p>
+                        <div className="flex items-baseline gap-1">
+                            <h3 className="text-2xl font-bold">{calculatedGET}</h3>
+                            <span className="text-sm text-indigo-200 font-medium">kcal</span>
+                        </div>
+                    </div>
+                    <div className="p-2 rounded-lg bg-white/20 backdrop-blur-sm">
+                        <Zap size={20} className="text-white" />
+                    </div>
+                </div>
+                <div className="flex items-center gap-1 mt-1 text-xs text-indigo-200">
+                    <span>Fator: {activityFactor}x</span>
+                    {activityFactor === 1.2 && <span>(Sedentário)</span>}
+                    {activityFactor === 1.375 && <span>(Leve)</span>}
+                    {activityFactor === 1.55 && <span>(Moderado)</span>}
+                    {activityFactor === 1.725 && <span>(Ativo)</span>}
+                </div>
+            </div>
+            <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-white/10 rounded-full blur-xl"></div>
+        </div>
+
         <Card 
             title="Idade Corporal"
             value={current.bodyAge || '-'}
@@ -323,22 +363,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
             icon={Hourglass}
             colorClass={getBodyAgeColor(current.bodyAge, current.age)}
             delta={renderDelta(current.bodyAge, previous?.bodyAge, true, " anos")}
-        />
-         <Card 
-            title="Taxa Metabólica"
-            value={current.bmr}
-            unit="kcal"
-            icon={Flame}
-            colorClass="text-slate-600 bg-slate-100"
-            delta={renderDelta(current.bmr, previous?.bmr, false)}
-        />
-        <Card 
-            title="Idade Real"
-            value={current.age}
-            unit="anos"
-            icon={Calendar}
-            colorClass="text-slate-600 bg-slate-100"
-            delta={<span className="text-slate-400 text-xs">Data Nasc: {new Date().getFullYear() - current.age}</span>}
         />
       </div>
 
