@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { CheckIn, ActivityLevel } from '../types';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  AreaChart, Area, ComposedChart, Legend 
+  AreaChart, Area, ComposedChart, Legend, BarChart, Bar, Rectangle
 } from 'recharts';
 import { 
   Scale, Activity, Zap, Flame, PieChart, Hourglass, TrendingDown, TrendingUp, 
-  Calculator, Calendar, AlertTriangle, CheckCircle, FileText, BarChart2
+  Calculator, Calendar, AlertTriangle, CheckCircle, FileText, BarChart2, Dumbbell
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -113,37 +113,42 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
     return null;
   };
 
-  // Custom Tooltip para o Gráfico de Composição
-  const CustomCompositionTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white dark:bg-slate-800 p-4 border border-slate-100 dark:border-slate-700 shadow-xl rounded-xl text-sm outline-none">
-          <p className="font-bold text-slate-700 dark:text-slate-200 mb-2 border-b border-slate-50 dark:border-slate-700 pb-2">{label}</p>
-          {payload.map((entry: any, index: number) => {
-            const data = entry.payload;
-            
-            // Determina a porcentagem baseada na chave do dado
-            let percentage = null;
-            if (entry.dataKey === 'muscleMassKg') percentage = data.muscleMass;
-            if (entry.dataKey === 'fatMassKg') percentage = data.bodyFat;
+  // Custom Tooltip para o Gráfico de Composição (Barras)
+  const CustomCompositionBarTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length >= 2) {
+      // Ordenar payload para consistência: Músculo primeiro, Gordura depois
+      const muscleData = payload.find((p: any) => p.dataKey === 'muscleMassKg');
+      const fatData = payload.find((p: any) => p.dataKey === 'fatMassKg');
 
-            return (
-              <div key={index} className="flex items-center justify-between gap-4 mb-1.5 last:mb-0" style={{ color: entry.color }}>
-                 <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }}></div>
-                    <span className="font-medium text-slate-600 dark:text-slate-300">{entry.name}:</span>
-                 </div>
-                 <div className="flex items-center gap-2">
-                    <span className="font-bold">{entry.value}</span>
-                    {percentage !== null && (
-                        <span className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 px-1.5 py-0.5 rounded font-medium min-w-[3rem] text-center">
-                            {percentage}%
-                        </span>
-                    )}
-                 </div>
-              </div>
-            );
-          })}
+      return (
+        <div className="bg-white dark:bg-slate-800 p-4 border border-slate-100 dark:border-slate-700 shadow-xl rounded-xl text-sm outline-none min-w-[200px]">
+          <p className="font-bold text-slate-700 dark:text-slate-200 mb-3 border-b border-slate-50 dark:border-slate-700 pb-2">{label}</p>
+          
+          {muscleData && (
+            <div className="flex items-center justify-between gap-4 mb-2">
+                <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                    <span className="font-medium text-slate-600 dark:text-slate-300">Massa Magra</span>
+                </div>
+                <div className="text-right">
+                    <span className="font-bold text-blue-600 dark:text-blue-400 block">{muscleData.value} kg</span>
+                    <span className="text-[10px] text-slate-400">{muscleData.payload.muscleMass}%</span>
+                </div>
+            </div>
+          )}
+
+          {fatData && (
+            <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-rose-500"></div>
+                    <span className="font-medium text-slate-600 dark:text-slate-300">Massa Gorda</span>
+                </div>
+                <div className="text-right">
+                    <span className="font-bold text-rose-600 dark:text-rose-400 block">{fatData.value} kg</span>
+                    <span className="text-[10px] text-slate-400">{fatData.payload.bodyFat}%</span>
+                </div>
+            </div>
+          )}
         </div>
       );
     }
@@ -538,27 +543,51 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
           </div>
         </div>
 
-        {/* Chart 2: Weight Composition (kg) */}
+        {/* Chart 2: Body Recomposition (Bar Chart) - SUBSTITUIÇÃO AQUI */}
         <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-              <Activity size={18} className="text-blue-500" />
-              Composição do Peso (kg)
+              <Dumbbell size={18} className="text-blue-500" />
+              Recomposição Corporal (kg)
             </h3>
           </div>
           <div className="h-[280px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }} barGap={2}>
+                <defs>
+                    <linearGradient id="muscleGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#3b82f6" />
+                        <stop offset="100%" stopColor="#2563eb" />
+                    </linearGradient>
+                    <linearGradient id="fatGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#f43f5e" />
+                        <stop offset="100%" stopColor="#e11d48" />
+                    </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" strokeOpacity={0.2} />
                 <XAxis dataKey="dateFormatted" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} domain={['auto', 'auto']} unit="kg" />
-                <Tooltip content={<CustomCompositionTooltip />} cursor={{ opacity: 0.2 }} />
+                <Tooltip content={<CustomCompositionBarTooltip />} cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }} />
                 <Legend iconType="circle" wrapperStyle={{paddingTop: '20px'}} />
-                <Line type="monotone" dataKey="weight" name="Peso Total" stroke="#94a3b8" strokeWidth={2} dot={{r: 3}} />
-                {/* Muscle Line is now Blue */}
-                <Line type="monotone" dataKey="muscleMassKg" name="Massa Magra (kg)" stroke="#3b82f6" strokeWidth={2} dot={{r: 3}} />
-                <Line type="monotone" dataKey="fatMassKg" name="Massa Gorda (kg)" stroke="#f43f5e" strokeWidth={2} dot={{r: 3}} />
-              </ComposedChart>
+                
+                {/* Massa Magra (Azul) */}
+                <Bar 
+                    dataKey="muscleMassKg" 
+                    name="Massa Magra" 
+                    fill="url(#muscleGradient)" 
+                    radius={[4, 4, 0, 0]}
+                    barSize={24}
+                />
+                
+                {/* Massa Gorda (Vermelho) */}
+                <Bar 
+                    dataKey="fatMassKg" 
+                    name="Massa Gorda" 
+                    fill="url(#fatGradient)" 
+                    radius={[4, 4, 0, 0]}
+                    barSize={24}
+                />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
