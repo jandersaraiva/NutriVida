@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { CheckIn, Patient } from '../types';
 import { ChevronLeft, Download, AlertTriangle, CheckCircle, User, Camera, X, Activity, Scale, Ruler, TrendingUp, Flame, Hourglass, Loader2, Info } from 'lucide-react';
 import { 
@@ -17,17 +17,29 @@ interface AssessmentReportProps {
 
 export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, patient, allCheckIns, onBack }) => {
   
-  // --- Estados para Fotos ---
+  // --- Estados para Fotos e Tema ---
   const [frontPhoto, setFrontPhoto] = useState<string | null>(null);
   const [sidePhoto, setSidePhoto] = useState<string | null>(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-  const [showScoreInfo, setShowScoreInfo] = useState(false); // Novo estado para o modal de info
+  const [showScoreInfo, setShowScoreInfo] = useState(false);
+  const [isDark, setIsDark] = useState(false);
   
   const frontInputRef = useRef<HTMLInputElement>(null);
   const sideInputRef = useRef<HTMLInputElement>(null);
-  
-  // Ref para o container principal para escopo de seletores
   const reportContainerRef = useRef<HTMLDivElement>(null);
+
+  // --- Detectar Tema Escuro ---
+  useEffect(() => {
+    // Checagem inicial
+    const checkTheme = () => setIsDark(document.documentElement.classList.contains('dark'));
+    checkTheme();
+
+    // Observador para mudanças dinâmicas de classe no HTML
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+    return () => observer.disconnect();
+  }, []);
 
   // --- Handlers de Foto ---
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'front' | 'side') => {
@@ -58,11 +70,26 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
     setIsGeneratingPdf(true);
 
     try {
+        // Detecta cor de fundo baseado no tema atual
+        const isDarkActive = document.documentElement.classList.contains('dark');
+        const backgroundColor = isDarkActive ? '#020617' : '#ffffff'; // slate-950 vs white
+
         const pdf = new jsPDF('p', 'mm', 'a4');
         const pdfWidth = 210;
         const pdfHeight = 297;
         const margin = 10; // 10mm de margem
         const contentWidth = pdfWidth - (margin * 2);
+
+        // Helper para pintar o fundo da página (cobre as margens brancas)
+        const paintBackground = () => {
+            if (isDarkActive) {
+                pdf.setFillColor(2, 6, 23); // RGB para Slate-950 (#020617)
+                pdf.rect(0, 0, pdfWidth, pdfHeight, 'F'); // Preenche retângulo do tamanho da página
+            }
+        };
+
+        // Pinta a primeira página
+        paintBackground();
 
         // 1. Capturar Cabeçalho
         const headerEl = reportContainerRef.current.querySelector('.report-header') as HTMLElement;
@@ -70,7 +97,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
         let headerData: string | null = null;
 
         if (headerEl) {
-            const headerCanvas = await html2canvas(headerEl, { scale: 2, backgroundColor: '#ffffff' });
+            const headerCanvas = await html2canvas(headerEl, { scale: 2, backgroundColor });
             headerData = headerCanvas.toDataURL('image/png');
             // Calcula a altura proporcional no PDF
             headerHeight = (headerCanvas.height * contentWidth) / headerCanvas.width;
@@ -96,14 +123,14 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
         // 3. Iterar sobre as seções e paginar
         for (const section of sections) {
             // Captura a seção
-            const canvas = await html2canvas(section, { scale: 2, backgroundColor: '#ffffff' });
+            const canvas = await html2canvas(section, { scale: 2, backgroundColor });
             const imgData = canvas.toDataURL('image/png');
             const imgHeight = (canvas.height * contentWidth) / canvas.width;
 
             // Verifica se a seção cabe na página atual
-            // Se (posição atual + altura da seção) > (altura da página - margem inferior)
             if (currentY + imgHeight > pdfHeight - margin) {
                 pdf.addPage(); // Nova página
+                paintBackground(); // Pinta o fundo da nova página
                 currentY = addHeaderToPage(); // Adiciona cabeçalho e reseta Y
             }
 
@@ -125,46 +152,27 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
   // --- Cálculos ---
   const waist = checkIn.waistCircumference || 0;
   const hip = checkIn.hipCircumference || 0;
-  
-  // RCQ: Cintura / Quadril
   const rcq = waist > 0 && hip > 0 ? waist / hip : 0;
   
-  // Massas (kg)
   const fatMass = (checkIn.weight * (checkIn.bodyFat / 100));
   const muscleMass = (checkIn.weight * (checkIn.muscleMass / 100));
-  
-  // Indices (kg/m²)
   const heightM2 = checkIn.height * checkIn.height;
-  const img = fatMass / heightM2; // Índice de Massa Gorda
-  const imm = muscleMass / heightM2; // Índice de Massa Magra
-
-  // Water / Residual
+  const img = fatMass / heightM2;
+  const imm = muscleMass / heightM2;
   const residualMass = checkIn.weight - fatMass - muscleMass;
 
-  // --- ALGORITMO DE PONTUAÇÃO DE SAÚDE (HEALTH SCORE) ---
+  // --- Score ---
   const healthScore = useMemo(() => {
     let score = 100;
-
-    // Penalidade por IMC (Muito baixo ou muito alto)
-    if (checkIn.imc > 25) score -= (checkIn.imc - 25) * 2; // -2 pontos por unidade acima
-    else if (checkIn.imc < 18.5) score -= (18.5 - checkIn.imc) * 2; // -2 pontos por unidade abaixo
-
-    // Penalidade por Gordura Visceral (Crítico)
-    if (checkIn.visceralFat > 9) score -= (checkIn.visceralFat - 9) * 4; // -4 pontos por nível acima
-
-    // Penalidade por % Gordura (Exemplo genérico simplificado)
-    // Homens > 25% | Mulheres > 32%
+    if (checkIn.imc > 25) score -= (checkIn.imc - 25) * 2;
+    else if (checkIn.imc < 18.5) score -= (18.5 - checkIn.imc) * 2;
+    if (checkIn.visceralFat > 9) score -= (checkIn.visceralFat - 9) * 4;
     const fatLimit = patient.gender === 'Masculino' ? 25 : 32;
     if (checkIn.bodyFat > fatLimit) score -= (checkIn.bodyFat - fatLimit);
-
-    // Bônus por Massa Muscular (Exemplo genérico)
-    // Homens > 35% | Mulheres > 30%
     const muscleTarget = patient.gender === 'Masculino' ? 35 : 30;
     if (checkIn.muscleMass > muscleTarget) score += (checkIn.muscleMass - muscleTarget) * 0.5;
-
     return Math.max(0, Math.min(100, Math.round(score)));
   }, [checkIn, patient.gender]);
-
 
   // --- DADOS PARA GRÁFICOS ---
   const chartData = useMemo(() => {
@@ -179,38 +187,40 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
         visceralFat: c.visceralFat,
         bodyAge: c.bodyAge,
         age: c.age,
-        // Calculated kg
         fatMassKg: parseFloat((c.weight * (c.bodyFat / 100)).toFixed(1)),
         muscleMassKg: parseFloat((c.weight * (c.muscleMass / 100)).toFixed(1))
       }));
   }, [allCheckIns]);
 
   const pieData = [
-    { name: 'Massa Gorda', value: parseFloat(fatMass.toFixed(1)), color: '#f43f5e' }, // Rose 500
-    { name: 'Massa Magra', value: parseFloat(muscleMass.toFixed(1)), color: '#3b82f6' }, // Blue 500
+    { name: 'Massa Gorda', value: parseFloat(fatMass.toFixed(1)), color: '#f43f5e' },
+    { name: 'Massa Magra', value: parseFloat(muscleMass.toFixed(1)), color: '#3b82f6' },
   ];
 
-  // --- Componentes Visuais ---
+  // --- Cores Gráficos ---
+  const chartGridColor = isDark ? '#334155' : '#e2e8f0';
+  const chartTextColor = isDark ? '#94a3b8' : '#64748b';
 
+  // --- Componentes Visuais ---
   const MetricRow = ({ label, value, subValue, highlight = false }: any) => (
-      <div className={`flex justify-between items-center py-2 border-b border-slate-100 last:border-0 ${highlight ? 'bg-slate-50 px-2 -mx-2 rounded' : ''}`}>
-          <span className="text-slate-500 text-sm">{label}</span>
+      <div className={`flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-800 last:border-0 ${highlight ? 'bg-slate-50 dark:bg-slate-900 px-2 -mx-2 rounded' : ''}`}>
+          <span className="text-slate-500 dark:text-slate-400 text-sm">{label}</span>
           <div className="text-right">
-              <span className={`block font-bold ${highlight ? 'text-slate-900' : 'text-slate-700'}`}>{value}</span>
-              {subValue && <span className="block text-[10px] text-slate-400">{subValue}</span>}
+              <span className={`block font-bold ${highlight ? 'text-slate-900 dark:text-slate-100' : 'text-slate-700 dark:text-slate-200'}`}>{value}</span>
+              {subValue && <span className="block text-[10px] text-slate-400 dark:text-slate-500">{subValue}</span>}
           </div>
       </div>
   );
 
   const StatusBadge = ({ value, label, type }: { value: number, label: string, type: 'good' | 'warning' | 'danger' }) => {
     const colors = {
-        good: 'bg-emerald-100 text-emerald-700',
-        warning: 'bg-amber-100 text-amber-700',
-        danger: 'bg-rose-100 text-rose-700'
+        good: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+        warning: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+        danger: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'
     };
     return (
         <div className="flex items-center justify-between mt-2">
-            <span className="text-xs text-slate-500">{label}</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">{label}</span>
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${colors[type]}`}>
                 {value.toFixed(1)}
             </span>
@@ -224,25 +234,23 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
       return 'warning';
   };
 
-  // Componente de Upload de Foto
   const PhotoUploadBox = ({ title, photo, onUpload, onClear, inputRef }: any) => {
-    // Se não tiver foto e estiver imprimindo, não renderiza nada
     if (!photo) {
         return (
-            <div className="bg-slate-50/50 rounded-xl p-4 border border-dashed border-slate-200 flex flex-col items-center justify-center min-h-[200px] print:hidden cursor-pointer hover:border-blue-400 transition-colors group" onClick={() => inputRef.current?.click()}>
-                <div className="p-3 bg-white rounded-full mb-2 shadow-sm text-slate-300 group-hover:text-blue-500 transition-colors">
+            <div className="bg-slate-50/50 dark:bg-slate-900/30 rounded-xl p-4 border border-dashed border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center min-h-[200px] print:hidden cursor-pointer hover:border-blue-400 dark:hover:border-blue-500 transition-colors group" onClick={() => inputRef.current?.click()}>
+                <div className="p-3 bg-white dark:bg-slate-800 rounded-full mb-2 shadow-sm text-slate-300 dark:text-slate-600 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors">
                     <Camera size={24} />
                 </div>
-                <span className="text-sm font-medium text-slate-500 group-hover:text-blue-600">{title}</span>
-                <span className="text-xs text-slate-400 mt-1">Clique para adicionar</span>
+                <span className="text-sm font-medium text-slate-500 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400">{title}</span>
+                <span className="text-xs text-slate-400 dark:text-slate-500 mt-1">Clique para adicionar</span>
                 <input type="file" ref={inputRef} onChange={onUpload} className="hidden" accept="image/*" />
             </div>
         );
     }
 
     return (
-        <div className="bg-white p-2 rounded-xl border border-slate-100 shadow-sm relative group print:border-none print:shadow-none print:p-0">
-            <h4 className="text-xs font-bold text-slate-500 uppercase mb-2 text-center print:text-left print:mb-1">{title}</h4>
+        <div className="bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm relative group print:border-none print:shadow-none print:p-0">
+            <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2 text-center print:text-left print:mb-1">{title}</h4>
             <div className="relative bg-black rounded-lg overflow-hidden flex items-center justify-center aspect-[3/4]">
                 <img src={photo} alt={title} className="w-full h-full object-contain" />
                 <button 
@@ -257,11 +265,10 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
     );
   };
 
-  // Custom Label para os Gráficos
   const CustomLabel = (props: any) => {
     const { x, y, value, color, unit } = props;
     return (
-        <text x={x} y={y} dy={-10} fill={color || "#64748b"} fontSize={10} textAnchor="middle" fontWeight="bold">
+        <text x={x} y={y} dy={-10} fill={color || chartTextColor} fontSize={10} textAnchor="middle" fontWeight="bold">
             {value}{unit ? unit : ''}
         </text>
     );
@@ -270,7 +277,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
   return (
     <div className="bg-slate-50 dark:bg-slate-950 min-h-screen pb-12 transition-colors">
       
-      {/* Header de Ação (Apenas UI, oculto no PDF via controle de seleção) */}
+      {/* Header de Ação */}
       <div className="max-w-5xl mx-auto pt-6 px-4 mb-6 flex justify-between items-center print:hidden">
           <button onClick={onBack} className="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors">
               <ChevronLeft size={20} /> Voltar
@@ -286,48 +293,47 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
       </div>
 
       {/* ÁREA DO RELATÓRIO */}
-      {/* Este container é a referência para o seletor querySelectorAll */}
       <div className="flex justify-center overflow-auto p-4 md:p-0">
           <div 
             ref={reportContainerRef}
-            className="w-[210mm] min-h-[297mm] bg-white shadow-xl p-8 md:p-12 relative"
+            className="w-[210mm] min-h-[297mm] bg-white dark:bg-slate-950 shadow-xl p-8 md:p-12 relative transition-colors duration-200"
             style={{ margin: '0 auto' }} 
           >
-            {/* Aviso de Pré-visualização (apenas na tela) */}
-            <div className="absolute top-0 left-0 w-full bg-slate-100 text-slate-500 text-[10px] text-center py-1 print:hidden">
-                Pré-visualização de Impressão (Fundo branco para economia de tinta)
+            {/* Aviso de Pré-visualização */}
+            <div className="absolute top-0 left-0 w-full bg-slate-100 dark:bg-slate-900 text-slate-500 dark:text-slate-400 text-[10px] text-center py-1 print:hidden">
+                Pré-visualização de Impressão • {isDark ? 'Modo Escuro (PDF será gerado escuro)' : 'Modo Claro (PDF será gerado branco)'}
             </div>
             
-            {/* 1. CABEÇALHO (Marcado para captura) */}
-            <div className="report-header bg-white pb-6 mb-2 border-b-2 border-slate-100">
+            {/* 1. CABEÇALHO */}
+            <div className="report-header bg-white dark:bg-slate-950 pb-6 mb-2 border-b-2 border-slate-100 dark:border-slate-800">
                 <div className="flex justify-between items-end">
                     <div>
-                        <div className="flex items-center gap-2 text-blue-700 mb-1">
+                        <div className="flex items-center gap-2 text-blue-700 dark:text-blue-500 mb-1">
                             <Activity size={24} />
                             <span className="font-bold text-xl tracking-tight">NutriVida</span>
                         </div>
-                        <p className="text-xs text-slate-400 uppercase tracking-widest font-semibold">Relatório de Avaliação Física</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-widest font-semibold">Relatório de Avaliação Física</p>
                     </div>
                     <div className="text-right">
-                        <h1 className="text-xl font-bold text-slate-900">{patient.name}</h1>
-                        <p className="text-slate-500 text-sm">
+                        <h1 className="text-xl font-bold text-slate-900 dark:text-white">{patient.name}</h1>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm">
                             {patient.age} anos • {patient.gender} • {new Date(checkIn.date).toLocaleDateString('pt-BR')}
                         </p>
                     </div>
                 </div>
             </div>
 
-            {/* 2. GRID PRINCIPAL (Métricas e Score) - Section */}
-            <div className="report-section bg-white mb-6 pt-4">
+            {/* 2. GRID PRINCIPAL */}
+            <div className="report-section bg-white dark:bg-slate-950 mb-6 pt-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {/* Coluna 1: Métricas Detalhadas */}
                     <div className="space-y-6">
                         {/* Antropometria */}
                         <section>
-                            <h3 className="flex items-center gap-2 font-bold text-blue-700 mb-3 text-sm uppercase tracking-wide">
+                            <h3 className="flex items-center gap-2 font-bold text-blue-700 dark:text-blue-400 mb-3 text-sm uppercase tracking-wide">
                                 <Ruler size={16} /> Antropometria
                             </h3>
-                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                            <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 border border-slate-100 dark:border-slate-800">
                                 <MetricRow label="Peso Corporal" value={`${checkIn.weight.toFixed(1)} kg`} highlight />
                                 <MetricRow label="Altura" value={`${(checkIn.height * 100).toFixed(0)} cm`} />
                                 <MetricRow label="IMC" value={`${checkIn.imc.toFixed(1)} kg/m²`} subValue={checkIn.imc < 25 ? 'Eutrofia' : 'Sobrepeso'} />
@@ -337,12 +343,12 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                             </div>
                         </section>
 
-                        {/* Composição Corporal (Tabela) */}
+                        {/* Composição Corporal */}
                         <section>
-                            <h3 className="flex items-center gap-2 font-bold text-blue-700 mb-3 text-sm uppercase tracking-wide">
+                            <h3 className="flex items-center gap-2 font-bold text-blue-700 dark:text-blue-400 mb-3 text-sm uppercase tracking-wide">
                                 <Scale size={16} /> Composição Corporal
                             </h3>
-                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                            <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 border border-slate-100 dark:border-slate-800">
                                 <MetricRow label="Massa Gorda" value={`${fatMass.toFixed(1)} kg`} subValue={`${checkIn.bodyFat}%`} />
                                 <MetricRow label="Massa Magra" value={`${muscleMass.toFixed(1)} kg`} subValue={`${checkIn.muscleMass}%`} />
                                 <MetricRow label="Água / Residual" value={`${residualMass.toFixed(1)} kg`} />
@@ -356,7 +362,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                     <div className="flex flex-col gap-6">
                         
                         {/* Health Score Card */}
-                        <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden group">
+                        <div className="bg-gradient-to-br from-slate-900 to-slate-800 dark:from-slate-800 dark:to-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden group">
                             <div className="relative z-10 flex justify-between items-center">
                                 <div>
                                     <div className="flex items-center gap-2 mb-1">
@@ -386,8 +392,8 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                         </div>
 
                         {/* Gráfico Donut */}
-                        <div className="flex-1 bg-white rounded-xl border border-slate-100 p-4 flex flex-col items-center justify-center">
-                            <h4 className="font-bold text-slate-700 text-sm mb-4">Distribuição de Massa (Kg)</h4>
+                        <div className="flex-1 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 p-4 flex flex-col items-center justify-center">
+                            <h4 className="font-bold text-slate-700 dark:text-slate-200 text-sm mb-4">Distribuição de Massa (Kg)</h4>
                             <div className="flex items-center justify-center w-full gap-8">
                                 <div className="w-32 h-32 relative">
                                     <ResponsiveContainer width="100%" height="100%">
@@ -414,15 +420,15 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                                     <div className="flex items-center gap-2">
                                         <div className="w-3 h-3 rounded-full bg-rose-500"></div>
                                         <div>
-                                            <span className="block font-bold text-slate-700">{fatMass.toFixed(1)}kg</span>
-                                            <span className="text-slate-400">Gordura ({checkIn.bodyFat}%)</span>
+                                            <span className="block font-bold text-slate-700 dark:text-slate-200">{fatMass.toFixed(1)}kg</span>
+                                            <span className="text-slate-400 dark:text-slate-500">Gordura ({checkIn.bodyFat}%)</span>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <div className="w-3 h-3 rounded-full bg-blue-500"></div>
                                         <div>
-                                            <span className="block font-bold text-slate-700">{muscleMass.toFixed(1)}kg</span>
-                                            <span className="text-slate-400">Músculo ({checkIn.muscleMass}%)</span>
+                                            <span className="block font-bold text-slate-700 dark:text-slate-200">{muscleMass.toFixed(1)}kg</span>
+                                            <span className="text-slate-400 dark:text-slate-500">Músculo ({checkIn.muscleMass}%)</span>
                                         </div>
                                     </div>
                                 </div>
@@ -430,7 +436,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                         </div>
 
                         {/* Indicadores Visuais Rápidos */}
-                        <div className="bg-white rounded-xl border border-slate-100 p-4">
+                        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 p-4">
                             <StatusBadge label="Índice Massa Corporal (IMC)" value={checkIn.imc} type={getStatusColor(checkIn.imc, 18.5, 24.9)} />
                             <StatusBadge label="Índice Massa Gorda (IMG)" value={img} type={getStatusColor(img, 3, 8)} />
                             <StatusBadge label="Índice Massa Magra (IMM)" value={imm} type={getStatusColor(imm, 18, 24)} />
@@ -439,24 +445,24 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                 </div>
             </div>
 
-            {/* 3. TÍTULO EVOLUÇÃO - Section */}
-            <div className="report-section bg-white pt-4 pb-2">
-                <h3 className="font-bold text-slate-800 mb-2 text-sm uppercase border-b border-slate-100 pb-2 flex items-center gap-2">
+            {/* 3. TÍTULO EVOLUÇÃO */}
+            <div className="report-section bg-white dark:bg-slate-950 pt-4 pb-2">
+                <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-2 text-sm uppercase border-b border-slate-100 dark:border-slate-800 pb-2 flex items-center gap-2">
                     <TrendingUp size={16} /> Evolução Detalhada
                 </h3>
             </div>
             
-            {/* 4. LINHA 1 DE GRÁFICOS - Section */}
-            <div className="report-section bg-white mb-6">
+            {/* 4. LINHA 1 DE GRÁFICOS */}
+            <div className="report-section bg-white dark:bg-slate-950 mb-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* 1. Peso e IMC */}
-                    <div className="bg-slate-50 rounded-xl border border-slate-100 p-4">
-                        <p className="text-xs text-center font-bold text-slate-600 mb-2">Peso Corporal (kg) e IMC</p>
+                    <div className="bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 p-4">
+                        <p className="text-xs text-center font-bold text-slate-600 dark:text-slate-300 mb-2">Peso Corporal (kg) e IMC</p>
                         <div className="h-48 w-full">
                             <ResponsiveContainer width="100%" height="100%">
                                 <ComposedChart data={chartData} margin={{ top: 20, right: 10, left: 10, bottom: 0 }}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                                    <XAxis dataKey="date" tick={{fontSize: 10, fill: '#64748b'}} axisLine={false} tickLine={false} />
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridColor} />
+                                    <XAxis dataKey="date" tick={{fontSize: 10, fill: chartTextColor}} axisLine={false} tickLine={false} />
                                     <YAxis yAxisId="left" hide domain={['dataMin - 2', 'dataMax + 2']} />
                                     <YAxis yAxisId="right" hide orientation="right" domain={['dataMin - 1', 'dataMax + 1']} />
                                     
@@ -488,13 +494,13 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                     </div>
 
                     {/* 2. Massas em KG */}
-                    <div className="bg-slate-50 rounded-xl border border-slate-100 p-4">
-                        <p className="text-xs text-center font-bold text-slate-600 mb-2">Composição Corporal (Kg)</p>
+                    <div className="bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 p-4">
+                        <p className="text-xs text-center font-bold text-slate-600 dark:text-slate-300 mb-2">Composição Corporal (Kg)</p>
                         <div className="h-48 w-full">
                             <ResponsiveContainer width="100%" height="100%">
                                 <ComposedChart data={chartData} margin={{ top: 20, right: 10, left: 10, bottom: 0 }}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                                    <XAxis dataKey="date" tick={{fontSize: 10, fill: '#64748b'}} axisLine={false} tickLine={false} />
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridColor} />
+                                    <XAxis dataKey="date" tick={{fontSize: 10, fill: chartTextColor}} axisLine={false} tickLine={false} />
                                     <YAxis hide />
                                     
                                     <Line 
@@ -522,17 +528,17 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                 </div>
             </div>
             
-            {/* 5. LINHA 2 DE GRÁFICOS - Section */}
-            <div className="report-section bg-white mb-6">
+            {/* 5. LINHA 2 DE GRÁFICOS */}
+            <div className="report-section bg-white dark:bg-slate-950 mb-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* 3. Gordura Visceral */}
-                    <div className="bg-slate-50 rounded-xl border border-slate-100 p-4">
-                        <p className="text-xs text-center font-bold text-slate-600 mb-2 flex items-center justify-center gap-1"><Flame size={12} className="text-amber-500"/> Nível Visceral</p>
+                    <div className="bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 p-4">
+                        <p className="text-xs text-center font-bold text-slate-600 dark:text-slate-300 mb-2 flex items-center justify-center gap-1"><Flame size={12} className="text-amber-500"/> Nível Visceral</p>
                         <div className="h-48 w-full">
                             <ResponsiveContainer width="100%" height="100%">
                                 <AreaChart data={chartData} margin={{ top: 20, right: 10, left: 10, bottom: 0 }}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                                    <XAxis dataKey="date" tick={{fontSize: 10, fill: '#64748b'}} axisLine={false} tickLine={false} />
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridColor} />
+                                    <XAxis dataKey="date" tick={{fontSize: 10, fill: chartTextColor}} axisLine={false} tickLine={false} />
                                     <YAxis hide domain={[0, 'dataMax + 2']} />
                                     <Area 
                                         type="monotone" 
@@ -551,13 +557,13 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                     </div>
 
                     {/* 4. Idade Corporal */}
-                    <div className="bg-slate-50 rounded-xl border border-slate-100 p-4">
-                        <p className="text-xs text-center font-bold text-slate-600 mb-2 flex items-center justify-center gap-1"><Hourglass size={12} className="text-blue-500"/> Idade Corporal (anos)</p>
+                    <div className="bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 p-4">
+                        <p className="text-xs text-center font-bold text-slate-600 dark:text-slate-300 mb-2 flex items-center justify-center gap-1"><Hourglass size={12} className="text-blue-500"/> Idade Corporal (anos)</p>
                         <div className="h-48 w-full">
                             <ResponsiveContainer width="100%" height="100%">
                                 <AreaChart data={chartData} margin={{ top: 20, right: 10, left: 10, bottom: 0 }}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                                    <XAxis dataKey="date" tick={{fontSize: 10, fill: '#64748b'}} axisLine={false} tickLine={false} />
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridColor} />
+                                    <XAxis dataKey="date" tick={{fontSize: 10, fill: chartTextColor}} axisLine={false} tickLine={false} />
                                     <YAxis hide domain={['dataMin - 5', 'dataMax + 5']} />
                                     <Area 
                                         type="monotone" 
@@ -570,7 +576,6 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                                     >
                                         <LabelList dataKey="bodyAge" position="top" content={<CustomLabel color="#2563eb" unit=" anos" />} />
                                     </Area>
-                                    {/* Linha de referência da idade real (apenas visual) */}
                                     <Line type="monotone" dataKey="age" stroke="#cbd5e1" strokeWidth={1} strokeDasharray="4 4" dot={false} isAnimationActive={false} />
                                 </AreaChart>
                             </ResponsiveContainer>
@@ -579,9 +584,9 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                 </div>
             </div>
 
-            {/* 6. FOTOS - Section */}
+            {/* 6. FOTOS */}
             {(frontPhoto || sidePhoto) && (
-                <div className="report-section bg-white mb-8">
+                <div className="report-section bg-white dark:bg-slate-950 mb-8">
                     <div className="grid grid-cols-2 gap-6">
                         <PhotoUploadBox 
                             title="Análise Frontal"
@@ -601,9 +606,9 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                 </div>
             )}
 
-            {/* Caso de edição sem fotos ainda (para visualização apenas) */}
+            {/* Caso de edição sem fotos ainda */}
             {(!frontPhoto && !sidePhoto) && !isGeneratingPdf && (
-                 <div className="report-section bg-white mb-8">
+                 <div className="report-section bg-white dark:bg-slate-950 mb-8">
                     <div className="grid grid-cols-2 gap-6">
                         <PhotoUploadBox 
                             title="Análise Frontal"
@@ -623,19 +628,19 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                 </div>
             )}
 
-            {/* 7. RODAPÉ - Section */}
-            <div className="report-section bg-white pt-12 mt-auto">
+            {/* 7. RODAPÉ */}
+            <div className="report-section bg-white dark:bg-slate-950 pt-12 mt-auto">
                 <div className="flex justify-between items-end gap-12">
-                    <div className="flex-1 border-t border-slate-300 pt-2 text-center">
-                        <p className="font-bold text-slate-800 text-sm">Assinatura do Paciente</p>
-                        <p className="text-xs text-slate-400 mt-1">Declaro ter recebido a avaliação física.</p>
+                    <div className="flex-1 border-t border-slate-300 dark:border-slate-700 pt-2 text-center">
+                        <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">Assinatura do Paciente</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Declaro ter recebido a avaliação física.</p>
                     </div>
-                    <div className="flex-1 border-t border-slate-300 pt-2 text-center">
-                        <p className="font-bold text-slate-800 text-sm">Nutricionista Responsável</p>
-                        <p className="text-xs text-slate-400 mt-1">CRN-3/SP 12345</p>
+                    <div className="flex-1 border-t border-slate-300 dark:border-slate-700 pt-2 text-center">
+                        <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">Nutricionista Responsável</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">CRN-3/SP 12345</p>
                     </div>
                 </div>
-                <div className="text-center text-slate-300 text-[10px] mt-8">
+                <div className="text-center text-slate-300 dark:text-slate-600 text-[10px] mt-8">
                     Gerado por NutriVida • {new Date().toLocaleString('pt-BR')}
                 </div>
             </div>
