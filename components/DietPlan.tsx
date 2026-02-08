@@ -1,22 +1,17 @@
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { DietPlan as DietPlanType, Meal, FoodItem, Nutritionist } from '../types';
-import { Clock, Plus, Trash2, Edit2, Save, X, ChefHat, Copy, Check, PieChart, Search, Calendar, Archive, FilePlus, ChevronLeft, Zap, Target, Droplets, Download, Loader2, Utensils } from 'lucide-react';
-import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
+import React, { useState, useEffect, useMemo } from 'react';
+import { DietPlan as DietPlanType, Meal, FoodItem } from '../types';
+import { Clock, Plus, Trash2, Edit2, Save, X, ChefHat, Copy, Check, PieChart, Search, Calendar, Archive, FilePlus, ChevronLeft, Zap, Target, Droplets, Printer } from 'lucide-react';
 
 interface DietPlanProps {
   plans: DietPlanType[];
   onUpdatePlans: (plans: DietPlanType[]) => void;
   patientName: string;
   patientWeight?: number;
-  targetCalories?: number; 
-  nutritionist?: Nutritionist; // Novo: Dados do nutricionista para o PDF
+  targetCalories?: number; // Nova Prop para Meta
 }
 
 // --- BANCO DE DADOS DE ALIMENTOS (Baseado na TACO/TBCA - Por 100g) ---
-// (Mantido igual para brevidade, mas idealmente estaria em outro arquivo)
 const FOOD_DATABASE = [
   // --- PROTEÍNAS ANIMAIS ---
   { name: 'Peito de Frango Grelhado', protein: 32.0, carbs: 0.0, fats: 2.5, calories: 159 },
@@ -106,11 +101,9 @@ const createDefaultMeals = (): Meal[] => [
     { id: generateId(), name: 'Jantar', time: '20:00', items: [] },
 ];
 
-export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, patientName, patientWeight = 70, targetCalories, nutritionist }) => {
+export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, patientName, patientWeight = 70, targetCalories }) => {
   // State for which plan is currently being viewed
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-  const dietContainerRef = useRef<HTMLDivElement>(null);
   
   // Ensure we select a plan on mount/update (prefer active, then latest)
   useEffect(() => {
@@ -165,105 +158,6 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
 
 
   // --- ACTIONS ---
-
-  // --- PDF GENERATION LOGIC ---
-  const handleDownloadPDF = async () => {
-    if (!currentPlan || !dietContainerRef.current) return;
-    setIsGeneratingPdf(true);
-
-    try {
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pdfWidth = 210;
-        const pdfHeight = 297;
-        const margin = 10;
-        const contentWidth = pdfWidth - (margin * 2);
-
-        // 1. Header (Hidden in View, Visible for PDF capture)
-        const headerEl = dietContainerRef.current.querySelector('.pdf-header') as HTMLElement;
-        let headerHeight = 0;
-        let headerData: string | null = null;
-
-        if (headerEl) {
-            // Temporarily show header for capture
-            headerEl.style.display = 'block';
-            const headerCanvas = await html2canvas(headerEl, { scale: 2, backgroundColor: '#ffffff' });
-            headerData = headerCanvas.toDataURL('image/png');
-            headerHeight = (headerCanvas.height * contentWidth) / headerCanvas.width;
-            headerEl.style.display = 'none'; // Hide again
-        }
-
-        // 2. Footer
-        const footerEl = dietContainerRef.current.querySelector('.pdf-footer') as HTMLElement;
-        let footerHeight = 0;
-        let footerData: string | null = null;
-        if (footerEl) {
-            footerEl.style.display = 'block';
-             const footerCanvas = await html2canvas(footerEl, { scale: 2, backgroundColor: '#ffffff' });
-            footerData = footerCanvas.toDataURL('image/png');
-            footerHeight = (footerCanvas.height * contentWidth) / footerCanvas.width;
-            footerEl.style.display = 'none';
-        }
-
-        let currentY = margin;
-
-        const addHeaderToPage = () => {
-            if (headerData && headerHeight > 0) {
-                pdf.addImage(headerData, 'PNG', margin, margin, contentWidth, headerHeight);
-                return margin + headerHeight + 5;
-            }
-            return margin;
-        };
-        
-        const addFooterToPage = () => {
-             if (footerData && footerHeight > 0) {
-                pdf.addImage(footerData, 'PNG', margin, pdfHeight - margin - footerHeight, contentWidth, footerHeight);
-            }
-        }
-
-        currentY = addHeaderToPage();
-
-        // 3. Main Content (Meals)
-        // We capture the summary and then each meal card individually to handle pagination
-        const summaryEl = dietContainerRef.current.querySelector('.diet-summary') as HTMLElement;
-        if (summaryEl) {
-             const summaryCanvas = await html2canvas(summaryEl, { scale: 2, backgroundColor: '#ffffff' });
-             const summaryImg = summaryCanvas.toDataURL('image/png');
-             const summaryH = (summaryCanvas.height * contentWidth) / summaryCanvas.width;
-             
-             pdf.addImage(summaryImg, 'PNG', margin, currentY, contentWidth, summaryH);
-             currentY += summaryH + 8;
-        }
-
-        const mealCards = Array.from(dietContainerRef.current.querySelectorAll('.diet-meal-card')) as HTMLElement[];
-        
-        for (const card of mealCards) {
-            const canvas = await html2canvas(card, { scale: 2, backgroundColor: '#ffffff' });
-            const imgData = canvas.toDataURL('image/png');
-            const imgHeight = (canvas.height * contentWidth) / canvas.width;
-
-            // Check if it fits
-            if (currentY + imgHeight > pdfHeight - margin - footerHeight) {
-                addFooterToPage();
-                pdf.addPage();
-                currentY = addHeaderToPage();
-            }
-
-            pdf.addImage(imgData, 'PNG', margin, currentY, contentWidth, imgHeight);
-            currentY += imgHeight + 5;
-        }
-        
-        addFooterToPage(); // Footer on last page
-
-        pdf.save(`Dieta-${patientName.replace(/\s+/g, '_')}.pdf`);
-
-    } catch (error) {
-        console.error("PDF Error:", error);
-        alert("Erro ao gerar PDF.");
-    } finally {
-        setIsGeneratingPdf(false);
-    }
-  };
-
 
   const handleCreateNewPlan = () => {
     // Determine default name
@@ -361,7 +255,11 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // --- FORM HANDLERS ---
+  const handlePrint = () => {
+    window.print();
+  };
+
+  // --- FORM HANDLERS (Similar to previous logic) ---
   
   const handleMealChange = (mealId: string, field: keyof Meal, value: string) => {
     if (!editForm) return;
@@ -533,20 +431,16 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
     const pctF = Math.round((calFromF / validTotal) * 100);
 
     const diff = targetCalories ? totals.kcal - targetCalories : 0;
-    
-    const chartData = [
-        { name: 'Proteína', value: totals.p, color: '#f43f5e' }, // Rose
-        { name: 'Carbo', value: totals.c, color: '#3b82f6' }, // Blue
-        { name: 'Gordura', value: totals.f, color: '#fbbf24' } // Amber
-    ];
 
     return (
-        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-6 diet-summary">
-            <div className="flex flex-col md:flex-row gap-6">
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-6 print:border print:border-slate-300">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4">
+                <div className="bg-indigo-100 p-2 rounded-lg text-indigo-600 self-start print:hidden">
+                    <PieChart size={20} />
+                </div>
                 
-                {/* Stats */}
-                <div className="flex-1">
-                     <div className="flex justify-between items-start mb-4">
+                <div className="flex-1 w-full">
+                     <div className="flex justify-between items-start">
                         <div>
                             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Diário</span>
                             <div className="text-xl font-bold text-slate-800 flex items-baseline gap-1">
@@ -573,62 +467,42 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                              </div>
                         )}
                      </div>
-
-                     <div className="grid grid-cols-3 gap-2 text-center mt-6">
-                        <div className="flex flex-col items-center">
-                            <div className="flex items-center gap-1.5 mb-1">
-                                <div className="w-2 h-2 rounded-full bg-rose-500 print:bg-slate-400"></div>
-                                <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Proteína</span>
-                            </div>
-                            <div className="text-slate-800 font-bold text-lg leading-none">{totals.p.toFixed(0)}g</div>
-                            <div className="text-slate-400 text-[10px] mt-0.5">{(totals.p / patientWeight).toFixed(1)}g/kg</div>
-                        </div>
-                        
-                        <div className="flex flex-col items-center border-x border-slate-200">
-                            <div className="flex items-center gap-1.5 mb-1">
-                                <div className="w-2 h-2 rounded-full bg-blue-500 print:bg-slate-600"></div>
-                                <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Carbo</span>
-                            </div>
-                            <div className="text-slate-800 font-bold text-lg leading-none">{totals.c.toFixed(0)}g</div>
-                            <div className="text-slate-400 text-[10px] mt-0.5">{(totals.c / patientWeight).toFixed(1)}g/kg</div>
-                        </div>
-                        
-                        <div className="flex flex-col items-center">
-                            <div className="flex items-center gap-1.5 mb-1">
-                                <div className="w-2 h-2 rounded-full bg-amber-400 print:bg-slate-800"></div>
-                                <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Gordura</span>
-                            </div>
-                            <div className="text-slate-800 font-bold text-lg leading-none">{totals.f.toFixed(0)}g</div>
-                            <div className="text-slate-400 text-[10px] mt-0.5">{(totals.f / patientWeight).toFixed(1)}g/kg</div>
-                        </div>
-                    </div>
                 </div>
+            </div>
 
-                {/* Donut Chart (Novo) */}
-                <div className="w-32 h-32 relative mx-auto md:mx-0">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <RechartsPieChart>
-                            <Pie
-                                data={chartData}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={25}
-                                outerRadius={40}
-                                paddingAngle={2}
-                                dataKey="value"
-                            >
-                                {chartData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
-                                ))}
-                            </Pie>
-                            <Tooltip />
-                        </RechartsPieChart>
-                    </ResponsiveContainer>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                        <span className="text-[10px] font-bold text-slate-400">MACROS</span>
+            <div className="h-4 w-full bg-slate-200 rounded-full overflow-hidden flex mb-4 relative group print:border print:border-slate-300">
+                <div style={{ width: `${pctP}%` }} className="h-full bg-rose-500 print:bg-slate-400" title="Proteínas"></div>
+                <div style={{ width: `${pctC}%` }} className="h-full bg-blue-500 print:bg-slate-600" title="Carboidratos"></div>
+                <div style={{ width: `${pctF}%` }} className="h-full bg-amber-400 print:bg-slate-800" title="Gorduras"></div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="flex flex-col items-center">
+                    <div className="flex items-center gap-1.5 mb-1">
+                        <div className="w-2 h-2 rounded-full bg-rose-500 print:bg-slate-400"></div>
+                        <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Proteína</span>
                     </div>
+                    <div className="text-slate-800 font-bold text-lg leading-none">{totals.p.toFixed(0)}g</div>
+                    <div className="text-slate-400 text-[10px] mt-0.5">{(totals.p / patientWeight).toFixed(1)}g/kg</div>
                 </div>
-
+                
+                <div className="flex flex-col items-center border-x border-slate-200">
+                    <div className="flex items-center gap-1.5 mb-1">
+                        <div className="w-2 h-2 rounded-full bg-blue-500 print:bg-slate-600"></div>
+                        <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Carbo</span>
+                    </div>
+                    <div className="text-slate-800 font-bold text-lg leading-none">{totals.c.toFixed(0)}g</div>
+                    <div className="text-slate-400 text-[10px] mt-0.5">{(totals.c / patientWeight).toFixed(1)}g/kg</div>
+                </div>
+                
+                <div className="flex flex-col items-center">
+                    <div className="flex items-center gap-1.5 mb-1">
+                        <div className="w-2 h-2 rounded-full bg-amber-400 print:bg-slate-800"></div>
+                        <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Gordura</span>
+                    </div>
+                    <div className="text-slate-800 font-bold text-lg leading-none">{totals.f.toFixed(0)}g</div>
+                    <div className="text-slate-400 text-[10px] mt-0.5">{(totals.f / patientWeight).toFixed(1)}g/kg</div>
+                </div>
             </div>
         </div>
     );
@@ -650,6 +524,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
             >
               <Plus size={20} /> Criar Primeiro Plano
             </button>
+            {/* Modal Logic needs to be rendered outside or handled here if showNewPlanModal is true */}
             {showNewPlanModal && (
                  <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
                     {/* Rendered below in main return usually, but handled by state switch */}
@@ -712,28 +587,15 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
         {/* MAIN: CONTENT */}
         <div className="lg:col-span-3 w-full">
             {currentPlan && (
-                <div ref={dietContainerRef} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 print:border-none print:shadow-none print:p-0 print:w-full">
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 print:border-none print:shadow-none print:p-0 print:w-full">
                     
-                    {/* PDF HEADER (Hidden by default, shown during capture) */}
-                    <div className="pdf-header hidden mb-6 pb-4 border-b-2 border-slate-100">
-                        <div className="flex justify-between items-end">
-                            <div>
-                                <div className="flex items-center gap-2 text-blue-700 mb-1">
-                                    <Utensils size={24} />
-                                    <span className="font-bold text-xl tracking-tight">NutriVida</span>
-                                </div>
-                                <p className="text-xs text-slate-400 uppercase tracking-widest font-semibold">Plano Alimentar Personalizado</p>
-                            </div>
-                            <div className="text-right">
-                                <h1 className="text-xl font-bold text-slate-900">{patientName}</h1>
-                                <p className="text-slate-500 text-sm">
-                                    {currentPlan.name} • {new Date().toLocaleDateString('pt-BR')}
-                                </p>
-                            </div>
-                        </div>
+                    {/* Header Impressão */}
+                    <div className="hidden print:block mb-8 text-center border-b border-slate-300 pb-4">
+                        <h1 className="text-2xl font-bold text-slate-900">Plano Alimentar</h1>
+                        <p className="text-slate-600">{patientName}</p>
                     </div>
 
-                    {/* SCREEN HEADER */}
+                    {/* Header Tela */}
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b border-slate-100 pb-4 print:hidden">
                         <div>
                             {isEditing ? (
@@ -761,19 +623,14 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                 </>
                             ) : (
                                 <>
-                                    <button 
-                                        onClick={handleDownloadPDF} 
-                                        disabled={isGeneratingPdf}
-                                        className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm shadow-sm"
-                                    >
-                                        {isGeneratingPdf ? <Loader2 size={16} className="animate-spin"/> : <Download size={16} />} 
-                                        <span className="hidden sm:inline">Baixar PDF</span>
+                                    <button onClick={handlePrint} className="flex items-center gap-2 px-3 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors font-medium text-sm">
+                                        <Printer size={16} /> <span className="hidden sm:inline">Imprimir</span>
                                     </button>
                                     <button onClick={handleCopyDiet} className="flex items-center gap-2 px-3 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors font-medium text-sm">
                                         {copied ? <Check size={16} className="text-blue-600" /> : <Copy size={16} />}
                                         <span className="hidden sm:inline">{copied ? 'Copiado' : 'Copiar Texto'}</span>
                                     </button>
-                                    <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 px-3 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors shadow-sm font-medium text-sm">
+                                    <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-medium text-sm">
                                         <Edit2 size={16} /> Editar
                                     </button>
                                 </>
@@ -782,7 +639,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                     </div>
 
                     {/* Water Tracker Section */}
-                    <div className="mb-6 bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center justify-between diet-summary">
+                    <div className="mb-6 bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center justify-between print:border-slate-300 print:bg-slate-50">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-blue-200 text-blue-700 rounded-full print:hidden">
                                 <Droplets size={20} />
@@ -812,9 +669,9 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                     <MacroSummary />
 
                     {/* Editor / Viewer Body */}
-                    <div className="space-y-6">
+                    <div className="space-y-6 print:space-y-4">
                          {(isEditing ? editForm?.meals : currentPlan.meals)?.map((meal) => (
-                             <div key={meal.id} className={`diet-meal-card rounded-xl p-4 border transition-all ${isEditing ? 'bg-slate-50 border-slate-200' : 'bg-white border-slate-100 hover:border-blue-200 shadow-sm'}`}>
+                             <div key={meal.id} className={`rounded-xl p-4 border transition-all ${isEditing ? 'bg-slate-50 border-slate-200' : 'bg-white border-slate-100 hover:border-blue-200 shadow-sm'} print:border-slate-300 print:shadow-none print:break-inside-avoid`}>
                                  {/* Meal Header */}
                                  <div className="flex justify-between items-center mb-3">
                                      <div className="flex items-center gap-3">
@@ -826,7 +683,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                                  className="bg-white border border-slate-300 rounded px-2 py-1 text-sm font-bold w-24 text-slate-900 outline-none focus:border-blue-500"
                                              />
                                          ) : (
-                                            <div className="flex items-center gap-2 text-blue-700 font-bold bg-blue-50 px-3 py-1 rounded-lg">
+                                            <div className="flex items-center gap-2 text-blue-700 font-bold bg-blue-50 px-3 py-1 rounded-lg print:bg-slate-100 print:text-slate-800 print:border print:border-slate-200">
                                                 <Clock size={14} className="print:hidden" />
                                                 {meal.time}
                                             </div>
@@ -846,7 +703,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                      
                                      <div className="flex items-center gap-2">
                                          {!isEditing && (
-                                             <span className="text-xs font-medium text-slate-400">
+                                             <span className="text-xs font-medium text-slate-400 print:hidden">
                                                  {meal.items.reduce((acc, i) => acc + (Number(i.calories) || 0), 0).toFixed(0)} kcal
                                              </span>
                                          )}
@@ -910,6 +767,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                                              )}
                                                          </div>
                                                      </div>
+                                                     {/* Alterado gap-1 para gap-2 e w-10 para w-16 para melhor visibilidade */}
                                                      <div className="flex gap-2 w-full sm:w-auto">
                                                          <input type="number" className="w-16 p-1 border border-rose-200 rounded text-xs text-center bg-rose-50 text-rose-900 placeholder-rose-300 focus:border-rose-500 outline-none [color-scheme:light]" placeholder="P" value={item.protein} onChange={(e) => handleItemChange(meal.id, item.id, 'protein', e.target.value)} />
                                                          <input type="number" className="w-16 p-1 border border-blue-200 rounded text-xs text-center bg-blue-50 text-blue-900 placeholder-blue-300 focus:border-blue-500 outline-none [color-scheme:light]" placeholder="C" value={item.carbs} onChange={(e) => handleItemChange(meal.id, item.id, 'carbs', e.target.value)} />
@@ -924,12 +782,12 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                                  // View Mode Item
                                                  <div className="flex justify-between w-full group/item">
                                                      <div className="flex items-center">
-                                                         <span className="w-1.5 h-1.5 rounded-full bg-blue-400 mr-2"></span>
+                                                         <span className="w-1.5 h-1.5 rounded-full bg-blue-400 mr-2 print:border print:border-slate-400 print:bg-white"></span>
                                                          <span className="font-semibold text-slate-700 mr-1.5">{item.quantity}</span>
                                                          <span className="text-slate-600">{item.name}</span>
                                                      </div>
                                                      {(item.calories > 0) && (
-                                                         <div className="text-xs text-slate-400 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                                                         <div className="text-xs text-slate-400 opacity-0 group-hover/item:opacity-100 transition-opacity print:hidden">
                                                              <span className="mr-2 text-rose-400 font-medium">P:{item.protein}</span>
                                                              <span className="mr-2 text-blue-400 font-medium">C:{item.carbs}</span>
                                                              <span className="font-semibold">{item.calories?.toFixed(0)}kcal</span>
@@ -969,23 +827,12 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                             </div>
                         ) : (
                             currentPlan.notes && (
-                                <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 diet-meal-card">
-                                    <h4 className="font-bold text-amber-900 text-sm mb-1">Observações</h4>
-                                    <p className="text-amber-800 text-sm whitespace-pre-wrap">{currentPlan.notes}</p>
+                                <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 print:bg-white print:border-slate-300">
+                                    <h4 className="font-bold text-amber-900 text-sm mb-1 print:text-slate-800">Observações</h4>
+                                    <p className="text-amber-800 text-sm whitespace-pre-wrap print:text-slate-600">{currentPlan.notes}</p>
                                 </div>
                             )
                         )}
-                    </div>
-
-                    {/* PDF FOOTER (Hidden) */}
-                    <div className="pdf-footer hidden pt-4 mt-8 border-t border-slate-300">
-                        <div className="flex justify-between items-center text-xs text-slate-400">
-                            <span>Gerado por NutriVida</span>
-                            <div className="text-right">
-                                <p className="font-bold text-slate-600">{nutritionist?.name || 'Nutricionista Responsável'}</p>
-                                <p>{nutritionist?.crn || ''}</p>
-                            </div>
-                        </div>
                     </div>
 
                 </div>

@@ -599,7 +599,6 @@ const App: React.FC = () => {
                     patientWeight={activeCheckIns[0]?.weight || 70} // Passando peso para calculo de g/kg
                     // CALCULA O GET: BMR * ActivityFactor (Se não houver checkin, usa 0)
                     targetCalories={(activeCheckIns[0]?.bmr || 0) * (activePatient.activityFactor || 1.2)} 
-                    nutritionist={nutritionist} // PASSANDO DADOS DO NUTRICIONISTA
                 />
               )}
 
