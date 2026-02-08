@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { CheckIn, ActivityLevel } from '../types';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -6,7 +6,7 @@ import {
 } from 'recharts';
 import { 
   Scale, Activity, Zap, Flame, PieChart, Hourglass, TrendingDown, TrendingUp, 
-  Calculator, Calendar, AlertTriangle, CheckCircle, FileText 
+  Calculator, Calendar, AlertTriangle, CheckCircle, FileText, BarChart2
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -19,6 +19,9 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onViewReport, age, gender, activityFactor }) => {
+  // Estado para o gráfico de evolução interativo
+  const [evolutionMetric, setEvolutionMetric] = useState<'weight' | 'imc' | 'bodyFat' | 'muscleMass'>('weight');
+
   // We assume checkIns is already sorted (newest first) for card display
   const current = checkIns[0];
   const previous = checkIns[1];
@@ -55,6 +58,59 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
         {sign}{diff.toFixed(1).replace('.', ',')}{suffix} vs anterior
       </span>
     );
+  };
+
+  // Configuração das métricas para o gráfico de evolução
+  const evolutionConfig = {
+    weight: { 
+        label: 'Peso Corporal', 
+        unit: 'kg', 
+        color: '#3b82f6', 
+        gradientId: 'colorWeightEvo',
+        dataKey: 'weight'
+    },
+    imc: { 
+        label: 'IMC', 
+        unit: 'kg/m²', 
+        color: '#8b5cf6', 
+        gradientId: 'colorImcEvo',
+        dataKey: 'imc'
+    },
+    bodyFat: { 
+        label: 'Gordura Corporal', 
+        unit: '%', 
+        color: '#f43f5e', 
+        gradientId: 'colorFatEvo',
+        dataKey: 'bodyFat'
+    },
+    muscleMass: { 
+        label: 'Massa Muscular', 
+        unit: '%', 
+        color: '#10b981', 
+        gradientId: 'colorMuscleEvo',
+        dataKey: 'muscleMass'
+    }
+  };
+
+  const currentEvoConfig = evolutionConfig[evolutionMetric];
+
+  // Custom Tooltip para o Gráfico de Evolução Geral
+  const CustomEvolutionTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0];
+      return (
+        <div className="bg-white dark:bg-slate-800 p-3 border border-slate-100 dark:border-slate-700 shadow-xl rounded-xl text-sm outline-none">
+          <p className="font-bold text-slate-700 dark:text-slate-200 mb-1">{label}</p>
+          <div className="flex items-center gap-2">
+             <span className="text-slate-500 dark:text-slate-400">{currentEvoConfig.label}:</span>
+             <span className="font-bold text-lg" style={{ color: currentEvoConfig.color }}>
+                {data.value} <span className="text-xs">{currentEvoConfig.unit}</span>
+             </span>
+          </div>
+        </div>
+      );
+    }
+    return null;
   };
 
   // Custom Tooltip para o Gráfico de Composição
@@ -363,6 +419,64 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
             colorClass={getBodyAgeColor(current.bodyAge, current.age)}
             delta={renderDelta(current.bodyAge, previous?.bodyAge, true, " anos")}
         />
+      </div>
+
+      {/* NOVO COMPONENTE: Evolução Mensal Detalhada (AreaChart Interativo) */}
+      <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                <BarChart2 size={20} className="text-blue-500" />
+                Análise de Evolução Temporal
+            </h3>
+            
+            <div className="flex bg-slate-100 dark:bg-slate-700 p-1 rounded-xl">
+                {Object.entries(evolutionConfig).map(([key, config]) => (
+                    <button
+                        key={key}
+                        onClick={() => setEvolutionMetric(key as any)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                            evolutionMetric === key 
+                            ? 'bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-300 shadow-sm' 
+                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                        }`}
+                    >
+                        {key === 'bodyFat' ? 'Gordura %' : key === 'muscleMass' ? 'Massa %' : config.label}
+                    </button>
+                ))}
+            </div>
+        </div>
+
+        <div className="h-[320px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <defs>
+                        <linearGradient id={currentEvoConfig.gradientId} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={currentEvoConfig.color} stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor={currentEvoConfig.color} stopOpacity={0}/>
+                        </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" strokeOpacity={0.1} />
+                    <XAxis dataKey="dateFormatted" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dy={10} />
+                    <YAxis 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{fill: '#94a3b8', fontSize: 12}} 
+                        domain={['auto', 'auto']} 
+                        unit={currentEvoConfig.unit === '%' ? '' : currentEvoConfig.unit}
+                    />
+                    <Tooltip content={<CustomEvolutionTooltip />} cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                    <Area 
+                        type="monotone" 
+                        dataKey={currentEvoConfig.dataKey} 
+                        stroke={currentEvoConfig.color} 
+                        strokeWidth={3}
+                        fillOpacity={1} 
+                        fill={`url(#${currentEvoConfig.gradientId})`} 
+                        activeDot={{ r: 6, strokeWidth: 0, fill: currentEvoConfig.color }}
+                    />
+                </AreaChart>
+            </ResponsiveContainer>
+        </div>
       </div>
 
       {/* Charts Section: Row 1 */}
