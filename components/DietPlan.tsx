@@ -654,7 +654,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                     type="number"
                                     value={editForm?.waterTarget || 2000}
                                     onChange={(e) => setEditForm({...editForm!, waterTarget: Number(e.target.value)})}
-                                    className="w-20 text-right font-bold text-blue-900 bg-white border border-blue-200 rounded px-2 py-1 outline-none focus:ring-2 focus:ring-blue-400"
+                                    className="w-20 text-right font-bold text-blue-900 dark:text-blue-300 bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 rounded px-2 py-1 outline-none focus:ring-2 focus:ring-blue-400"
                                 />
                                 <span className="text-sm font-bold text-blue-900 dark:text-blue-300">ml</span>
                              </div>
@@ -679,7 +679,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                                  type="time" 
                                                  value={meal.time} 
                                                  onChange={(e) => handleMealChange(meal.id, 'time', e.target.value)}
-                                                 className="bg-white border border-slate-300 rounded px-2 py-1 text-sm font-bold w-24 text-slate-900 outline-none focus:border-blue-500"
+                                                 className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded px-2 py-1 text-sm font-bold w-24 text-slate-900 dark:text-slate-100 outline-none focus:border-blue-500"
                                              />
                                          ) : (
                                             <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 font-bold bg-blue-50 dark:bg-blue-900/30 px-3 py-1 rounded-lg print:bg-slate-100 print:text-slate-800 print:border print:border-slate-200">
@@ -693,7 +693,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                                 type="text" 
                                                 value={meal.name}
                                                 onChange={(e) => handleMealChange(meal.id, 'name', e.target.value)}
-                                                className="bg-white border border-slate-300 rounded px-2 py-1 text-sm font-bold w-40 sm:w-64 text-slate-900 outline-none focus:border-blue-500"
+                                                className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded px-2 py-1 text-sm font-bold w-40 sm:w-64 text-slate-900 dark:text-slate-100 outline-none focus:border-blue-500"
                                              />
                                          ) : (
                                              <h3 className="font-bold text-slate-800 dark:text-slate-200">{meal.name}</h3>
@@ -715,12 +715,12 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                  {/* Meal Items */}
                                  <ul className="space-y-2">
                                      {meal.items.map(item => (
-                                         <li key={item.id} className={`flex flex-col sm:flex-row gap-2 sm:items-center text-sm ${isEditing ? 'bg-white p-2 rounded border border-slate-200' : ''}`}>
+                                         <li key={item.id} className={`flex flex-col sm:flex-row gap-2 sm:items-center text-sm ${isEditing ? 'bg-white dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-700' : ''}`}>
                                              {isEditing ? (
                                                  <>
                                                      <div className="flex gap-2 w-full sm:w-auto">
                                                          <input 
-                                                             className="w-20 p-1 border border-slate-300 rounded text-xs bg-white text-slate-900 focus:border-blue-500 outline-none" 
+                                                             className="w-20 p-1 border border-slate-300 dark:border-slate-600 rounded text-xs bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-blue-500 outline-none" 
                                                              placeholder="Qtd" 
                                                              value={item.quantity} 
                                                              onChange={(e) => handleItemChange(meal.id, item.id, 'quantity', e.target.value)} 
@@ -728,7 +728,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                                          <div className="relative flex-1 sm:w-64">
                                                              <div className="relative">
                                                                 <input 
-                                                                    className="w-full p-1 border border-slate-300 rounded text-xs pr-8 bg-white text-slate-900 focus:border-blue-500 outline-none" 
+                                                                    className="w-full p-1 border border-slate-300 dark:border-slate-600 rounded text-xs pr-8 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-blue-500 outline-none" 
                                                                     placeholder="Buscar alimento..." 
                                                                     value={item.name} 
                                                                     onFocus={() => item.name.length >= 2 && setActiveSuggestionId(item.id)}
@@ -740,20 +740,20 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
 
                                                              {/* AUTOCOMPLETE DROPDOWN */}
                                                              {activeSuggestionId === item.id && (
-                                                                <div className="absolute top-full left-0 w-full bg-white rounded-lg shadow-xl border border-slate-100 z-50 max-h-48 overflow-y-auto mt-1 custom-scrollbar">
+                                                                <div className="absolute top-full left-0 w-full bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-100 dark:border-slate-700 z-50 max-h-48 overflow-y-auto mt-1 custom-scrollbar">
                                                                     {FOOD_DATABASE.filter(f => normalizeText(f.name).includes(normalizeText(item.name))).map((f, idx) => (
                                                                         <div 
                                                                             key={idx} 
                                                                             onClick={() => handleSelectSuggestion(meal.id, item.id, f)} 
-                                                                            className="p-2.5 hover:bg-blue-50 cursor-pointer border-b border-slate-50 last:border-0 group"
+                                                                            className="p-2.5 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer border-b border-slate-50 dark:border-slate-700 last:border-0 group"
                                                                         >
-                                                                            <div className="font-medium text-slate-700 text-xs">{f.name}</div>
-                                                                            <div className="text-[10px] text-slate-400 mt-0.5 flex gap-2">
-                                                                                <span className="font-semibold text-slate-500">{f.calories.toFixed(0)}kcal</span>
+                                                                            <div className="font-medium text-slate-700 dark:text-slate-200 text-xs">{f.name}</div>
+                                                                            <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 flex gap-2">
+                                                                                <span className="font-semibold text-slate-500 dark:text-slate-400">{f.calories.toFixed(0)}kcal</span>
                                                                                 <span>P:{f.protein}</span>
                                                                                 <span>C:{f.carbs}</span>
                                                                                 <span>G:{f.fats}</span>
-                                                                                <span className="ml-auto text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity font-medium">Selecionar</span>
+                                                                                <span className="ml-auto text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity font-medium">Selecionar</span>
                                                                             </div>
                                                                         </div>
                                                                     ))}
@@ -768,12 +768,12 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                                      </div>
                                                      {/* Alterado gap-1 para gap-2 e w-10 para w-16 para melhor visibilidade */}
                                                      <div className="flex gap-2 w-full sm:w-auto">
-                                                         <input type="number" className="w-16 p-1 border border-rose-200 rounded text-xs text-center bg-rose-50 text-rose-900 placeholder-rose-300 focus:border-rose-500 outline-none [color-scheme:light]" placeholder="P" value={item.protein} onChange={(e) => handleItemChange(meal.id, item.id, 'protein', e.target.value)} />
-                                                         <input type="number" className="w-16 p-1 border border-blue-200 rounded text-xs text-center bg-blue-50 text-blue-900 placeholder-blue-300 focus:border-blue-500 outline-none [color-scheme:light]" placeholder="C" value={item.carbs} onChange={(e) => handleItemChange(meal.id, item.id, 'carbs', e.target.value)} />
-                                                         <input type="number" className="w-16 p-1 border border-amber-200 rounded text-xs text-center bg-amber-50 text-amber-900 placeholder-amber-300 focus:border-amber-500 outline-none [color-scheme:light]" placeholder="G" value={item.fats} onChange={(e) => handleItemChange(meal.id, item.id, 'fats', e.target.value)} />
+                                                         <input type="number" className="w-16 p-1 border border-rose-200 dark:border-rose-900/50 rounded text-xs text-center bg-rose-50 dark:bg-rose-900/20 text-rose-900 dark:text-rose-200 placeholder-rose-300 focus:border-rose-500 outline-none [color-scheme:light] dark:[color-scheme:dark]" placeholder="P" value={item.protein} onChange={(e) => handleItemChange(meal.id, item.id, 'protein', e.target.value)} />
+                                                         <input type="number" className="w-16 p-1 border border-blue-200 dark:border-blue-900/50 rounded text-xs text-center bg-blue-50 dark:bg-blue-900/20 text-blue-900 dark:text-blue-200 placeholder-blue-300 focus:border-blue-500 outline-none [color-scheme:light] dark:[color-scheme:dark]" placeholder="C" value={item.carbs} onChange={(e) => handleItemChange(meal.id, item.id, 'carbs', e.target.value)} />
+                                                         <input type="number" className="w-16 p-1 border border-amber-200 dark:border-amber-900/50 rounded text-xs text-center bg-amber-50 dark:bg-amber-900/20 text-amber-900 dark:text-amber-200 placeholder-amber-300 focus:border-amber-500 outline-none [color-scheme:light] dark:[color-scheme:dark]" placeholder="G" value={item.fats} onChange={(e) => handleItemChange(meal.id, item.id, 'fats', e.target.value)} />
                                                      </div>
                                                      <div className="flex items-center justify-between flex-1">
-                                                         <span className="text-xs text-slate-400 w-12 text-right">{item.calories?.toFixed(0)}kcal</span>
+                                                         <span className="text-xs text-slate-400 dark:text-slate-500 w-12 text-right">{item.calories?.toFixed(0)}kcal</span>
                                                          <button onClick={() => handleRemoveItem(meal.id, item.id)} className="text-slate-300 hover:text-red-500 ml-2"><X size={14}/></button>
                                                      </div>
                                                  </>
@@ -818,7 +818,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Observações</label>
                                 <textarea 
-                                    className="w-full bg-white text-slate-900 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none placeholder-slate-400" 
+                                    className="w-full bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none placeholder-slate-400" 
                                     rows={4}
                                     value={editForm?.notes || ''}
                                     onChange={(e) => setEditForm({...editForm!, notes: e.target.value})}

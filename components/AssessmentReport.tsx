@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useMemo } from 'react';
 import { CheckIn, Patient } from '../types';
 import { ChevronLeft, Download, AlertTriangle, CheckCircle, User, Camera, X, Activity, Scale, Ruler, TrendingUp, Flame, Hourglass, Loader2, Info } from 'lucide-react';
@@ -269,11 +268,11 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
   };
 
   return (
-    <div className="bg-slate-50 min-h-screen pb-12">
+    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen pb-12 transition-colors">
       
       {/* Header de Ação (Apenas UI, oculto no PDF via controle de seleção) */}
       <div className="max-w-5xl mx-auto pt-6 px-4 mb-6 flex justify-between items-center print:hidden">
-          <button onClick={onBack} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors">
+          <button onClick={onBack} className="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors">
               <ChevronLeft size={20} /> Voltar
           </button>
           <button 
@@ -291,9 +290,13 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
       <div className="flex justify-center overflow-auto p-4 md:p-0">
           <div 
             ref={reportContainerRef}
-            className="w-[210mm] min-h-[297mm] bg-white shadow-xl p-8 md:p-12"
+            className="w-[210mm] min-h-[297mm] bg-white shadow-xl p-8 md:p-12 relative"
             style={{ margin: '0 auto' }} 
           >
+            {/* Aviso de Pré-visualização (apenas na tela) */}
+            <div className="absolute top-0 left-0 w-full bg-slate-100 text-slate-500 text-[10px] text-center py-1 print:hidden">
+                Pré-visualização de Impressão (Fundo branco para economia de tinta)
+            </div>
             
             {/* 1. CABEÇALHO (Marcado para captura) */}
             <div className="report-header bg-white pb-6 mb-2 border-b-2 border-slate-100">
@@ -643,59 +646,59 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
       {/* MODAL DE EXPLICAÇÃO DA PONTUAÇÃO */}
       {showScoreInfo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm print:hidden">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative animate-in fade-in zoom-in duration-200">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 relative animate-in fade-in zoom-in duration-200 border border-slate-200 dark:border-slate-700">
                 <button 
                     onClick={() => setShowScoreInfo(false)}
-                    className="absolute top-4 right-4 p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+                    className="absolute top-4 right-4 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors"
                 >
                     <X size={20} />
                 </button>
                 
-                <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-                    <Activity size={20} className="text-blue-600" />
+                <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
+                    <Activity size={20} className="text-blue-600 dark:text-blue-400" />
                     Como funciona o cálculo?
                 </h3>
                 
-                <p className="text-slate-600 text-sm mb-4">
+                <p className="text-slate-600 dark:text-slate-300 text-sm mb-4">
                     A pontuação de saúde é um algoritmo heurístico que começa com 100 pontos e aplica penalidades ou bônus.
                 </p>
 
                 <div className="space-y-4">
-                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 flex justify-between items-center">
+                    <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border border-slate-100 dark:border-slate-700 flex justify-between items-center">
                         <div className="flex flex-col">
-                            <span className="font-bold text-slate-700 text-sm">Base Inicial</span>
-                            <span className="text-[10px] text-slate-500">Valor de partida</span>
+                            <span className="font-bold text-slate-700 dark:text-slate-200 text-sm">Base Inicial</span>
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400">Valor de partida</span>
                         </div>
-                        <span className="font-bold text-blue-600 text-lg">100 pts</span>
+                        <span className="font-bold text-blue-600 dark:text-blue-400 text-lg">100 pts</span>
                     </div>
 
                     <div>
-                        <h4 className="font-bold text-xs text-rose-500 uppercase tracking-wider mb-2 border-b border-rose-100 pb-1">Penalidades</h4>
+                        <h4 className="font-bold text-xs text-rose-500 dark:text-rose-400 uppercase tracking-wider mb-2 border-b border-rose-100 dark:border-rose-900/50 pb-1">Penalidades</h4>
                         <ul className="space-y-3">
-                            <li className="text-sm text-slate-600">
-                                <div className="flex justify-between font-bold text-slate-700 text-xs mb-1">
+                            <li className="text-sm text-slate-600 dark:text-slate-300">
+                                <div className="flex justify-between font-bold text-slate-700 dark:text-slate-200 text-xs mb-1">
                                     <span>IMC (Peso/Altura²)</span>
-                                    <span className="text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded">-2 pts / unidade</span>
+                                    <span className="text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/30 px-1.5 py-0.5 rounded">-2 pts / unidade</span>
                                 </div>
-                                <p className="text-xs text-slate-500 leading-snug">
+                                <p className="text-xs text-slate-500 dark:text-slate-400 leading-snug">
                                     Descontado para cada ponto acima de 25 ou abaixo de 18.5.
                                 </p>
                             </li>
-                            <li className="text-sm text-slate-600">
-                                <div className="flex justify-between font-bold text-slate-700 text-xs mb-1">
+                            <li className="text-sm text-slate-600 dark:text-slate-300">
+                                <div className="flex justify-between font-bold text-slate-700 dark:text-slate-200 text-xs mb-1">
                                     <span>Gordura Visceral</span>
-                                    <span className="text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded">-4 pts / nível</span>
+                                    <span className="text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/30 px-1.5 py-0.5 rounded">-4 pts / nível</span>
                                 </div>
-                                <p className="text-xs text-slate-500 leading-snug">
+                                <p className="text-xs text-slate-500 dark:text-slate-400 leading-snug">
                                     Descontado severamente para cada nível acima de 9.
                                 </p>
                             </li>
-                            <li className="text-sm text-slate-600">
-                                <div className="flex justify-between font-bold text-slate-700 text-xs mb-1">
+                            <li className="text-sm text-slate-600 dark:text-slate-300">
+                                <div className="flex justify-between font-bold text-slate-700 dark:text-slate-200 text-xs mb-1">
                                     <span>% de Gordura Corporal</span>
-                                    <span className="text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded">-1 pt / %</span>
+                                    <span className="text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/30 px-1.5 py-0.5 rounded">-1 pt / %</span>
                                 </div>
-                                <p className="text-xs text-slate-500 leading-snug">
+                                <p className="text-xs text-slate-500 dark:text-slate-400 leading-snug">
                                     Descontado se acima de 25% (homens) ou 32% (mulheres).
                                 </p>
                             </li>
@@ -703,14 +706,14 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                     </div>
 
                     <div>
-                        <h4 className="font-bold text-xs text-emerald-500 uppercase tracking-wider mb-2 border-b border-emerald-100 pb-1">Bônus</h4>
+                        <h4 className="font-bold text-xs text-emerald-500 dark:text-emerald-400 uppercase tracking-wider mb-2 border-b border-emerald-100 dark:border-emerald-900/50 pb-1">Bônus</h4>
                         <ul className="space-y-2">
-                            <li className="text-sm text-slate-600">
-                                <div className="flex justify-between font-bold text-slate-700 text-xs mb-1">
+                            <li className="text-sm text-slate-600 dark:text-slate-300">
+                                <div className="flex justify-between font-bold text-slate-700 dark:text-slate-200 text-xs mb-1">
                                     <span>Massa Muscular</span>
-                                    <span className="text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">+0.5 pt / %</span>
+                                    <span className="text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded">+0.5 pt / %</span>
                                 </div>
-                                <p className="text-xs text-slate-500 leading-snug">
+                                <p className="text-xs text-slate-500 dark:text-slate-400 leading-snug">
                                     Adicionado para cada % acima de 35% (homens) ou 30% (mulheres).
                                 </p>
                             </li>
@@ -718,10 +721,10 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                     </div>
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-slate-100 text-center">
+                <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700 text-center">
                     <button 
                         onClick={() => setShowScoreInfo(false)}
-                        className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-2 rounded-lg font-medium text-sm transition-colors"
+                        className="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 px-6 py-2 rounded-lg font-medium text-sm transition-colors"
                     >
                         Entendi
                     </button>
