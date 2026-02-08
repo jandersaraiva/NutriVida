@@ -11,11 +11,66 @@ interface HistoryTableProps {
 }
 
 export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, onDelete, onViewReport }) => {
+  
+  const handleExportCSV = () => {
+    if (checkIns.length === 0) {
+      alert("Não há dados para exportar.");
+      return;
+    }
+
+    // Cabeçalho do CSV
+    const headers = [
+      "Data",
+      "Peso (kg)",
+      "IMC",
+      "Gordura (%)",
+      "Músculo (%)",
+      "Idade Corporal",
+      "TMB (kcal)",
+      "Gordura Visceral",
+      "Cintura (cm)",
+      "Quadril (cm)"
+    ];
+
+    // Linhas de dados
+    const rows = checkIns.map(c => [
+      new Date(c.date).toLocaleDateString('pt-BR'),
+      c.weight.toFixed(2).replace('.', ','),
+      c.imc.toFixed(2).replace('.', ','),
+      c.bodyFat.toFixed(2).replace('.', ','),
+      c.muscleMass.toFixed(2).replace('.', ','),
+      c.bodyAge || '-',
+      c.bmr,
+      c.visceralFat,
+      c.waistCircumference || '-',
+      c.hipCircumference || '-'
+    ]);
+
+    // Monta o conteúdo CSV
+    const csvContent = [
+      headers.join(';'),
+      ...rows.map(row => row.join(';'))
+    ].join('\n');
+
+    // Cria o blob e o link para download
+    const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `historico_avaliacoes_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
       <div className="p-6 border-b border-slate-100 flex justify-between items-center">
         <h3 className="font-bold text-lg text-slate-800">Histórico Completo</h3>
-        <button className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-2">
+        <button 
+          onClick={handleExportCSV}
+          className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
+        >
           <Download size={16} /> Exportar CSV
         </button>
       </div>
