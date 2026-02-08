@@ -1,65 +1,77 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { CheckIn } from '../types';
-import { Calendar, Download, Pencil, Trash2, FileText } from 'lucide-react';
+import { Calendar, Download, Pencil, Trash2, FileText, Loader2 } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 interface HistoryTableProps {
   checkIns: CheckIn[];
   onEdit: (checkIn: CheckIn) => void;
   onDelete: (id: string) => void;
-  onViewReport?: (checkIn: CheckIn) => void; // Nova prop opcional para não quebrar outros usos se houver
+  onViewReport?: (checkIn: CheckIn) => void;
 }
 
 export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, onDelete, onViewReport }) => {
+  const tableRef = useRef<HTMLDivElement>(null);
+  const [isExporting, setIsExporting] = useState(false);
   
-  const handleExportCSV = () => {
-    if (checkIns.length === 0) {
+  const handleExportPDF = async () => {
+    if (checkIns.length === 0 || !tableRef.current) {
       alert("Não há dados para exportar.");
       return;
     }
 
-    // Cabeçalho do CSV
-    const headers = [
-      "Data",
-      "Peso (kg)",
-      "IMC",
-      "Gordura (%)",
-      "Músculo (%)",
-      "Idade Corporal",
-      "TMB (kcal)",
-      "Gordura Visceral",
-      "Cintura (cm)",
-      "Quadril (cm)"
-    ];
+    setIsExporting(true);
 
-    // Linhas de dados
-    const rows = checkIns.map(c => [
-      new Date(c.date).toLocaleDateString('pt-BR'),
-      c.weight.toFixed(2).replace('.', ','),
-      c.imc.toFixed(2).replace('.', ','),
-      c.bodyFat.toFixed(2).replace('.', ','),
-      c.muscleMass.toFixed(2).replace('.', ','),
-      c.bodyAge || '-',
-      c.bmr,
-      c.visceralFat,
-      c.waistCircumference || '-',
-      c.hipCircumference || '-'
-    ]);
+    try {
+        // Detecta tema para fundo
+        const isDark = document.documentElement.classList.contains('dark');
+        const backgroundColor = isDark ? '#1e293b' : '#ffffff'; // slate-800 vs white
+        const textColor = isDark ? '#f8fafc' : '#1e293b';
 
-    // Monta o conteúdo CSV
-    const csvContent = [
-      headers.join(';'),
-      ...rows.map(row => row.join(';'))
-    ].join('\n');
+        // Captura a tabela como imagem
+        const canvas = await html2canvas(tableRef.current, {
+            scale: 2, // Melhor resolução
+            backgroundColor: backgroundColor,
+            ignoreElements: (element) => {
+                // Ignora elementos com a classe 'pdf-exclude' (Coluna Ações)
+                return element.classList.contains('pdf-exclude');
+            }
+        });
 
-    // Cria o blob e o link para download
-    const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `historico_avaliacoes_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = 210;
+        const pdfHeight = 297;
+        const margin = 10;
+        
+        // Calcula altura proporcional
+        const imgProps = pdf.getImageProperties(imgData);
+        const contentWidth = pdfWidth - (margin * 2);
+        const imgHeight = (imgProps.height * contentWidth) / imgProps.width;
+
+        // Pinta o fundo da página inteira se for modo escuro
+        if (isDark) {
+            pdf.setFillColor(30, 41, 59); // slate-800 RGB
+            pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
+        }
+
+        // Título do Documento
+        pdf.setFontSize(14);
+        pdf.setTextColor(isDark ? 255 : 0, isDark ? 255 : 0, isDark ? 255 : 0);
+        pdf.text("Histórico de Avaliações", margin, margin + 5);
+
+        // Adiciona a imagem da tabela
+        pdf.addImage(imgData, 'PNG', margin, margin + 10, contentWidth, imgHeight);
+
+        pdf.save(`historico_avaliacoes_${new Date().toISOString().split('T')[0]}.pdf`);
+
+    } catch (error) {
+        console.error("Erro ao exportar PDF:", error);
+        alert("Ocorreu um erro ao gerar o PDF.");
+    } finally {
+        setIsExporting(false);
+    }
   };
 
   return (
@@ -67,14 +79,16 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, on
       <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
         <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100">Histórico Completo</h3>
         <button 
-          onClick={handleExportCSV}
-          className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+          onClick={handleExportPDF}
+          disabled={isExporting}
+          className="text-sm text-white bg-blue-600 hover:bg-blue-700 font-medium flex items-center gap-2 px-4 py-2 rounded-lg transition-colors shadow-sm disabled:opacity-70 disabled:cursor-wait"
         >
-          <Download size={16} /> Exportar CSV
+          {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+          {isExporting ? 'Gerando...' : 'Exportar PDF'}
         </button>
       </div>
       
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto" ref={tableRef}>
         <table className="w-full text-sm text-left">
           <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-100 dark:border-slate-700">
             <tr>
@@ -86,7 +100,7 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, on
               <th className="px-6 py-4">Idade Corp.</th>
               <th className="px-6 py-4">TMB (Kcal)</th>
               <th className="px-6 py-4 text-center">Visceral</th>
-              <th className="px-6 py-4 text-right">Ações</th>
+              <th className="px-6 py-4 text-right pdf-exclude">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -121,7 +135,7 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, on
                     {checkIn.visceralFat}
                   </div>
                 </td>
-                <td className="px-6 py-4 text-right">
+                <td className="px-6 py-4 text-right pdf-exclude">
                   <div className="flex justify-end gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                     {onViewReport && (
                         <button 
