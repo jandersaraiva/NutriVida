@@ -528,39 +528,64 @@ const App: React.FC = () => {
             </div>
         )}
 
-        {currentView !== 'home' && currentView !== 'active_diets' && currentView !== 'assessment_report' && (
+        {/* Header Logic: Allow header on 'home' but with different content */}
+        {(currentView !== 'active_diets' && currentView !== 'assessment_report') && (
           <header className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 max-w-[1920px] mx-auto print:hidden">
             <div className="flex justify-between w-full sm:w-auto items-center">
               <div>
-                <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
-                  {currentView === 'patients' && !selectedPatientId && 'Gestão de Pacientes'}
-                  {currentView === 'patients' && selectedPatientId && (activePatient?.name || 'Detalhes do Paciente')}
-                  {currentView === 'schedule' && 'Agenda'}
-                  {currentView === 'add_entry' && (checkInToEdit ? 'Editar Avaliação' : 'Nova Avaliação')}
-                  {currentView === 'select_patient_for_entry' && 'Menu de Ações'}
-                  {currentView === 'profile_settings' && 'Meu Perfil'}
-                </h1>
-                <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-                  {currentView === 'patients' && !selectedPatientId && 'Gerencie o acompanhamento dos seus alunos'}
-                  {currentView === 'patients' && selectedPatientId && 'Acompanhe a evolução e gerencie o plano'}
-                  {currentView === 'schedule' && 'Visualize seus próximos atendimentos'}
-                  {currentView === 'select_patient_for_entry' && 'Selecione o que deseja criar ou gerenciar'}
-                  {currentView === 'profile_settings' && 'Gerencie seus dados e informações da clínica'}
-                </p>
+                {/* Special Header Content for Home View on Mobile */}
+                {currentView === 'home' ? (
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-600 rounded-lg text-white shadow-sm lg:hidden">
+                            <Activity size={24} />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">NutriVida</h1>
+                            <p className="text-slate-500 dark:text-slate-400 text-sm lg:hidden">Seu assistente nutricional</p>
+                            <p className="text-slate-500 dark:text-slate-400 text-sm hidden lg:block">Painel Geral</p>
+                        </div>
+                    </div>
+                ) : (
+                    <>
+                        <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+                        {currentView === 'patients' && !selectedPatientId && 'Gestão de Pacientes'}
+                        {currentView === 'patients' && selectedPatientId && (activePatient?.name || 'Detalhes do Paciente')}
+                        {currentView === 'schedule' && 'Agenda'}
+                        {currentView === 'add_entry' && (checkInToEdit ? 'Editar Avaliação' : 'Nova Avaliação')}
+                        {currentView === 'select_patient_for_entry' && 'Menu de Ações'}
+                        {currentView === 'profile_settings' && 'Meu Perfil'}
+                        </h1>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
+                        {currentView === 'patients' && !selectedPatientId && 'Gerencie o acompanhamento dos seus alunos'}
+                        {currentView === 'patients' && selectedPatientId && 'Acompanhe a evolução e gerencie o plano'}
+                        {currentView === 'schedule' && 'Visualize seus próximos atendimentos'}
+                        {currentView === 'select_patient_for_entry' && 'Selecione o que deseja criar ou gerenciar'}
+                        {currentView === 'profile_settings' && 'Gerencie seus dados e informações da clínica'}
+                        </p>
+                    </>
+                )}
               </div>
 
-              {/* Mobile Header Buttons (since Sidebar is gone) */}
+              {/* Mobile Header Buttons (visible on all screens on mobile since sidebar is bottom nav) */}
               <div className="flex gap-2 lg:hidden">
-                 <button onClick={toggleTheme} className="p-2 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                 <button 
+                    onClick={toggleTheme} 
+                    className="p-2 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors shadow-sm"
+                    title={isDarkMode ? 'Modo Claro' : 'Modo Escuro'}
+                 >
                     {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
                  </button>
-                 <button onClick={handleLogout} className="p-2 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors">
+                 <button 
+                    onClick={handleLogout} 
+                    className="p-2 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors shadow-sm"
+                    title="Sair"
+                 >
                     <LogOut size={20} />
                  </button>
               </div>
             </div>
             
-            {activePatient && selectedPatientId && (
+            {activePatient && selectedPatientId && currentView !== 'home' && (
               <div className="flex items-center gap-3 bg-white dark:bg-slate-800 p-2 pr-4 rounded-full shadow-sm border border-slate-100 dark:border-slate-700">
                  <div className={`h-10 w-10 ${activePatient.avatarColor} rounded-full flex items-center justify-center font-bold border-2 border-white dark:border-slate-700 shadow-sm`}>
                     {activePatient.name.substring(0,2).toUpperCase()}
@@ -612,6 +637,7 @@ const App: React.FC = () => {
                 data={nutritionist}
                 onSave={handleSaveProfile}
                 onResetData={handleResetData}
+                onLogout={handleLogout}
             />
           )}
 
