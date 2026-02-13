@@ -86,8 +86,26 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
   // Load initial data for editing
   useEffect(() => {
     if (initialData) {
-        const { id, ...rest } = initialData;
-        setFormData(rest);
+        // Explicitly extract ONLY valid fields to prevent UI pollution (delta, etc)
+        const { 
+            date, height, weight, imc, bodyFat, muscleMass, 
+            bmr, age, bodyAge, visceralFat, waistCircumference, hipCircumference 
+        } = initialData;
+
+        setFormData({
+            date: date || new Date().toISOString().split('T')[0],
+            height: height || 0,
+            weight: weight || 0,
+            imc: imc || 0,
+            bodyFat: bodyFat || 0,
+            muscleMass: muscleMass || 0,
+            bmr: bmr || 0,
+            age: age || 0,
+            bodyAge: bodyAge || 0,
+            visceralFat: visceralFat || 0,
+            waistCircumference: waistCircumference || 0,
+            hipCircumference: hipCircumference || 0
+        });
     }
   }, [initialData]);
 

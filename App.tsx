@@ -334,17 +334,33 @@ const App: React.FC = () => {
   const handleSaveCheckIn = async (checkIn: CheckIn) => {
     if (!activePatient) return;
 
+    // SANITIZAÇÃO: Remove propriedades extras (UI-derived) antes de enviar para o Supabase
+    // Isso evita o erro 400/500 se o objeto contiver campos como 'delta', 'dateFormatted', etc.
+    const payload = {
+        id: checkIn.id,
+        patientId: activePatient.id,
+        date: checkIn.date,
+        height: checkIn.height,
+        weight: checkIn.weight,
+        imc: checkIn.imc,
+        bodyFat: checkIn.bodyFat,
+        muscleMass: checkIn.muscleMass,
+        bmr: checkIn.bmr,
+        age: checkIn.age,
+        bodyAge: checkIn.bodyAge,
+        visceralFat: checkIn.visceralFat,
+        waistCircumference: checkIn.waistCircumference || 0,
+        hipCircumference: checkIn.hipCircumference || 0
+    };
+
     // Salvar no Supabase
     const { error } = await supabase
         .from('check_ins')
-        .upsert({
-            ...checkIn,
-            patientId: activePatient.id
-        });
+        .upsert(payload);
 
     if (error) {
         console.error("Erro ao salvar avaliação:", error);
-        alert("Erro ao salvar avaliação.");
+        alert("Erro ao salvar avaliação: " + error.message);
         return;
     }
 
