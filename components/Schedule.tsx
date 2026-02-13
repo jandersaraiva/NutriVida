@@ -1,18 +1,19 @@
 import React, { useState, useMemo } from 'react';
 import { Appointment, Patient } from '../types';
-import { Calendar, Clock, Plus, ChevronLeft, ChevronRight, X, Edit2, Check } from 'lucide-react';
+import { Calendar, Clock, Plus, ChevronLeft, ChevronRight, X, Edit2, Check, Trash2 } from 'lucide-react';
 
 interface ScheduleProps {
   patients: Patient[];
   appointments: Appointment[];
   onAddAppointment: (appointment: Appointment) => void;
   onUpdateAppointment: (appointment: Appointment) => void;
+  onDeleteAppointment: (id: string) => void;
 }
 
 // Helper seguro para IDs
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
-export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAddAppointment, onUpdateAppointment }) => {
+export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAddAppointment, onUpdateAppointment, onDeleteAppointment }) => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   
@@ -352,6 +353,13 @@ export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAd
                                             >
                                                 <Edit2 size={16} />
                                                 Editar
+                                            </button>
+                                            <button 
+                                                onClick={() => onDeleteAppointment(app.id)}
+                                                className="p-2 border border-slate-200 dark:border-slate-600 text-rose-500 dark:text-rose-400 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors flex items-center justify-center"
+                                                title="Excluir agendamento"
+                                            >
+                                                <Trash2 size={18} />
                                             </button>
                                         </div>
                                     </div>

@@ -459,6 +459,20 @@ const App: React.FC = () => {
     }
   };
 
+  const handleDeleteAppointment = async (id: string) => {
+    if (!window.confirm('Tem certeza que deseja excluir este agendamento?')) return;
+    
+    const { error } = await supabase.from('appointments').delete().eq('id', id);
+    
+    if (error) {
+        console.error("Erro ao deletar agendamento:", error);
+        alert("Erro ao deletar agendamento.");
+        return;
+    }
+
+    setAppointments(prev => prev.filter(a => a.id !== id));
+  };
+
   const handleSaveProfile = async (data: Nutritionist) => {
       // Usa um ID fixo para o perfil único da clínica
       const { error } = await supabase
@@ -724,6 +738,7 @@ const App: React.FC = () => {
               appointments={appointments} 
               onAddAppointment={handleAddAppointment}
               onUpdateAppointment={handleUpdateAppointment}
+              onDeleteAppointment={handleDeleteAppointment}
             />
           )}
 
