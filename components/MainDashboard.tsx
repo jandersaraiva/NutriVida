@@ -1,6 +1,6 @@
 import React from 'react';
 import { Patient, Appointment, ViewState } from '../types';
-import { Users, CalendarDays, Utensils, TrendingUp, Clock, AlertCircle } from 'lucide-react';
+import { Users, CalendarDays, Utensils, TrendingUp, Clock, AlertCircle, AlertTriangle } from 'lucide-react';
 
 interface MainDashboardProps {
   patients: Patient[];
@@ -148,7 +148,10 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({ patients, appointm
                                 {p.name.substring(0,2).toUpperCase()}
                             </div>
                             <div className="flex-1">
-                                <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{p.name}</p>
+                                <div className="flex items-center gap-1.5">
+                                    <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{p.name}</p>
+                                    <AlertTriangle size={14} className="text-orange-500 shrink-0" />
+                                </div>
                                 <p className="text-xs text-orange-500 dark:text-orange-400">Sem dieta ativa cadastrada</p>
                             </div>
                         </div>
