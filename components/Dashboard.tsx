@@ -224,8 +224,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
     return null;
   };
 
-  // Custom Tooltip para o Gráfico de Composição (Barras)
-  const CustomCompositionBarTooltip = ({ active, payload, label }: any) => {
+  // Custom Tooltip para o Gráfico de Composição (Barras/Área)
+  const CustomCompositionTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length >= 2) {
       // Ordenar payload para consistência: Músculo primeiro, Gordura depois
       const muscleData = payload.find((p: any) => p.dataKey === 'muscleMassKg');
@@ -657,7 +657,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
           </div>
         </div>
 
-        {/* Chart 2: Body Recomposition (Bar Chart) - SUBSTITUIÇÃO AQUI */}
+        {/* Chart 2: Body Recomposition (Area Chart) - SUBSTITUIÇÃO AQUI */}
         <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
@@ -667,41 +667,45 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
           </div>
           <div className="h-[280px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }} barGap={2}>
+              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <defs>
-                    <linearGradient id="muscleGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#3b82f6" />
-                        <stop offset="100%" stopColor="#2563eb" />
-                    </linearGradient>
-                    <linearGradient id="fatGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#f43f5e" />
-                        <stop offset="100%" stopColor="#e11d48" />
-                    </linearGradient>
+                  <linearGradient id="colorMuscleArea" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorFatArea" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
+                  </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" strokeOpacity={0.2} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" strokeOpacity={0.1} />
                 <XAxis dataKey="dateFormatted" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} domain={['auto', 'auto']} unit="kg" />
-                <Tooltip content={<CustomCompositionBarTooltip />} cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }} />
+                <Tooltip content={<CustomCompositionTooltip />} cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '4 4' }} />
                 <Legend iconType="circle" wrapperStyle={{paddingTop: '20px'}} />
-                
-                {/* Massa Magra (Azul) */}
-                <Bar 
-                    dataKey="muscleMassKg" 
-                    name="Massa Magra" 
-                    fill="url(#muscleGradient)" 
-                    radius={[4, 4, 0, 0]}
-                    barSize={24}
+
+                <Area
+                  type="monotone"
+                  dataKey="muscleMassKg"
+                  name="Massa Magra"
+                  stroke="#3b82f6"
+                  strokeWidth={3}
+                  fillOpacity={1}
+                  fill="url(#colorMuscleArea)"
+                  activeDot={{ r: 6, strokeWidth: 0, fill: '#2563eb' }}
                 />
-                
-                {/* Massa Gorda (Vermelho) */}
-                <Bar 
-                    dataKey="fatMassKg" 
-                    name="Massa Gorda" 
-                    fill="url(#fatGradient)" 
-                    radius={[4, 4, 0, 0]}
-                    barSize={24}
+
+                <Area
+                  type="monotone"
+                  dataKey="fatMassKg"
+                  name="Massa Gorda"
+                  stroke="#f43f5e"
+                  strokeWidth={3}
+                  fillOpacity={1}
+                  fill="url(#colorFatArea)"
+                  activeDot={{ r: 6, strokeWidth: 0, fill: '#e11d48' }}
                 />
-              </BarChart>
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
