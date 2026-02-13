@@ -6,7 +6,7 @@ import {
 } from 'recharts';
 import { 
   Scale, Activity, Zap, Flame, PieChart, Hourglass, TrendingDown, TrendingUp, 
-  Calculator, Calendar, AlertTriangle, CheckCircle, FileText, BarChart2, Dumbbell
+  Calculator, Calendar, AlertTriangle, CheckCircle, FileText, BarChart2, Dumbbell, Minus, ArrowUp, ArrowDown, Info
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -57,6 +57,117 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
       <span className={`flex items-center gap-1 text-xs font-medium ${colorClass}`}>
         {sign}{diff.toFixed(1).replace('.', ',')}{suffix} vs anterior
       </span>
+    );
+  };
+
+  // --- Lógica de Recomposição Corporal (Novo Componente) ---
+  const renderRecompositionAnalysis = () => {
+    if (!current || !previous) return null;
+
+    // Calcular Massas em KG
+    const currentFatKg = current.weight * (current.bodyFat / 100);
+    const prevFatKg = previous.weight * (previous.bodyFat / 100);
+    const diffFatKg = currentFatKg - prevFatKg;
+
+    const currentMuscleKg = current.weight * (current.muscleMass / 100);
+    const prevMuscleKg = previous.weight * (previous.muscleMass / 100);
+    const diffMuscleKg = currentMuscleKg - prevMuscleKg;
+
+    // Determinar Status
+    const fatStatus = diffFatKg < -0.1 ? 'good' : diffFatKg > 0.1 ? 'bad' : 'neutral';
+    const muscleStatus = diffMuscleKg > 0.1 ? 'good' : diffMuscleKg < -0.1 ? 'bad' : 'neutral';
+
+    // Texto de Veredito
+    let veredictTitle = "Manutenção";
+    let veredictDesc = "Os indicadores mantiveram-se estáveis neste período.";
+    let veredictColor = "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300";
+
+    if (fatStatus === 'good' && muscleStatus === 'good') {
+        veredictTitle = "Recomposição Ouro";
+        veredictDesc = "Excelente! Você perdeu gordura e ganhou massa muscular simultaneamente.";
+        veredictColor = "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400";
+    } else if (fatStatus === 'good' && muscleStatus === 'neutral') {
+        veredictTitle = "Queima de Gordura";
+        veredictDesc = "Ótimo progresso na redução de gordura mantendo a massa magra.";
+        veredictColor = "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400";
+    } else if (fatStatus === 'neutral' && muscleStatus === 'good') {
+        veredictTitle = "Hipertrofia Limpa";
+        veredictDesc = "Ganho de massa muscular sem aumento significativo de gordura.";
+        veredictColor = "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400";
+    } else if (fatStatus === 'bad' && muscleStatus === 'bad') {
+        veredictTitle = "Alerta: Perda de Qualidade";
+        veredictDesc = "Houve ganho de gordura e perda de massa muscular. Vamos ajustar o plano.";
+        veredictColor = "bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400";
+    } else if (fatStatus === 'good' && muscleStatus === 'bad') {
+        veredictTitle = "Perda de Peso";
+        veredictDesc = "Houve redução de gordura, mas também de massa magra. Atenção à ingestão proteica.";
+        veredictColor = "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400";
+    } else if (fatStatus === 'bad' && muscleStatus === 'good') {
+        veredictTitle = "Ganho de Peso (Bulking)";
+        veredictDesc = "Ganho muscular acompanhado de algum ganho de gordura (natural em processos de hipertrofia).";
+        veredictColor = "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400";
+    }
+
+    const StatBlock = ({ label, valueKg, diffKg, status, icon: Icon }: any) => {
+        const isGood = status === 'good';
+        const isBad = status === 'bad';
+        const color = isGood ? 'text-emerald-600 dark:text-emerald-400' : isBad ? 'text-rose-600 dark:text-rose-400' : 'text-slate-500 dark:text-slate-400';
+        const bgColor = isGood ? 'bg-emerald-50 dark:bg-emerald-900/20' : isBad ? 'bg-rose-50 dark:bg-rose-900/20' : 'bg-slate-50 dark:bg-slate-700/50';
+        
+        return (
+            <div className={`flex-1 p-4 rounded-xl border border-slate-100 dark:border-slate-700 flex items-center justify-between ${bgColor}`}>
+                <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-full bg-white dark:bg-slate-800 shadow-sm ${color}`}>
+                        <Icon size={20} />
+                    </div>
+                    <div>
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{label}</p>
+                        <p className="text-lg font-bold text-slate-800 dark:text-slate-100">{valueKg.toFixed(1)} kg</p>
+                    </div>
+                </div>
+                <div className="text-right">
+                    <div className={`flex items-center justify-end gap-1 font-bold text-sm ${color}`}>
+                        {diffKg > 0 ? <ArrowUp size={16} strokeWidth={3} /> : diffKg < 0 ? <ArrowDown size={16} strokeWidth={3} /> : <Minus size={16} />}
+                        <span>{Math.abs(diffKg).toFixed(2)} kg</span>
+                    </div>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">este mês</span>
+                </div>
+            </div>
+        );
+    };
+
+    return (
+        <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+            <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
+                <TrendingUp size={20} className="text-blue-500" />
+                Análise de Recomposição (Mês Atual)
+            </h3>
+            
+            <div className="flex flex-col md:flex-row gap-4">
+                <StatBlock 
+                    label="Gordura Corporal" 
+                    valueKg={currentFatKg} 
+                    diffKg={diffFatKg} 
+                    status={fatStatus} 
+                    icon={Flame} 
+                />
+                <StatBlock 
+                    label="Massa Muscular" 
+                    valueKg={currentMuscleKg} 
+                    diffKg={diffMuscleKg} 
+                    status={muscleStatus} 
+                    icon={Dumbbell} 
+                />
+            </div>
+
+            <div className={`mt-4 p-3 rounded-xl flex items-start gap-3 ${veredictColor}`}>
+                <Info size={20} className="shrink-0 mt-0.5" />
+                <div>
+                    <span className="font-bold block text-sm mb-0.5">{veredictTitle}</span>
+                    <span className="text-xs opacity-90 leading-relaxed">{veredictDesc}</span>
+                </div>
+            </div>
+        </div>
     );
   };
 
@@ -425,6 +536,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
             delta={renderDelta(current.bodyAge, previous?.bodyAge, true, " anos")}
         />
       </div>
+
+      {/* NOVO: Análise de Recomposição Corporal */}
+      {renderRecompositionAnalysis()}
 
       {/* NOVO COMPONENTE: Evolução Mensal Detalhada (AreaChart Interativo) */}
       <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
