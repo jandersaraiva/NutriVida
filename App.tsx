@@ -14,7 +14,7 @@ import { AnamnesisForm } from './components/AnamnesisForm';
 import { AssessmentReport } from './components/AssessmentReport';
 import { LoginScreen } from './components/LoginScreen';
 import { CheckIn, ViewState, Patient, DietPlan as DietPlanType, PatientTab, Appointment, Nutritionist, Anamnesis } from './types';
-import { User, Activity, Utensils, FileText, LayoutDashboard, Stethoscope, Sun, Moon, LogOut } from 'lucide-react';
+import { User, Activity, Utensils, FileText, LayoutDashboard, Stethoscope, Sun, Moon, LogOut, XCircle } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { Session } from '@supabase/supabase-js';
 
@@ -65,6 +65,7 @@ const App: React.FC = () => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    setHasInitialFetch(false); // Reset para mostrar loading no próximo login
     setCurrentView('home');
   };
 
@@ -90,11 +91,33 @@ const App: React.FC = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [nutritionist, setNutritionist] = useState<Nutritionist>(SEED_NUTRITIONIST);
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [hasInitialFetch, setHasInitialFetch] = useState(false); // Novo estado para controle de carga inicial
+  const [showLongLoadingOptions, setShowLongLoadingOptions] = useState(false); // Controle para mostrar opção de fechar
+
+  // Efeito para monitorar tempo de carregamento
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    if (isLoadingData) {
+        setShowLongLoadingOptions(false);
+        timer = setTimeout(() => {
+            setShowLongLoadingOptions(true);
+        }, 5000); // 5 segundos
+    }
+    return () => clearTimeout(timer);
+  }, [isLoadingData]);
 
   // Carregar dados do Supabase
   const fetchData = async () => {
     if (!session) return; // Só busca se estiver autenticado
-    setIsLoadingData(true);
+    
+    // Bloqueia a UI apenas se for a primeira carga
+    if (!hasInitialFetch) {
+        setIsLoadingData(true);
+    } else {
+        // Opcional: Mostrar um indicador sutil de "Atualizando..." em algum lugar
+        // mas não bloquear a tela
+    }
+
     try {
         // 1. Fetch Patients
         const { data: patientsData, error: patientsError } = await supabase
@@ -151,6 +174,8 @@ const App: React.FC = () => {
 
         setPatients(assembledPatients);
         setAppointments(apptData || []);
+        
+        setHasInitialFetch(true); // Marca como carregado
 
     } catch (error) {
         console.error("Erro ao buscar dados do Supabase:", error);
@@ -534,13 +559,25 @@ const App: React.FC = () => {
       {/* Main Content Area: Added pb-24 for mobile nav clearance */}
       <main className="flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-8 print:p-0 print:overflow-visible">
         
-        {/* Loading Indicator for Data Fetching */}
-        {isLoadingData && (
+        {/* Loading Indicator for Data Fetching - Só aparece na primeira carga */}
+        {(isLoadingData && !hasInitialFetch) && (
             <div className="fixed inset-0 bg-white/80 dark:bg-slate-950/80 z-50 flex flex-col items-center justify-center backdrop-blur-sm">
                 <div className="animate-spin text-blue-600 dark:text-blue-400 mb-4">
                     <Activity size={48} />
                 </div>
                 <p className="text-slate-600 dark:text-slate-300 font-medium">Sincronizando com Supabase...</p>
+                {/* Opção de escape se demorar muito */}
+                {showLongLoadingOptions && (
+                    <button 
+                        onClick={() => {
+                            setIsLoadingData(false);
+                            setHasInitialFetch(true); // Assume carregado para desbloquear
+                        }}
+                        className="mt-6 flex items-center gap-2 px-4 py-2 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors text-sm font-medium"
+                    >
+                        <XCircle size={16} /> Demorando muito? Fechar
+                    </button>
+                )}
             </div>
         )}
 
