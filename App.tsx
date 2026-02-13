@@ -789,9 +789,18 @@ const App: React.FC = () => {
 
               {activeTab === 'profile' && (
                 <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-8 max-w-4xl mx-auto border border-slate-100 dark:border-slate-700">
-                  <div className="flex items-center gap-4 mb-6 text-blue-600 dark:text-blue-400">
-                    <User size={32} />
-                    <h2 className="text-xl font-semibold">Dados Pessoais</h2>
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <div className="flex items-center gap-4 text-blue-600 dark:text-blue-400">
+                        <User size={32} />
+                        <h2 className="text-xl font-semibold">Dados Pessoais</h2>
+                    </div>
+                    <button 
+                        onClick={() => setActiveTab('anamnesis')}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors font-medium text-sm shadow-sm"
+                    >
+                        <Stethoscope size={18} />
+                        Editar Anamnese
+                    </button>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div>
