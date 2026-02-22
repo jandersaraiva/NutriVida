@@ -345,8 +345,15 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                                 <MetricRow label="Peso Corporal" value={`${checkIn.weight.toFixed(1)} kg`} highlight />
                                 <MetricRow label="Altura" value={`${(checkIn.height * 100).toFixed(0)} cm`} />
                                 <MetricRow label="IMC" value={`${checkIn.imc.toFixed(1)} kg/m²`} subValue={checkIn.imc < 25 ? 'Eutrofia' : 'Sobrepeso'} />
-                                
-                                {/* Circunferências */}
+                            </div>
+                        </section>
+
+                        {/* Medidas de Circunferência */}
+                        <section>
+                            <h3 className="flex items-center gap-2 font-bold text-blue-700 dark:text-blue-400 mb-3 text-sm uppercase tracking-wide">
+                                <Ruler size={16} /> Circunferências
+                            </h3>
+                            <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 border border-slate-100 dark:border-slate-800">
                                 {checkIn.chestCircumference && checkIn.chestCircumference > 0 && <MetricRow label="Tórax" value={`${checkIn.chestCircumference} cm`} />}
                                 {checkIn.waistCircumference && checkIn.waistCircumference > 0 && <MetricRow label="Cintura" value={`${checkIn.waistCircumference} cm`} />}
                                 {checkIn.abdomenCircumference && checkIn.abdomenCircumference > 0 && <MetricRow label="Abdome" value={`${checkIn.abdomenCircumference} cm`} />}
