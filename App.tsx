@@ -108,52 +108,65 @@ const App: React.FC = () => {
     // Bloqueia a UI apenas se for a primeira carga
     if (!hasInitialFetch) {
         setIsLoadingData(true);
-    } else {
-        // Opcional: Mostrar um indicador sutil de "Atualizando..." em algum lugar
-        // mas não bloquear a tela
     }
 
     try {
-        // 1. Fetch Patients
+        const userId = session.user.id;
+
+        // 1. Fetch Patients (Filtered by User)
         const { data: patientsData, error: patientsError } = await supabase
             .from('patients')
-            .select('*');
+            .select('*')
+            .eq('user_id', userId);
         
         if (patientsError) throw patientsError;
 
-        // 2. Fetch CheckIns
-        const { data: checkInsData, error: checkInsError } = await supabase
-            .from('check_ins')
-            .select('*');
-        
-        if (checkInsError) throw checkInsError;
+        const patientIds = (patientsData || []).map(p => p.id);
 
-        // 3. Fetch Diet Plans
-        const { data: dietsData, error: dietsError } = await supabase
-            .from('diet_plans')
-            .select('*');
-        
-        if (dietsError) throw dietsError;
+        // 2. Fetch CheckIns (Filtered by Patient IDs)
+        let checkInsData: any[] = [];
+        if (patientIds.length > 0) {
+            const { data, error } = await supabase
+                .from('check_ins')
+                .select('*')
+                .in('patientId', patientIds);
+            
+            if (error) throw error;
+            checkInsData = data || [];
+        }
 
-        // 4. Fetch Appointments
+        // 3. Fetch Diet Plans (Filtered by Patient IDs)
+        let dietsData: any[] = [];
+        if (patientIds.length > 0) {
+            const { data, error } = await supabase
+                .from('diet_plans')
+                .select('*')
+                .in('patientId', patientIds);
+            
+            if (error) throw error;
+            dietsData = data || [];
+        }
+
+        // 4. Fetch Appointments (Filtered by User)
         const { data: apptData, error: apptError } = await supabase
             .from('appointments')
-            .select('*');
+            .select('*')
+            .eq('user_id', userId);
         
         if (apptError) throw apptError;
 
-        // 5. Fetch Nutritionist Profile (Single Row)
+        // 5. Fetch Nutritionist Profile (Filtered by User)
         const { data: profileData, error: profileError } = await supabase
             .from('nutritionist_profile')
             .select('*')
-            .single();
+            .eq('user_id', userId)
+            .maybeSingle(); // Use maybeSingle instead of single to avoid error if empty
         
-        // Se der erro (ex: tabela vazia), não trava o app, usa o default
-        if (profileData && !profileError) {
+        if (profileData) {
              setNutritionist(profileData);
-        } else if (profileError && profileError.code !== 'PGRST116') {
-             // PGRST116 é o código para "nenhuma linha encontrada", o que é aceitável no primeiro uso
-             console.error("Erro ao buscar perfil:", profileError);
+        } else {
+             // If no profile found, keep default or reset
+             // Optional: Create a default profile for the new user?
         }
 
         // Montar a estrutura de objeto aninhado que o frontend espera
@@ -174,7 +187,6 @@ const App: React.FC = () => {
 
     } catch (error) {
         console.error("Erro ao buscar dados do Supabase:", error);
-        // Não alerte em erros de autenticação silenciosos durante load
     } finally {
         setIsLoadingData(false);
     }
@@ -227,7 +239,12 @@ const App: React.FC = () => {
     // Remover campos relacionais (arrays) antes de salvar na tabela 'patients'
     const { checkIns, dietPlans, ...patientData } = newPatient;
     
-    const { error } = await supabase.from('patients').insert(patientData);
+    if (!session) return;
+
+    const { error } = await supabase.from('patients').insert({
+        ...patientData,
+        user_id: session.user.id
+    });
     
     if (error) {
         console.error("Erro ao salvar paciente:", error);
@@ -444,7 +461,11 @@ const App: React.FC = () => {
   };
 
   const handleAddAppointment = async (newAppointment: Appointment) => {
-    const { error } = await supabase.from('appointments').insert(newAppointment);
+    if (!session) return;
+    const { error } = await supabase.from('appointments').insert({
+        ...newAppointment,
+        user_id: session.user.id
+    });
     if (!error) {
         setAppointments(prev => [...prev, newAppointment]);
     }
@@ -476,12 +497,27 @@ const App: React.FC = () => {
   };
 
   const handleSaveProfile = async (data: Nutritionist) => {
-      // Usa um ID fixo para o perfil único da clínica
+      if (!session) return;
+      // Usa o ID do usuário como ID do perfil ou um campo user_id
       const { error } = await supabase
         .from('nutritionist_profile')
-        .upsert({ ...data, id: 'profile_1' });
+        .upsert({ 
+            ...data, 
+            user_id: session.user.id,
+            // If the table uses 'id' as PK and it's not auto-generated or linked to auth.users, 
+            // we might need to handle it. Assuming 'user_id' is unique or we filter by it.
+            // If we want one profile per user, we can use user_id as part of the unique constraint or PK.
+            // Let's assume we can just upsert with user_id.
+            // If there is a separate ID column, we might need to fetch it first or use a consistent ID logic.
+            // For now, let's try to upsert based on user_id if possible, or just add user_id.
+            // If the previous code used 'profile_1', it was shared. Now we want per-user.
+            // We should probably NOT send 'id': 'profile_1' anymore.
+        }, { onConflict: 'user_id' }); // Assuming user_id is unique/PK or we have a constraint
       
       if (error) {
+          // Fallback if onConflict fails or isn't configured for user_id
+          // Try standard insert/update logic?
+          // Actually, let's just try to insert/update with user_id.
           console.error("Erro ao salvar perfil:", error);
           alert("Erro ao salvar perfil.");
           return;

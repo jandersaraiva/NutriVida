@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { DietPlan as DietPlanType, Meal, FoodItem, Nutritionist } from '../types';
-import { Clock, Plus, Trash2, Edit2, Save, X, ChefHat, Copy, Check, PieChart, Search, Calendar, Archive, FilePlus, ChevronLeft, Zap, Target, Droplets, Printer } from 'lucide-react';
+import { Clock, Plus, Trash2, Edit2, Save, X, ChefHat, Copy, Check, PieChart, Search, Calendar, Archive, FilePlus, ChevronLeft, Zap, Target, Droplets, Download } from 'lucide-react';
+import { jsPDF } from "jspdf";
 
 interface DietPlanProps {
   plans: DietPlanType[];
@@ -321,8 +322,262 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
 
 
 
-  const handlePrint = () => {
-    window.print();
+  const handleExportPDF = () => {
+    if (!currentPlan) return;
+    
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    let yPos = 0;
+
+    // --- HEADER ---
+    doc.setFillColor(37, 99, 235); // Blue-600
+    doc.rect(0, 0, pageWidth, 40, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.setFont("helvetica", "bold");
+    doc.text("NutriVida", 14, 20);
+    
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    doc.text("Plano Alimentar Personalizado", 14, 28);
+
+    doc.setFontSize(10);
+    doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, pageWidth - 14, 20, { align: 'right' });
+    
+    yPos = 50;
+
+    // --- INFO CARD ---
+    doc.setFillColor(248, 250, 252); // Slate-50
+    doc.setDrawColor(226, 232, 240); // Slate-200
+    doc.roundedRect(14, yPos, pageWidth - 28, 35, 3, 3, 'FD');
+    
+    doc.setTextColor(30, 41, 59); // Slate-800
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("Paciente:", 20, yPos + 10);
+    doc.setFont("helvetica", "normal");
+    doc.text(patientName, 45, yPos + 10);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Peso:", 20, yPos + 20);
+    doc.setFont("helvetica", "normal");
+    doc.text(`${patientWeight} kg`, 45, yPos + 20);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Nutricionista:", pageWidth / 2 + 10, yPos + 10);
+    doc.setFont("helvetica", "normal");
+    doc.text(nutritionist.name, pageWidth / 2 + 40, yPos + 10);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("CRN:", pageWidth / 2 + 10, yPos + 20);
+    doc.setFont("helvetica", "normal");
+    doc.text(nutritionist.crn || 'N/A', pageWidth / 2 + 40, yPos + 20);
+
+    yPos += 45;
+
+    // --- WATER TARGET ---
+    doc.setFillColor(239, 246, 255); // Blue-50
+    doc.setDrawColor(191, 219, 254); // Blue-200
+    doc.roundedRect(14, yPos, pageWidth - 28, 15, 2, 2, 'FD');
+    
+    doc.setTextColor(37, 99, 235); // Blue-600
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    // Removed emoji to fix encoding issue
+    doc.text(`Meta Diaria de Agua: ${(currentPlan.waterTarget || 2000) / 1000} Litros`, pageWidth / 2, yPos + 10, { align: 'center' });
+    
+    yPos += 25;
+
+    // --- MEAL PLAN ---
+    const daysToPrint = currentPlan.days && currentPlan.days.length > 0 
+        ? currentPlan.days 
+        : DAYS_OF_WEEK.map(d => ({ day: d, meals: currentPlan.meals }));
+
+    daysToPrint.forEach((dayPlan) => {
+        if (dayPlan.meals.length === 0) return;
+
+        // Calculate Daily Totals
+        let dailyKcal = 0;
+        let dailyProtein = 0;
+        let dailyCarbs = 0;
+        let dailyFats = 0;
+
+        dayPlan.meals.forEach(m => {
+            if (m.isCheatMeal) return;
+            m.items.forEach(i => {
+                dailyKcal += i.calories || 0;
+                dailyProtein += i.protein || 0;
+                dailyCarbs += i.carbs || 0;
+                dailyFats += i.fats || 0;
+            });
+        });
+
+        // Check page break for Day Header + Chart
+        if (yPos > pageHeight - 80) {
+            doc.addPage();
+            yPos = 20;
+        }
+
+        // Day Header
+        doc.setFillColor(30, 41, 59); // Slate-800
+        doc.rect(14, yPos, pageWidth - 28, 10, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.text(dayPlan.day.toUpperCase(), pageWidth / 2, yPos + 7, { align: 'center' });
+        yPos += 15;
+
+        // --- DAILY CHART (Mini Summary) ---
+        if (dailyKcal > 0) {
+            doc.setFillColor(248, 250, 252);
+            doc.setDrawColor(226, 232, 240);
+            doc.roundedRect(14, yPos, pageWidth - 28, 25, 2, 2, 'FD');
+            
+            doc.setTextColor(30, 41, 59);
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            doc.text("Resumo do Dia:", 20, yPos + 8);
+            
+            doc.setFont("helvetica", "normal");
+            doc.text(`${dailyKcal.toFixed(0)} kcal`, 20, yPos + 15);
+            
+            // Macros
+            const startX = 60;
+            const barWidth = 40;
+            
+            // Protein
+            doc.setTextColor(225, 29, 72); // Rose-600
+            doc.text(`Proteina: ${dailyProtein.toFixed(0)}g`, startX, yPos + 8);
+            doc.setFillColor(225, 29, 72);
+            doc.rect(startX, yPos + 10, (dailyProtein / (dailyProtein + dailyCarbs + dailyFats)) * barWidth, 3, 'F');
+            
+            // Carbs
+            doc.setTextColor(37, 99, 235); // Blue-600
+            doc.text(`Carbo: ${dailyCarbs.toFixed(0)}g`, startX + 50, yPos + 8);
+            doc.setFillColor(37, 99, 235);
+            doc.rect(startX + 50, yPos + 10, (dailyCarbs / (dailyProtein + dailyCarbs + dailyFats)) * barWidth, 3, 'F');
+            
+            // Fats
+            doc.setTextColor(217, 119, 6); // Amber-600
+            doc.text(`Gordura: ${dailyFats.toFixed(0)}g`, startX + 100, yPos + 8);
+            doc.setFillColor(217, 119, 6);
+            doc.rect(startX + 100, yPos + 10, (dailyFats / (dailyProtein + dailyCarbs + dailyFats)) * barWidth, 3, 'F');
+
+            yPos += 30;
+        }
+
+
+        dayPlan.meals.forEach((meal) => {
+             // Check page break for Meal
+             if (yPos > pageHeight - 40) {
+                doc.addPage();
+                yPos = 20;
+            }
+
+            // Calculate Meal Protein Total
+            const mealProtein = meal.items.reduce((acc, item) => acc + (item.protein || 0), 0);
+            const mealCalories = meal.items.reduce((acc, item) => acc + (item.calories || 0), 0);
+
+            // Meal Header
+            doc.setFillColor(241, 245, 249); // Slate-100
+            doc.rect(14, yPos, pageWidth - 28, 8, 'F');
+            
+            doc.setTextColor(37, 99, 235); // Blue-600
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            doc.text(meal.time, 18, yPos + 5.5);
+            
+            doc.setTextColor(30, 41, 59); // Slate-800
+            doc.text(`- ${meal.name}`, 32, yPos + 5.5);
+            
+            // Meal Summary (Right aligned)
+            if (!meal.isCheatMeal) {
+                doc.setFontSize(9);
+                doc.setTextColor(100, 116, 139); // Slate-500
+                doc.text(`(${mealCalories.toFixed(0)} kcal | ${mealProtein.toFixed(0)}g Prot)`, pageWidth - 18, yPos + 5.5, { align: 'right' });
+            }
+
+            if (meal.isCheatMeal) {
+                doc.setTextColor(220, 38, 38); // Red-600
+                doc.text("(Refeicao Livre)", pageWidth - 18, yPos + 5.5, { align: 'right' });
+            }
+
+            yPos += 12;
+
+            // Meal Items
+            doc.setTextColor(51, 65, 85); // Slate-700
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+
+            if (meal.isCheatMeal && meal.items.length === 0) {
+                 doc.text("• Refeicao livre para aproveitar com moderacao!", 20, yPos);
+                 yPos += 6;
+            } else {
+                meal.items.forEach((item) => {
+                     if (yPos > pageHeight - 20) {
+                        doc.addPage();
+                        yPos = 20;
+                    }
+                    const unit = item.unit ? item.unit : 'g';
+                    const text = `• ${item.quantity}${unit} ${item.name}`;
+                    doc.text(text, 20, yPos);
+                    
+                    // Calories and Protein aligned right
+                    doc.setTextColor(148, 163, 184); // Slate-400
+                    doc.setFontSize(9);
+                    // Show Protein per item
+                    const itemProtein = item.protein ? ` | ${item.protein.toFixed(1)}g P` : '';
+                    doc.text(`${item.calories.toFixed(0)} kcal${itemProtein}`, pageWidth - 20, yPos, { align: 'right' });
+                    
+                    // Reset for next item
+                    doc.setTextColor(51, 65, 85); // Slate-700
+                    doc.setFontSize(10);
+                    yPos += 6;
+                });
+            }
+            yPos += 4; // Spacing between meals
+        });
+        yPos += 10; // Spacing between days
+    });
+    
+    // --- NOTES ---
+    if (currentPlan.notes) {
+        if (yPos > pageHeight - 60) {
+            doc.addPage();
+            yPos = 20;
+        }
+        
+        doc.setDrawColor(226, 232, 240); // Slate-200
+        doc.setLineWidth(0.5);
+        doc.line(14, yPos, pageWidth - 14, yPos);
+        yPos += 10;
+
+        doc.setTextColor(30, 41, 59); // Slate-800
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.text("Observacoes e Recomendacoes", 14, yPos);
+        yPos += 8;
+        
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.setTextColor(71, 85, 105); // Slate-600
+        
+        const splitNotes = doc.splitTextToSize(currentPlan.notes, pageWidth - 28);
+        doc.text(splitNotes, 14, yPos);
+    }
+
+    // --- FOOTER (Page Numbers) ---
+    const pageCount = doc.getNumberOfPages();
+    for(let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(148, 163, 184); // Slate-400
+        doc.text(`Pagina ${i} de ${pageCount} - NutriVida App`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+    }
+
+    doc.save(`Dieta_${patientName.replace(/\s+/g, '_')}.pdf`);
   };
 
   // --- FORM HANDLERS (Updated for Weekly Plan) ---
@@ -815,8 +1070,8 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                 </>
                             ) : (
                                 <>
-                                    <button onClick={handlePrint} className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors font-medium text-sm">
-                                        <Printer size={16} /> <span className="hidden sm:inline">Imprimir</span>
+                                    <button onClick={handleExportPDF} className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors font-medium text-sm">
+                                        <Download size={16} /> <span className="hidden sm:inline">Exportar PDF</span>
                                     </button>
                                     <button onClick={handleCopyDiet} className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors font-medium text-sm">
                                         {copied ? <Check size={16} className="text-blue-600 dark:text-blue-400" /> : <Copy size={16} />}
