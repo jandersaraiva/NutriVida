@@ -187,7 +187,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
     return [...allCheckIns]
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .map(c => ({
-        date: new Date(c.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+        date: new Date(c.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }),
         weight: c.weight,
         bodyFat: c.bodyFat,
         muscleMass: c.muscleMass,

@@ -29,7 +29,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
   // For charts, we need chronological order (oldest to newest)
   const chartData = [...checkIns].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).map(c => ({
     ...c,
-    dateFormatted: new Date(c.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
+    dateFormatted: new Date(c.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: '2-digit' }),
     // Formatação para tooltips
     weightNum: c.weight,
     imcNum: c.imc,
