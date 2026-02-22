@@ -3,20 +3,24 @@ import { Activity, Mail, Lock, Eye, EyeOff, Loader2, ArrowRight, Sun, Moon, User
 
 interface LoginScreenProps {
   onLogin: (email: string, pass: string) => Promise<void>;
+  onSignUp: (email: string, pass: string) => Promise<void>;
   isDarkMode: boolean;
   toggleTheme: () => void;
 }
 
-export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, isDarkMode, toggleTheme }) => {
+export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onSignUp, isDarkMode, toggleTheme }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isSignUpMode, setIsSignUpMode] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccessMessage('');
     setIsLoading(true);
 
     if (!email || !password) {
@@ -26,7 +30,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, isDarkMode, t
     }
 
     try {
-        await onLogin(email, password);
+        if (isSignUpMode) {
+            await onSignUp(email, password);
+            setSuccessMessage('Conta criada com sucesso! Verifique seu e-mail ou faça login.');
+            setIsSignUpMode(false); // Switch back to login
+        } else {
+            await onLogin(email, password);
+        }
     } catch (err: any) {
         console.error(err);
         
@@ -75,10 +85,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, isDarkMode, t
             <Activity size={32} />
           </div>
           <h1 className="text-3xl font-bold text-slate-800 dark:text-white mb-2 tracking-tight">
-            Bem-vindo ao NutriVida
+            {isSignUpMode ? 'Criar Conta' : 'Bem-vindo ao NutriVida'}
           </h1>
           <p className="text-slate-500 dark:text-slate-400">
-            Entre para gerenciar seus pacientes
+            {isSignUpMode ? 'Preencha os dados para começar' : 'Entre para gerenciar seus pacientes'}
           </p>
         </div>
 
@@ -131,13 +141,21 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, isDarkMode, t
             </div>
           )}
 
-          <div className="flex items-center justify-between text-sm">
-              <label className="flex items-center gap-2 cursor-pointer group">
-              <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
-              <span className="text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors">Lembrar de mim</span>
-              </label>
-              <a href="#" className="text-blue-600 dark:text-blue-400 font-medium hover:underline">Esqueceu a senha?</a>
-          </div>
+          {successMessage && (
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 rounded-xl text-emerald-600 dark:text-emerald-400 text-sm font-medium flex items-center justify-center animate-in slide-in-from-top-2">
+              {successMessage}
+            </div>
+          )}
+
+          {!isSignUpMode && (
+            <div className="flex items-center justify-between text-sm">
+                <label className="flex items-center gap-2 cursor-pointer group">
+                <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                <span className="text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors">Lembrar de mim</span>
+                </label>
+                <a href="#" className="text-blue-600 dark:text-blue-400 font-medium hover:underline">Esqueceu a senha?</a>
+            </div>
+          )}
 
           <button 
             type="submit" 
@@ -148,12 +166,30 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, isDarkMode, t
               <Loader2 size={20} className="animate-spin" />
             ) : (
               <>
-                Entrar no Sistema
-                <LogIn size={20} />
+                {isSignUpMode ? 'Criar Conta' : 'Entrar no Sistema'} 
+                {isSignUpMode ? <UserPlus size={20} /> : <LogIn size={20} />}
               </>
             )}
           </button>
         </form>
+
+        <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 text-center">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            {isSignUpMode ? 'Já tem uma conta?' : 'Ainda não tem conta?'}
+            {' '}
+            <button 
+                type="button"
+                onClick={() => {
+                    setIsSignUpMode(!isSignUpMode);
+                    setError('');
+                    setSuccessMessage('');
+                }}
+                className="text-blue-600 dark:text-blue-400 font-bold hover:underline bg-transparent border-none p-0 cursor-pointer"
+            >
+                {isSignUpMode ? 'Fazer login' : 'Criar conta'}
+            </button>
+          </p>
+        </div>
       </div>
       
       <div className="absolute bottom-6 text-center text-xs text-slate-400 dark:text-slate-600">
