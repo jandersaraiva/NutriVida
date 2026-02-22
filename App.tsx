@@ -375,7 +375,14 @@ const App: React.FC = () => {
         bodyAge: checkIn.bodyAge,
         visceralFat: checkIn.visceralFat,
         waistCircumference: checkIn.waistCircumference || 0,
-        hipCircumference: checkIn.hipCircumference || 0
+        hipCircumference: checkIn.hipCircumference || 0,
+        chestCircumference: checkIn.chestCircumference || 0,
+        abdomenCircumference: checkIn.abdomenCircumference || 0,
+        armCircumference: checkIn.armCircumference || 0,
+        forearmCircumference: checkIn.forearmCircumference || 0,
+        wristCircumference: checkIn.wristCircumference || 0,
+        thighCircumference: checkIn.thighCircumference || 0,
+        calfCircumference: checkIn.calfCircumference || 0
     };
 
     // Salvar no Supabase

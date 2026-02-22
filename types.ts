@@ -11,8 +11,15 @@ export interface CheckIn {
   age: number; // years (chronological)
   bodyAge: number; // years (bioimpedance)
   visceralFat: number; // level
-  waistCircumference?: number; // cm (Novo)
-  hipCircumference?: number; // cm (Novo)
+  waistCircumference?: number; // cm (Cintura)
+  hipCircumference?: number; // cm (Quadril)
+  chestCircumference?: number; // cm (Tórax)
+  abdomenCircumference?: number; // cm (Abdome)
+  armCircumference?: number; // cm (Braço)
+  forearmCircumference?: number; // cm (Antebraço)
+  wristCircumference?: number; // cm (Punho)
+  thighCircumference?: number; // cm (Coxa)
+  calfCircumference?: number; // cm (Panturrilha)
 }
 
 export interface FoodItem {

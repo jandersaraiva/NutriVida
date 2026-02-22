@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CheckIn } from '../types';
-import { Save, X, Calculator, Flame } from 'lucide-react';
+import { Save, X, Calculator, Flame, Activity, Ruler } from 'lucide-react';
 
 interface EntryFormProps {
   onSave: (data: CheckIn) => void;
@@ -31,7 +31,7 @@ const InputGroup: React.FC<InputGroupProps> = ({ label, name, unit, step = "0.1"
     <label htmlFor={name} className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{label}</label>
     <div className="relative">
       <input
-        required
+        required={name === 'date' || name === 'weight' || name === 'height'} // Apenas campos essenciais obrigatórios
         readOnly={readOnly}
         type={type}
         id={name}
@@ -55,6 +55,8 @@ const InputGroup: React.FC<InputGroupProps> = ({ label, name, unit, step = "0.1"
 );
 
 export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastRecord, patientBirthDate, initialData, patientGender }) => {
+  const [activeTab, setActiveTab] = useState<'bioimpedance' | 'measurements'>('bioimpedance');
+
   // Calcula idade baseada na data da avaliação vs data de nascimento
   const calculateAgeAtDate = (dob: string, targetDate: string) => {
     if (!dob || !targetDate) return 0;
@@ -77,19 +79,27 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
     muscleMass: 0,
     bmr: 0,
     age: patientBirthDate ? calculateAgeAtDate(patientBirthDate, new Date().toISOString().split('T')[0]) : (lastRecord?.age || 33),
-    bodyAge: lastRecord?.bodyAge || 0, // Novo campo padrão
+    bodyAge: lastRecord?.bodyAge || 0,
     visceralFat: 0,
     waistCircumference: 0,
     hipCircumference: 0,
+    chestCircumference: 0,
+    abdomenCircumference: 0,
+    armCircumference: 0,
+    forearmCircumference: 0,
+    wristCircumference: 0,
+    thighCircumference: 0,
+    calfCircumference: 0,
   });
 
   // Load initial data for editing
   useEffect(() => {
     if (initialData) {
-        // Explicitly extract ONLY valid fields to prevent UI pollution (delta, etc)
         const { 
             date, height, weight, imc, bodyFat, muscleMass, 
-            bmr, age, bodyAge, visceralFat, waistCircumference, hipCircumference 
+            bmr, age, bodyAge, visceralFat, waistCircumference, hipCircumference,
+            chestCircumference, abdomenCircumference, armCircumference, 
+            forearmCircumference, wristCircumference, thighCircumference, calfCircumference
         } = initialData;
 
         setFormData({
@@ -104,7 +114,14 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
             bodyAge: bodyAge || 0,
             visceralFat: visceralFat || 0,
             waistCircumference: waistCircumference || 0,
-            hipCircumference: hipCircumference || 0
+            hipCircumference: hipCircumference || 0,
+            chestCircumference: chestCircumference || 0,
+            abdomenCircumference: abdomenCircumference || 0,
+            armCircumference: armCircumference || 0,
+            forearmCircumference: forearmCircumference || 0,
+            wristCircumference: wristCircumference || 0,
+            thighCircumference: thighCircumference || 0,
+            calfCircumference: calfCircumference || 0,
         });
     }
   }, [initialData]);
@@ -126,11 +143,7 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
 
   // Auto-calculate BMR (Mifflin-St Jeor)
   useEffect(() => {
-    // Só calcula se tiver peso, altura, idade e não estiver editando um valor manual específico (opcional, aqui sobrescrevemos para ajudar)
     if (formData.weight > 0 && formData.height > 0 && formData.age > 0 && patientGender) {
-        // Mifflin-St Jeor Equation
-        // Men: (10 × weight) + (6.25 × height_cm) - (5 × age) + 5
-        // Women: (10 × weight) + (6.25 × height_cm) - (5 × age) - 161
         const weightPart = 10 * formData.weight;
         const heightPart = 6.25 * (formData.height * 100);
         const agePart = 5 * formData.age;
@@ -142,9 +155,6 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
             bmr = weightPart + heightPart - agePart - 161;
         }
         
-        // Only update if BMR is currently 0 (new form) to avoid overwriting manual edits during session, 
-        // OR update always if we want dynamic calculation (usually better for UX in simplified apps)
-        // Let's update if it's a new entry OR if the user hasn't heavily modified it yet.
         setFormData(prev => ({ ...prev, bmr: Math.round(bmr) }));
     }
   }, [formData.weight, formData.height, formData.age, patientGender]);
@@ -161,12 +171,12 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
     e.preventDefault();
     onSave({
       ...formData,
-      id: initialData?.id || generateId(), // Usa ID existente se editando
+      id: initialData?.id || generateId(),
     });
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-3xl mx-auto">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 md:p-8">
         <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-50 dark:border-slate-700">
           <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
@@ -182,38 +192,62 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Linha 1: Data, Altura, Peso */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <InputGroup label="Data da Avaliação" name="date" type="date" value={formData.date} onChange={handleChange} />
-            <InputGroup label="Altura" name="height" unit="m" step="0.01" value={formData.height} onChange={handleChange} />
-            <InputGroup label="Peso" name="weight" unit="kg" value={formData.weight} onChange={handleChange} />
+          {/* Data da Avaliação (Comum) */}
+          <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
+             <InputGroup label="Data da Avaliação" name="date" type="date" value={formData.date} onChange={handleChange} />
           </div>
 
-          {/* Linha 2: IMC, Gordura, Músculo */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="relative">
-               <InputGroup label="IMC" name="imc" step="0.1" value={formData.imc} onChange={handleChange} />
-               <div className="absolute top-0 right-0">
-                  <span className="text-[10px] text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/40 px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <Calculator size={10} /> Auto
-                  </span>
-               </div>
-            </div>
-            <InputGroup label="Gordura Corporal" name="bodyFat" unit="%" value={formData.bodyFat} onChange={handleChange} />
-            <InputGroup label="Massa Muscular" name="muscleMass" unit="%" value={formData.muscleMass} onChange={handleChange} />
+          {/* Abas de Navegação */}
+          <div className="flex border-b border-slate-200 dark:border-slate-700 mb-6">
+            <button
+              type="button"
+              onClick={() => setActiveTab('bioimpedance')}
+              className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors flex items-center justify-center gap-2 ${
+                activeTab === 'bioimpedance'
+                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+              }`}
+            >
+              <Activity size={18} />
+              Bioimpedância
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('measurements')}
+              className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors flex items-center justify-center gap-2 ${
+                activeTab === 'measurements'
+                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+              }`}
+            >
+              <Ruler size={18} />
+              Medidas Corporais
+            </button>
           </div>
 
-          <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl space-y-4 border border-slate-100 dark:border-slate-700">
-            <h3 className="font-semibold text-slate-700 dark:text-slate-300 text-sm uppercase tracking-wide mb-2">Medidas de Circunferência</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <InputGroup label="Cintura" name="waistCircumference" unit="cm" step="0.5" value={formData.waistCircumference || 0} onChange={handleChange} />
-                <InputGroup label="Quadril" name="hipCircumference" unit="cm" step="0.5" value={formData.hipCircumference || 0} onChange={handleChange} />
-            </div>
-          </div>
+          {/* Conteúdo da Aba: Bioimpedância */}
+          {activeTab === 'bioimpedance' && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <InputGroup label="Peso" name="weight" unit="kg" value={formData.weight} onChange={handleChange} />
+                
+                <div className="relative">
+                   <InputGroup label="IMC" name="imc" step="0.1" value={formData.imc} onChange={handleChange} />
+                   <div className="absolute top-0 right-0">
+                      <span className="text-[10px] text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/40 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <Calculator size={10} /> Auto
+                      </span>
+                   </div>
+                </div>
+              </div>
 
-          <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl space-y-4 border border-slate-100 dark:border-slate-700">
-            <h3 className="font-semibold text-slate-700 dark:text-slate-300 text-sm uppercase tracking-wide mb-2">Indicadores Metabólicos</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <InputGroup label="Gordura Corporal" name="bodyFat" unit="%" value={formData.bodyFat} onChange={handleChange} />
+                <InputGroup label="Massa Muscular" name="muscleMass" unit="%" value={formData.muscleMass} onChange={handleChange} />
+                <InputGroup label="Gordura Visceral" name="visceralFat" step="1" value={formData.visceralFat} onChange={handleChange} />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="relative">
                     <InputGroup label="Taxa Metabólica Basal" name="bmr" unit="Kcal" step="1" value={formData.bmr} onChange={handleChange} />
                     <div className="absolute top-0 right-0">
@@ -222,12 +256,45 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
                         </span>
                     </div>
                 </div>
-                <InputGroup label="Gordura Visceral" name="visceralFat" step="1" value={formData.visceralFat} onChange={handleChange} />
                 <InputGroup label="Idade Corporal" name="bodyAge" unit="anos" step="1" value={formData.bodyAge} onChange={handleChange} />
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="flex gap-4 pt-4">
+          {/* Conteúdo da Aba: Medidas Corporais */}
+          {activeTab === 'measurements' && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              {/* Altura (Fundamental) */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800/50">
+                 <InputGroup label="Altura" name="height" unit="m" step="0.01" value={formData.height} onChange={handleChange} />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <InputGroup label="Tórax" name="chestCircumference" unit="cm" step="0.5" value={formData.chestCircumference || 0} onChange={handleChange} />
+                <InputGroup label="Abdome" name="abdomenCircumference" unit="cm" step="0.5" value={formData.abdomenCircumference || 0} onChange={handleChange} />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <InputGroup label="Cintura" name="waistCircumference" unit="cm" step="0.5" value={formData.waistCircumference || 0} onChange={handleChange} />
+                <InputGroup label="Quadril" name="hipCircumference" unit="cm" step="0.5" value={formData.hipCircumference || 0} onChange={handleChange} />
+              </div>
+
+              <h3 className="font-semibold text-slate-700 dark:text-slate-300 text-sm uppercase tracking-wide pt-2 border-t border-slate-100 dark:border-slate-700">Membros Superiores</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <InputGroup label="Braço" name="armCircumference" unit="cm" step="0.5" value={formData.armCircumference || 0} onChange={handleChange} />
+                <InputGroup label="Antebraço" name="forearmCircumference" unit="cm" step="0.5" value={formData.forearmCircumference || 0} onChange={handleChange} />
+                <InputGroup label="Punho" name="wristCircumference" unit="cm" step="0.5" value={formData.wristCircumference || 0} onChange={handleChange} />
+              </div>
+
+              <h3 className="font-semibold text-slate-700 dark:text-slate-300 text-sm uppercase tracking-wide pt-2 border-t border-slate-100 dark:border-slate-700">Membros Inferiores</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <InputGroup label="Coxa" name="thighCircumference" unit="cm" step="0.5" value={formData.thighCircumference || 0} onChange={handleChange} />
+                <InputGroup label="Panturrilha" name="calfCircumference" unit="cm" step="0.5" value={formData.calfCircumference || 0} onChange={handleChange} />
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-4 pt-4 border-t border-slate-100 dark:border-slate-700 mt-6">
             <button
               type="button"
               onClick={onCancel}

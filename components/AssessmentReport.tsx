@@ -345,8 +345,20 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                                 <MetricRow label="Peso Corporal" value={`${checkIn.weight.toFixed(1)} kg`} highlight />
                                 <MetricRow label="Altura" value={`${(checkIn.height * 100).toFixed(0)} cm`} />
                                 <MetricRow label="IMC" value={`${checkIn.imc.toFixed(1)} kg/m²`} subValue={checkIn.imc < 25 ? 'Eutrofia' : 'Sobrepeso'} />
-                                <MetricRow label="Circunferência Cintura" value={waist > 0 ? `${waist} cm` : '-'} />
-                                <MetricRow label="Circunferência Quadril" value={hip > 0 ? `${hip} cm` : '-'} />
+                                
+                                {/* Circunferências */}
+                                {checkIn.chestCircumference && checkIn.chestCircumference > 0 && <MetricRow label="Tórax" value={`${checkIn.chestCircumference} cm`} />}
+                                {checkIn.waistCircumference && checkIn.waistCircumference > 0 && <MetricRow label="Cintura" value={`${checkIn.waistCircumference} cm`} />}
+                                {checkIn.abdomenCircumference && checkIn.abdomenCircumference > 0 && <MetricRow label="Abdome" value={`${checkIn.abdomenCircumference} cm`} />}
+                                {checkIn.hipCircumference && checkIn.hipCircumference > 0 && <MetricRow label="Quadril" value={`${checkIn.hipCircumference} cm`} />}
+                                
+                                {checkIn.armCircumference && checkIn.armCircumference > 0 && <MetricRow label="Braço" value={`${checkIn.armCircumference} cm`} />}
+                                {checkIn.forearmCircumference && checkIn.forearmCircumference > 0 && <MetricRow label="Antebraço" value={`${checkIn.forearmCircumference} cm`} />}
+                                {checkIn.wristCircumference && checkIn.wristCircumference > 0 && <MetricRow label="Punho" value={`${checkIn.wristCircumference} cm`} />}
+                                
+                                {checkIn.thighCircumference && checkIn.thighCircumference > 0 && <MetricRow label="Coxa" value={`${checkIn.thighCircumference} cm`} />}
+                                {checkIn.calfCircumference && checkIn.calfCircumference > 0 && <MetricRow label="Panturrilha" value={`${checkIn.calfCircumference} cm`} />}
+
                                 {rcq > 0 && <MetricRow label="Relação Cintura-Quadril" value={rcq.toFixed(2)} />}
                             </div>
                         </section>
