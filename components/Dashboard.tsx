@@ -401,9 +401,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
   }
 
   // Common card style
-  const Card = ({ title, value, unit, icon: Icon, colorClass, delta }: any) => (
-    <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between h-full hover:shadow-md transition-shadow">
-      <div className="flex justify-between items-start mb-2">
+  const Card = ({ title, value, unit, icon: Icon, colorClass, delta, gauge }: any) => (
+    <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between h-full hover:shadow-md transition-shadow relative overflow-hidden">
+      <div className="flex justify-between items-start mb-2 relative z-10">
          <div>
             <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">{title}</p>
             <div className="flex items-baseline gap-1">
@@ -415,11 +415,94 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
             <Icon size={20} className={colorClass.replace('bg-', 'text-')} />
          </div>
       </div>
-      <div>
+      
+      {/* Gauge / Progress Indicator */}
+      {gauge && (
+        <div className="mb-3 relative z-10">
+            {gauge}
+        </div>
+      )}
+
+      <div className="relative z-10">
         {delta}
       </div>
     </div>
   );
+
+  // Helper para renderizar o Gauge Linear
+  const LinearGauge = ({ value, min, max, ranges, formatValue }: any) => {
+    const percentage = Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100));
+    
+    return (
+        <div className="w-full mt-2 relative">
+            <div className="flex justify-between text-[10px] text-slate-400 mb-1 font-medium">
+                <span>{min}</span>
+                <span>{max}</span>
+            </div>
+            <div className="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full relative overflow-hidden">
+                {/* Render Ranges Background */}
+                {ranges && ranges.map((range: any, idx: number) => {
+                    const start = Math.max(0, ((range.start - min) / (max - min)) * 100);
+                    const width = Math.min(100, ((range.end - min) / (max - min)) * 100) - start;
+                    return (
+                        <div 
+                            key={idx}
+                            className={`absolute top-0 h-full ${range.color}`}
+                            style={{ left: `${start}%`, width: `${width}%` }}
+                        />
+                    );
+                })}
+                
+                {/* Current Value Indicator */}
+                {!ranges && (
+                    <div 
+                        className="absolute top-0 left-0 h-full bg-blue-500 rounded-full"
+                        style={{ width: `${percentage}%` }}
+                    />
+                )}
+            </div>
+            {/* Pointer for Ranges Mode */}
+            {ranges && (
+                <div 
+                    className="w-0.5 h-3 bg-slate-800 dark:bg-white absolute top-5 transition-all duration-500 z-20"
+                    style={{ left: `${percentage}%`, transform: 'translateX(-50%)' }}
+                />
+            )}
+             {ranges && (
+                <div 
+                    className="w-2 h-2 bg-slate-800 dark:bg-white rounded-full absolute top-5 border-2 border-white dark:border-slate-800 transition-all duration-500 shadow-sm z-20"
+                    style={{ left: `${percentage}%`, transform: 'translateX(-50%)', marginTop: '1px' }}
+                />
+            )}
+        </div>
+    );
+  };
+
+  // Configuração dos Ranges para IMC
+  const imcRanges = [
+      { start: 10, end: 18.5, color: 'bg-yellow-300' },
+      { start: 18.5, end: 25, color: 'bg-emerald-400' },
+      { start: 25, end: 30, color: 'bg-orange-400' },
+      { start: 30, end: 45, color: 'bg-rose-500' }
+  ];
+
+  // Configuração dos Ranges para Gordura (Exemplo Genérico, idealmente varia por sexo/idade)
+  const fatRanges = gender === 'Masculino' ? [
+      { start: 2, end: 6, color: 'bg-yellow-300' },
+      { start: 6, end: 24, color: 'bg-emerald-400' },
+      { start: 24, end: 30, color: 'bg-orange-400' },
+      { start: 30, end: 50, color: 'bg-rose-500' }
+  ] : [
+      { start: 10, end: 14, color: 'bg-yellow-300' },
+      { start: 14, end: 31, color: 'bg-emerald-400' },
+      { start: 31, end: 36, color: 'bg-orange-400' },
+      { start: 36, end: 55, color: 'bg-rose-500' }
+  ];
+
+  // Configuração para Peso (Min/Max do histórico)
+  const weightHistory = checkIns.map(c => c.weight);
+  const minWeight = Math.min(...weightHistory) * 0.9;
+  const maxWeight = Math.max(...weightHistory) * 1.1;
 
   // Helper para cor do IMC
   // Semantic colors (Health) stay Green/Yellow/Red
@@ -476,6 +559,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
           icon={Scale} 
           colorClass="text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-700"
           delta={renderDelta(current.weight, previous?.weight, true, " kg")}
+          gauge={<LinearGauge value={current.weight} min={Math.floor(minWeight)} max={Math.ceil(maxWeight)} />}
         />
         <Card 
             title="IMC"
@@ -484,6 +568,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
             icon={Calculator}
             colorClass={getImcColor(current.imc)}
             delta={renderDelta(current.imc, previous?.imc, true)}
+            gauge={<LinearGauge value={current.imc} min={10} max={45} ranges={imcRanges} />}
         />
         <Card 
           title="Gordura Corporal" 
@@ -492,6 +577,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
           icon={PieChart} 
           colorClass="text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-700"
           delta={renderDelta(current.bodyFat, previous?.bodyFat, true, " %")}
+          gauge={<LinearGauge value={current.bodyFat} min={gender === 'Masculino' ? 2 : 10} max={gender === 'Masculino' ? 50 : 55} ranges={fatRanges} />}
         />
         <Card 
           title="Massa Muscular" 

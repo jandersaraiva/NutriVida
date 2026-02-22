@@ -25,7 +25,8 @@ export interface CheckIn {
 export interface FoodItem {
   id: string;
   name: string;
-  quantity: string;
+  quantity: string; // Numeric value as string (e.g. "100", "3")
+  unit?: string; // Unit of measurement (e.g. "g", "ml", "un", "fatia")
   calories: number;
   protein: number; // grams
   carbs: number; // grams
@@ -37,6 +38,12 @@ export interface Meal {
   name: string;
   time: string; // HH:mm
   items: FoodItem[];
+  isCheatMeal?: boolean; // Refeição livre
+}
+
+export interface DayPlan {
+  day: string; // 'Segunda', 'Terça', ...
+  meals: Meal[];
 }
 
 export interface DietPlan {
@@ -52,7 +59,8 @@ export interface DietPlan {
     carbs: number;
     fats: number;
   };
-  meals: Meal[];
+  meals: Meal[]; // Mantido para compatibilidade (pode ser usado como padrão)
+  days?: DayPlan[]; // Plano semanal
   notes?: string;
 }
 
