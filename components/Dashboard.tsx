@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { CheckIn, ActivityLevel } from '../types';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -25,6 +25,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
   // We assume checkIns is already sorted (newest first) for card display
   const current = checkIns[0];
   const previous = checkIns[1];
+
+  // Encontrar o check-in mais próximo de 30 dias atrás para comparação de recomposição
+  const monthComparison = useMemo(() => {
+      if (checkIns.length < 2) return null;
+      
+      const targetDate = new Date(current.date);
+      targetDate.setDate(targetDate.getDate() - 30);
+      
+      // Candidatos são todos exceto o atual
+      const candidates = checkIns.slice(1);
+      
+      // Encontrar o mais próximo da data alvo
+      return candidates.reduce((prev, curr) => {
+          const prevDiff = Math.abs(new Date(prev.date).getTime() - targetDate.getTime());
+          const currDiff = Math.abs(new Date(curr.date).getTime() - targetDate.getTime());
+          return currDiff < prevDiff ? curr : prev;
+      });
+  }, [checkIns, current]);
 
   // For charts, we need chronological order (oldest to newest)
   const chartData = [...checkIns].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).map(c => ({
@@ -62,15 +80,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
 
   // --- Lógica de Recomposição Corporal (Novo Componente) ---
   const renderRecompositionAnalysis = () => {
-    if (!current || !previous) return null;
+    if (!current || !monthComparison) return null;
+
+    const comparisonDate = new Date(monthComparison.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
 
     // Calcular Massas em KG
     const currentFatKg = current.weight * (current.bodyFat / 100);
-    const prevFatKg = previous.weight * (previous.bodyFat / 100);
+    const prevFatKg = monthComparison.weight * (monthComparison.bodyFat / 100);
     const diffFatKg = currentFatKg - prevFatKg;
 
     const currentMuscleKg = current.weight * (current.muscleMass / 100);
-    const prevMuscleKg = previous.weight * (previous.muscleMass / 100);
+    const prevMuscleKg = monthComparison.weight * (monthComparison.muscleMass / 100);
     const diffMuscleKg = currentMuscleKg - prevMuscleKg;
 
     // Determinar Status
@@ -130,7 +150,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
                         {diffKg > 0 ? <ArrowUp size={16} strokeWidth={3} /> : diffKg < 0 ? <ArrowDown size={16} strokeWidth={3} /> : <Minus size={16} />}
                         <span>{Math.abs(diffKg).toFixed(2)} kg</span>
                     </div>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">este mês</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">vs {comparisonDate}</span>
                 </div>
             </div>
         );
@@ -140,7 +160,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
         <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
             <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
                 <TrendingUp size={20} className="text-blue-500" />
-                Análise de Recomposição (Mês Atual)
+                Análise de Recomposição (vs. Mês Anterior)
             </h3>
             
             <div className="flex flex-col md:flex-row gap-4">
