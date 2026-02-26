@@ -313,7 +313,11 @@ const App: React.FC = () => {
         if (!isNutritionist && assembledPatients.length > 0) {
             setSelectedPatientId(assembledPatients[0].id);
             // Mapeia a view inicial corretamente
-            if (currentView === 'home') setCurrentView('dashboard'); // Patient dashboard
+            // A view 'patients' com activeTab='overview' é o dashboard do paciente
+            if (currentView === 'home') {
+                setCurrentView('patients');
+                setActiveTab('overview');
+            }
         }
         
         setHasInitialFetch(true); // Marca como carregado
