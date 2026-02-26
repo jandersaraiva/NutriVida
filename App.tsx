@@ -630,25 +630,41 @@ const App: React.FC = () => {
     setAppointments(prev => prev.filter(a => a.id !== id));
   };
 
+  // Helper para gerar UUID (caso o navegador suporte ou fallback simples)
+  const generateUUID = () => {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  };
+
   const handleSaveProfile = async (data: Nutritionist) => {
       if (!session) return;
       
       const userId = session.user.id;
+      console.log("Salvando perfil para usuário:", userId);
 
       // Verificar se já existe um perfil para este usuário
-      const { data: existingProfile } = await supabase
+      const { data: existingProfile, error: fetchError } = await supabase
         .from('nutritionist_profile')
         .select('id')
         .eq('user_id', userId)
         .maybeSingle();
+      
+      if (fetchError) {
+          console.error("Erro ao verificar perfil existente:", fetchError);
+      }
 
       let error;
 
       // Sanitizar dados: remover 'id' para não tentar inserir/atualizar PK explicitamente
-      // O banco deve gerar o ID no insert, e o ID não deve mudar no update
       const { id, ...profileData } = data as any;
 
       if (existingProfile) {
+          console.log("Perfil existente encontrado. Atualizando...", existingProfile.id);
           // Atualizar existente
           const { error: updateError } = await supabase
             .from('nutritionist_profile')
@@ -659,10 +675,14 @@ const App: React.FC = () => {
             .eq('user_id', userId); // Usa user_id como chave para update
           error = updateError;
       } else {
+          console.log("Perfil não encontrado. Criando novo...");
           // Criar novo
+          // Gerar ID manualmente para garantir que não seja nulo
+          const newId = generateUUID();
           const { error: insertError } = await supabase
             .from('nutritionist_profile')
             .insert({
+                id: newId,
                 ...profileData,
                 user_id: userId
             });
@@ -670,16 +690,14 @@ const App: React.FC = () => {
       }
       
       if (error) {
-          console.error("Erro ao salvar perfil:", error);
+          console.error("Erro ao salvar perfil (Supabase):", error);
           alert("Erro ao salvar perfil: " + error.message);
           return;
       }
       
+      console.log("Perfil salvo com sucesso!");
       // Atualizar estado local
       setNutritionist(data);
-      
-      // Forçar refresh dos dados para garantir sincronia
-      // fetchData(); // Opcional, mas pode ajudar
   };
 
   const handleViewChange = (view: ViewState) => {
