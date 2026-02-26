@@ -14,7 +14,7 @@ import { AnamnesisForm } from './components/AnamnesisForm';
 import { AssessmentReport } from './components/AssessmentReport';
 import { LoginScreen } from './components/LoginScreen';
 import { CheckIn, ViewState, Patient, DietPlan as DietPlanType, PatientTab, Appointment, Nutritionist, Anamnesis } from './types';
-import { User, Activity, Utensils, FileText, LayoutDashboard, Stethoscope, Sun, Moon, LogOut, XCircle } from 'lucide-react';
+import { User, Activity, Utensils, FileText, LayoutDashboard, Stethoscope, Sun, Moon, LogOut, XCircle, AlertCircle } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { Session } from '@supabase/supabase-js';
 
@@ -88,6 +88,7 @@ const App: React.FC = () => {
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [hasInitialFetch, setHasInitialFetch] = useState(false); // Novo estado para controle de carga inicial
   const [showLongLoadingOptions, setShowLongLoadingOptions] = useState(false); // Controle para mostrar opção de fechar
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // Efeito para monitorar tempo de carregamento
   useEffect(() => {
@@ -105,6 +106,7 @@ const App: React.FC = () => {
   const fetchData = async () => {
     if (!session) return; // Só busca se estiver autenticado
     
+    setFetchError(null);
     // Bloqueia a UI apenas se for a primeira carga
     if (!hasInitialFetch) {
         setIsLoadingData(true);
@@ -119,7 +121,7 @@ const App: React.FC = () => {
             .select('*')
             .eq('user_id', userId);
         
-        if (patientsError) throw patientsError;
+        if (patientsError) throw new Error(`Erro ao buscar pacientes: ${patientsError.message}`);
 
         const patientIds = (patientsData || []).map(p => p.id);
 
@@ -131,7 +133,7 @@ const App: React.FC = () => {
                 .select('*')
                 .in('patientId', patientIds);
             
-            if (error) throw error;
+            if (error) throw new Error(`Erro ao buscar avaliações: ${error.message}`);
             checkInsData = data || [];
         }
 
@@ -143,7 +145,7 @@ const App: React.FC = () => {
                 .select('*')
                 .in('patientId', patientIds);
             
-            if (error) throw error;
+            if (error) throw new Error(`Erro ao buscar dietas: ${error.message}`);
             dietsData = data || [];
         }
 
@@ -153,20 +155,22 @@ const App: React.FC = () => {
             .select('*')
             .eq('user_id', userId);
         
-        if (apptError) throw apptError;
+        if (apptError) throw new Error(`Erro ao buscar agendamentos: ${apptError.message}`);
 
         // 5. Fetch Nutritionist Profile (Filtered by User)
         const { data: profileData, error: profileError } = await supabase
             .from('nutritionist_profile')
             .select('*')
             .eq('user_id', userId)
-            .maybeSingle(); // Use maybeSingle instead of single to avoid error if empty
+            .maybeSingle(); 
         
+        if (profileError && profileError.code !== 'PGRST116') {
+             console.error("Erro perfil:", profileError);
+             // Não lança erro fatal para perfil, usa default
+        }
+
         if (profileData) {
              setNutritionist(profileData);
-        } else {
-             // If no profile found, keep default or reset
-             // Optional: Create a default profile for the new user?
         }
 
         // Montar a estrutura de objeto aninhado que o frontend espera
@@ -185,8 +189,9 @@ const App: React.FC = () => {
         
         setHasInitialFetch(true); // Marca como carregado
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Erro ao buscar dados do Supabase:", error);
+        setFetchError(error.message || "Erro desconhecido ao conectar com o banco de dados.");
     } finally {
         setIsLoadingData(false);
     }
@@ -629,6 +634,25 @@ const App: React.FC = () => {
                         <XCircle size={16} /> Demorando muito? Fechar
                     </button>
                 )}
+            </div>
+        )}
+
+        {/* Error Indicator */}
+        {fetchError && (
+            <div className="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 rounded-xl flex items-center justify-between mx-4 md:mx-0">
+                <div className="flex items-center gap-3">
+                    <AlertCircle className="text-red-600 dark:text-red-400" size={24} />
+                    <div>
+                        <h3 className="font-bold text-red-800 dark:text-red-200">Erro de Conexão</h3>
+                        <p className="text-sm text-red-700 dark:text-red-300">{fetchError}</p>
+                    </div>
+                </div>
+                <button 
+                    onClick={fetchData}
+                    className="px-4 py-2 bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-100 rounded-lg hover:bg-red-200 dark:hover:bg-red-700 transition-colors text-sm font-bold whitespace-nowrap ml-4"
+                >
+                    Tentar Novamente
+                </button>
             </div>
         )}
 

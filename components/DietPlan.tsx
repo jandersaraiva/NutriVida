@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { DietPlan as DietPlanType, Meal, FoodItem, Nutritionist } from '../types';
 import { Clock, Plus, Trash2, Edit2, Save, X, ChefHat, Copy, Check, PieChart, Search, Calendar, Archive, FilePlus, ChevronLeft, Zap, Target, Droplets, FileDown } from 'lucide-react';
-import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { DietPDFReport } from './DietPDFReport';
+import html2canvas from 'html2canvas';
 
 interface DietPlanProps {
   plans: DietPlanType[];
@@ -145,6 +144,20 @@ const generateId = () => Math.random().toString(36).substr(2, 9);
 // Helper para remover acentos para busca
 const normalizeText = (text: string) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
+const calculateDayTotals = (dayMeals: Meal[]) => {
+    let totalKcal = 0, totalP = 0, totalC = 0, totalF = 0;
+    dayMeals.forEach(meal => {
+        if (meal.isCheatMeal) return;
+        meal.items.forEach(item => {
+            totalP += Number(item.protein) || 0;
+            totalC += Number(item.carbs) || 0;
+            totalF += Number(item.fats) || 0;
+            totalKcal += Number(item.calories) || ((Number(item.protein) || 0) * 4 + (Number(item.carbs) || 0) * 4 + (Number(item.fats) || 0) * 9);
+        });
+    });
+    return { kcal: totalKcal, p: totalP, c: totalC, f: totalF };
+  };
+
 const createDefaultMeals = (): Meal[] => [
     { id: generateId(), name: 'Café da Manhã', time: '07:30', items: [] },
     { id: generateId(), name: 'Almoço', time: '12:30', items: [] },
@@ -178,6 +191,21 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
   // Derived state for the active view
   const currentPlan = useMemo(() => plans.find(p => p.id === selectedPlanId), [plans, selectedPlanId]);
 
+  // Prepare data for PDF (handle migration for display)
+  const pdfPlanData = useMemo(() => {
+      if (!currentPlan) return null;
+      const plan = JSON.parse(JSON.stringify(currentPlan)); // Deep copy
+      
+      // Migration logic: If days are missing, populate them with the main meals
+      if (!plan.days || plan.days.length === 0) {
+          plan.days = DAYS_OF_WEEK.map((day: string) => ({
+              day,
+              meals: JSON.parse(JSON.stringify(plan.meals || []))
+          }));
+      }
+      return plan;
+  }, [currentPlan]);
+
   // Mode States
   const [isEditing, setIsEditing] = useState(false);
   const [showNewPlanModal, setShowNewPlanModal] = useState(false);
@@ -190,6 +218,53 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
   // New Plan Modal State
   const [newPlanName, setNewPlanName] = useState('');
   const [newPlanType, setNewPlanType] = useState<'blank' | 'copy'>('copy');
+
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const pdfRef = React.useRef<HTMLDivElement>(null);
+
+  const handleGeneratePDF = async () => {
+    if (!currentPlan || !pdfRef.current) return;
+    setIsGeneratingPDF(true);
+    
+    try {
+        await new Promise(resolve => setTimeout(resolve, 100)); // Garantir render
+        
+        const canvas = await html2canvas(pdfRef.current, {
+            scale: 2, // Melhor qualidade
+            useCORS: true,
+            logging: false,
+            windowWidth: 1200 // Forçar largura desktop para layout
+        });
+        
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const imgWidth = pdfWidth;
+        const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+        
+        let heightLeft = imgHeight;
+        let position = 0;
+        
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pdfHeight;
+        
+        while (heightLeft >= 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pdfHeight;
+        }
+        
+        pdf.save(`Dieta_${patientName.replace(/\s+/g, '_')}.pdf`);
+        
+    } catch (error) {
+        console.error("Erro ao gerar PDF:", error);
+        alert("Erro ao gerar PDF. Tente novamente.");
+    } finally {
+        setIsGeneratingPDF(false);
+    }
+  };
 
   // Load form when editing starts
   useEffect(() => {
@@ -324,9 +399,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
 
 
 
-  const handlePrint = () => {
-    window.print();
-  };
+
 
   // --- FORM HANDLERS (Updated for Weekly Plan) ---
   
@@ -607,36 +680,39 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
     setTimeout(() => setCopied(false), 2000);
   };
   
-  const MacroSummary = () => {
-    if (totals.kcal === 0 && !isEditing) return null;
-    const calFromP = totals.p * 4;
-    const calFromC = totals.c * 4;
-    const calFromF = totals.f * 9;
-    const validTotal = (calFromP + calFromC + calFromF) || totals.kcal || 1; 
+  const MacroSummary = ({ customTotals, isPdf = false }: { customTotals?: { kcal: number, p: number, c: number, f: number }, isPdf?: boolean }) => {
+    const t = customTotals || totals;
+    if (t.kcal === 0 && !isEditing && !customTotals) return null;
+    const calFromP = t.p * 4;
+    const calFromC = t.c * 4;
+    const calFromF = t.f * 9;
+    const validTotal = (calFromP + calFromC + calFromF) || t.kcal || 1; 
     const pctP = Math.round((calFromP / validTotal) * 100);
     const pctC = Math.round((calFromC / validTotal) * 100);
     const pctF = Math.round((calFromF / validTotal) * 100);
 
-    const diff = targetCalories ? totals.kcal - targetCalories : 0;
+    const diff = targetCalories ? t.kcal - targetCalories : 0;
 
     return (
-        <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 mb-6 print:border print:border-slate-300">
+        <div className={`${isPdf ? 'bg-white border border-slate-200 rounded-xl p-4 mb-4' : 'bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 mb-6'} print:border print:border-slate-300`}>
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4">
-                <div className="bg-indigo-100 dark:bg-indigo-900/40 p-2 rounded-lg text-indigo-600 dark:text-indigo-400 self-start print:hidden">
-                    <PieChart size={20} />
-                </div>
+                {!isPdf && (
+                    <div className="bg-indigo-100 dark:bg-indigo-900/40 p-2 rounded-lg text-indigo-600 dark:text-indigo-400 self-start print:hidden">
+                        <PieChart size={20} />
+                    </div>
+                )}
                 
                 <div className="flex-1 w-full">
                      <div className="flex justify-between items-start">
                         <div>
                             <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Diário</span>
                             <div className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-baseline gap-1">
-                                {Math.round(totals.kcal).toLocaleString()} 
+                                {Math.round(t.kcal).toLocaleString()} 
                                 <span className="text-sm font-medium text-slate-500 dark:text-slate-400">kcal</span>
                             </div>
                         </div>
                         
-                        {targetCalories && targetCalories > 0 && (
+                        {targetCalories && targetCalories > 0 && !customTotals && (
                              <div className="text-right print:hidden">
                                 <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center justify-end gap-1">
                                     <Target size={12} /> Meta: {targetCalories}
@@ -657,7 +733,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                 </div>
             </div>
 
-            <div className="h-4 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden flex mb-4 relative group print:border print:border-slate-300">
+            <div className={`h-4 w-full ${isPdf ? 'bg-slate-100' : 'bg-slate-200 dark:bg-slate-700'} rounded-full overflow-hidden flex mb-4 relative group print:border print:border-slate-300`}>
                 <div style={{ width: `${pctP}%` }} className="h-full bg-rose-500 print:bg-slate-400" title="Proteínas"></div>
                 <div style={{ width: `${pctC}%` }} className="h-full bg-blue-500 print:bg-slate-600" title="Carboidratos"></div>
                 <div style={{ width: `${pctF}%` }} className="h-full bg-amber-400 print:bg-slate-800" title="Lipídios"></div>
@@ -669,8 +745,8 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                         <div className="w-2 h-2 rounded-full bg-rose-500 print:bg-slate-400"></div>
                         <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Proteína</span>
                     </div>
-                    <div className="text-slate-800 dark:text-slate-100 font-bold text-lg leading-none">{totals.p.toFixed(0)}g</div>
-                    <div className="text-slate-400 dark:text-slate-500 text-[10px] mt-0.5">{(totals.p / patientWeight).toFixed(1)}g/kg</div>
+                    <div className="text-slate-800 dark:text-slate-100 font-bold text-lg leading-none">{t.p.toFixed(0)}g</div>
+                    <div className="text-slate-400 dark:text-slate-500 text-[10px] mt-0.5">{(t.p / patientWeight).toFixed(1)}g/kg</div>
                 </div>
                 
                 <div className="flex flex-col items-center border-x border-slate-200 dark:border-slate-700">
@@ -678,8 +754,8 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                         <div className="w-2 h-2 rounded-full bg-blue-500 print:bg-slate-600"></div>
                         <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Carbo</span>
                     </div>
-                    <div className="text-slate-800 dark:text-slate-100 font-bold text-lg leading-none">{totals.c.toFixed(0)}g</div>
-                    <div className="text-slate-400 dark:text-slate-500 text-[10px] mt-0.5">{(totals.c / patientWeight).toFixed(1)}g/kg</div>
+                    <div className="text-slate-800 dark:text-slate-100 font-bold text-lg leading-none">{t.c.toFixed(0)}g</div>
+                    <div className="text-slate-400 dark:text-slate-500 text-[10px] mt-0.5">{(t.c / patientWeight).toFixed(1)}g/kg</div>
                 </div>
                 
                 <div className="flex flex-col items-center">
@@ -687,8 +763,8 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                         <div className="w-2 h-2 rounded-full bg-amber-400 print:bg-slate-800"></div>
                         <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Lipídios</span>
                     </div>
-                    <div className="text-slate-800 dark:text-slate-100 font-bold text-lg leading-none">{totals.f.toFixed(0)}g</div>
-                    <div className="text-slate-400 dark:text-slate-500 text-[10px] mt-0.5">{(totals.f / patientWeight).toFixed(1)}g/kg</div>
+                    <div className="text-slate-800 dark:text-slate-100 font-bold text-lg leading-none">{t.f.toFixed(0)}g</div>
+                    <div className="text-slate-400 dark:text-slate-500 text-[10px] mt-0.5">{(t.f / patientWeight).toFixed(1)}g/kg</div>
                 </div>
             </div>
         </div>
@@ -818,8 +894,9 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                 </>
                             ) : (
                                 <>
-                                    <button onClick={handlePrint} className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors font-medium text-sm">
-                                        <Printer size={16} /> <span className="hidden sm:inline">Imprimir</span>
+
+                                    <button onClick={handleGeneratePDF} disabled={isGeneratingPDF} className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors font-medium text-sm disabled:opacity-50">
+                                        <FileDown size={16} /> <span className="hidden sm:inline">{isGeneratingPDF ? 'Gerando...' : 'Baixar PDF'}</span>
                                     </button>
                                     <button onClick={handleCopyDiet} className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors font-medium text-sm">
                                         {copied ? <Check size={16} className="text-blue-600 dark:text-blue-400" /> : <Copy size={16} />}
@@ -1192,6 +1269,120 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                         <button onClick={() => setShowNewPlanModal(false)} className="px-4 py-2 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg text-sm font-medium">Cancelar</button>
                         <button onClick={confirmCreateNewPlan} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium shadow-sm">Criar Ciclo</button>
                     </div>
+                </div>
+            </div>
+        )}
+
+        {/* PDF TEMPLATE (Hidden) */}
+        {pdfPlanData && (
+            <div ref={pdfRef} className="absolute left-[-9999px] top-0 w-[800px] bg-white text-slate-800 p-10 font-sans">
+                {/* Header with Logo/Brand */}
+                <div className="flex justify-between items-end border-b-2 border-blue-600 pb-4 mb-8">
+                    <div>
+                        <div className="flex items-center gap-2 text-blue-700 mb-1">
+                            <ChefHat size={32} />
+                            <h1 className="text-3xl font-bold tracking-tight">NutriVida</h1>
+                        </div>
+                        <p className="text-slate-500 text-sm font-medium uppercase tracking-wide">Plano Alimentar Personalizado</p>
+                    </div>
+                    <div className="text-right">
+                        <h2 className="text-2xl font-bold text-slate-900">{patientName}</h2>
+                        <div className="text-sm text-slate-500 mt-1">
+                            <p>Nutricionista: <span className="font-semibold text-slate-700">{nutritionist.name}</span></p>
+                            <p>CRN: {nutritionist.crn}</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Overview Grid */}
+                <div className="grid grid-cols-2 gap-6 mb-8">
+                     {/* Plan Info */}
+                     <div className="bg-slate-50 rounded-xl p-5 border border-slate-100">
+                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Detalhes do Plano</h3>
+                        <p className="text-lg font-bold text-slate-800 mb-1">{pdfPlanData.name}</p>
+                        <p className="text-sm text-slate-600">Criado em {new Date().toLocaleDateString('pt-BR')}</p>
+                     </div>
+
+                     {/* Hydration */}
+                     <div className="bg-blue-50 rounded-xl p-5 border border-blue-100 flex items-center gap-4">
+                        <div className="p-3 bg-white text-blue-600 rounded-full shadow-sm">
+                            <Droplets size={24} />
+                        </div>
+                        <div>
+                            <h3 className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-1">Meta de Hidratação</h3>
+                            <p className="text-blue-900">
+                                <span className="text-2xl font-bold">{((pdfPlanData.waterTarget || 2000) / 1000).toFixed(1)}</span>
+                                <span className="text-sm font-medium ml-1">Litros/dia</span>
+                            </p>
+                        </div>
+                     </div>
+                </div>
+
+                {/* Loop Days */}
+                <div className="space-y-8">
+                    {DAYS_OF_WEEK.map(day => {
+                        const dayMeals = pdfPlanData.days?.find((d: any) => d.day === day)?.meals || [];
+                        if (dayMeals.length === 0) return null;
+                        const dayTotals = calculateDayTotals(dayMeals);
+                        
+                        return (
+                            <div key={day} className="break-inside-avoid mb-8">
+                                {/* Day Header */}
+                                <div className="flex items-center gap-3 mb-4 border-b border-slate-200 pb-2">
+                                    <h3 className="text-xl font-bold text-slate-800">{day}</h3>
+                                    <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-full">
+                                        {dayMeals.length} refeições
+                                    </span>
+                                </div>
+                                
+                                {/* Macro Summary (Clean Version) */}
+                                <MacroSummary customTotals={dayTotals} isPdf={true} />
+
+                                {/* Meals Table Style */}
+                                <div className="mt-4 border border-slate-200 rounded-xl overflow-hidden">
+                                    {dayMeals.map((meal: any, index: number) => (
+                                        <div key={meal.id} className={`p-4 ${index !== dayMeals.length - 1 ? 'border-b border-slate-100' : ''}`}>
+                                            <div className="flex items-baseline justify-between mb-2">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-mono text-sm font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{meal.time}</span>
+                                                    <span className="font-bold text-slate-800 text-lg">{meal.name}</span>
+                                                </div>
+                                                {meal.isCheatMeal && <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-full uppercase tracking-wide">Refeição Livre</span>}
+                                            </div>
+                                            
+                                            {/* Items Grid */}
+                                            {meal.items.length > 0 ? (
+                                                <div className="grid grid-cols-1 gap-1">
+                                                    {meal.items.map((item: any) => (
+                                                        <div key={item.id} className="flex items-center justify-between text-sm py-1">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                                                                <span className="font-bold text-slate-700 w-16 text-right">{item.quantity}{item.unit || 'g'}</span>
+                                                                <span className="text-slate-600">{item.name}</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-3 text-xs font-mono text-slate-400">
+                                                                <span>{item.calories.toFixed(0)} kcal</span>
+                                                                <span className="text-slate-300">|</span>
+                                                                <span className="text-rose-500 font-medium">P: {item.protein}g</span>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <p className="text-sm text-slate-400 italic pl-4">Sem alimentos cadastrados.</p>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+                
+                {/* Footer */}
+                <div className="mt-12 pt-6 border-t border-slate-100 flex justify-between items-center text-xs text-slate-400">
+                    <p>Gerado via NutriVida</p>
+                    <p>{new Date().toLocaleDateString('pt-BR')}</p>
                 </div>
             </div>
         )}
