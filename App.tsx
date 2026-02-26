@@ -644,12 +644,16 @@ const App: React.FC = () => {
 
       let error;
 
+      // Sanitizar dados: remover 'id' para não tentar inserir/atualizar PK explicitamente
+      // O banco deve gerar o ID no insert, e o ID não deve mudar no update
+      const { id, ...profileData } = data as any;
+
       if (existingProfile) {
           // Atualizar existente
           const { error: updateError } = await supabase
             .from('nutritionist_profile')
             .update({
-                ...data,
+                ...profileData,
                 user_id: userId, // Garante que o user_id não muda
             })
             .eq('user_id', userId); // Usa user_id como chave para update
@@ -659,7 +663,7 @@ const App: React.FC = () => {
           const { error: insertError } = await supabase
             .from('nutritionist_profile')
             .insert({
-                ...data,
+                ...profileData,
                 user_id: userId
             });
           error = insertError;
