@@ -52,7 +52,7 @@ export const PatientSidebar: React.FC<PatientSidebarProps> = ({
       </nav>
 
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-64 h-screen bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-colors duration-300 fixed left-0 top-0 z-40">
+      <aside className="hidden md:flex flex-col w-64 h-screen bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-colors duration-300 sticky top-0 z-40">
         <div className="p-6 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-3 mb-1">
             <div className="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-600/20">

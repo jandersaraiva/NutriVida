@@ -632,31 +632,50 @@ const App: React.FC = () => {
 
   const handleSaveProfile = async (data: Nutritionist) => {
       if (!session) return;
-      // Usa o ID do usuário como ID do perfil ou um campo user_id
-      const { error } = await supabase
+      
+      const userId = session.user.id;
+
+      // Verificar se já existe um perfil para este usuário
+      const { data: existingProfile } = await supabase
         .from('nutritionist_profile')
-        .upsert({ 
-            ...data, 
-            user_id: session.user.id,
-            // If the table uses 'id' as PK and it's not auto-generated or linked to auth.users, 
-            // we might need to handle it. Assuming 'user_id' is unique or we filter by it.
-            // If we want one profile per user, we can use user_id as part of the unique constraint or PK.
-            // Let's assume we can just upsert with user_id.
-            // If there is a separate ID column, we might need to fetch it first or use a consistent ID logic.
-            // For now, let's try to upsert based on user_id if possible, or just add user_id.
-            // If the previous code used 'profile_1', it was shared. Now we want per-user.
-            // We should probably NOT send 'id': 'profile_1' anymore.
-        }, { onConflict: 'user_id' }); // Assuming user_id is unique/PK or we have a constraint
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      let error;
+
+      if (existingProfile) {
+          // Atualizar existente
+          const { error: updateError } = await supabase
+            .from('nutritionist_profile')
+            .update({
+                ...data,
+                user_id: userId, // Garante que o user_id não muda
+            })
+            .eq('user_id', userId); // Usa user_id como chave para update
+          error = updateError;
+      } else {
+          // Criar novo
+          const { error: insertError } = await supabase
+            .from('nutritionist_profile')
+            .insert({
+                ...data,
+                user_id: userId
+            });
+          error = insertError;
+      }
       
       if (error) {
-          // Fallback if onConflict fails or isn't configured for user_id
-          // Try standard insert/update logic?
-          // Actually, let's just try to insert/update with user_id.
           console.error("Erro ao salvar perfil:", error);
-          alert("Erro ao salvar perfil.");
+          alert("Erro ao salvar perfil: " + error.message);
           return;
       }
+      
+      // Atualizar estado local
       setNutritionist(data);
+      
+      // Forçar refresh dos dados para garantir sincronia
+      // fetchData(); // Opcional, mas pode ajudar
   };
 
   const handleViewChange = (view: ViewState) => {
