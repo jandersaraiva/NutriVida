@@ -9,9 +9,10 @@ interface HistoryTableProps {
   onEdit: (checkIn: CheckIn) => void;
   onDelete: (id: string) => void;
   onViewReport?: (checkIn: CheckIn) => void;
+  readOnly?: boolean;
 }
 
-export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, onDelete, onViewReport }) => {
+export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, onDelete, onViewReport, readOnly = false }) => {
   const tableRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -151,7 +152,7 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, on
               <th className="px-6 py-4">Idade Corp.</th>
               <th className="px-6 py-4">TMB (Kcal)</th>
               <th className="px-6 py-4 text-center">Visceral</th>
-              <th className="px-6 py-4 text-right pdf-exclude">Ações</th>
+              {!readOnly && <th className="px-6 py-4 text-right pdf-exclude">Ações</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -219,33 +220,35 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, on
                   </div>
                 </td>
                 
-                <td className="px-6 py-4 text-right pdf-exclude">
-                  <div className="flex justify-end gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                    {onViewReport && (
+                {!readOnly && (
+                    <td className="px-6 py-4 text-right pdf-exclude">
+                    <div className="flex justify-end gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                        {onViewReport && (
+                            <button 
+                                onClick={() => onViewReport(checkIn)}
+                                className="p-1.5 text-white bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors shadow-sm"
+                                title="Ver Relatório Completo"
+                            >
+                                <FileText size={16} />
+                            </button>
+                        )}
                         <button 
-                            onClick={() => onViewReport(checkIn)}
-                            className="p-1.5 text-white bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors shadow-sm"
-                            title="Ver Relatório Completo"
+                        onClick={() => onEdit(checkIn)}
+                        className="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                        title="Editar"
                         >
-                            <FileText size={16} />
+                        <Pencil size={16} />
                         </button>
-                    )}
-                    <button 
-                      onClick={() => onEdit(checkIn)}
-                      className="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-                      title="Editar"
-                    >
-                      <Pencil size={16} />
-                    </button>
-                    <button 
-                      onClick={() => onDelete(checkIn.id)}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors"
-                      title="Excluir"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </td>
+                        <button 
+                        onClick={() => onDelete(checkIn.id)}
+                        className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors"
+                        title="Excluir"
+                        >
+                        <Trash2 size={16} />
+                        </button>
+                    </div>
+                    </td>
+                )}
               </tr>
             ))}
           </tbody>

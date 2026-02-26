@@ -11,6 +11,7 @@ interface DietPlanProps {
   patientWeight?: number;
   targetCalories?: number; // Nova Prop para Meta
   nutritionist: Nutritionist;
+  readOnly?: boolean;
 }
 
 // --- BANCO DE DADOS DE ALIMENTOS (Baseado na TACO/TBCA - Por 100g) ---
@@ -167,7 +168,7 @@ const createDefaultMeals = (): Meal[] => [
 
 const DAYS_OF_WEEK = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
 
-export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, patientName, patientWeight = 70, targetCalories, nutritionist }) => {
+export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, patientName, patientWeight = 70, targetCalories, nutritionist, readOnly = false }) => {
   // State for which plan is currently being viewed
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [selectedDay, setSelectedDay] = useState<string>('Segunda');
@@ -779,14 +780,20 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
             <div className="bg-slate-50 dark:bg-slate-700 p-4 rounded-full mb-4 text-slate-400 dark:text-slate-500">
               <ChefHat size={48} />
             </div>
-            <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200 mb-2">Nenhum plano alimentar</h3>
-            <p className="text-slate-500 dark:text-slate-400 mb-6 max-w-md">Crie o primeiro ciclo de dieta para este paciente.</p>
-            <button 
-              onClick={handleCreateNewPlan}
-              className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors font-medium shadow-lg shadow-blue-200 dark:shadow-none flex items-center gap-2"
-            >
-              <Plus size={20} /> Criar Primeiro Plano
-            </button>
+            <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200 mb-2">
+                {readOnly ? 'Nenhum plano alimentar disponível' : 'Nenhum plano alimentar'}
+            </h3>
+            <p className="text-slate-500 dark:text-slate-400 mb-6 max-w-md">
+                {readOnly ? 'Aguarde seu nutricionista criar um plano para você.' : 'Crie o primeiro ciclo de dieta para este paciente.'}
+            </p>
+            {!readOnly && (
+                <button 
+                onClick={handleCreateNewPlan}
+                className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors font-medium shadow-lg shadow-blue-200 dark:shadow-none flex items-center gap-2"
+                >
+                <Plus size={20} /> Criar Primeiro Plano
+                </button>
+            )}
             {/* Modal Logic needs to be rendered outside or handled here if showNewPlanModal is true */}
             {showNewPlanModal && (
                  <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
@@ -805,9 +812,11 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden lg:col-span-1 print:hidden">
              <div className="p-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex justify-between items-center">
                  <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Ciclos de Dieta</h3>
-                 <button onClick={handleCreateNewPlan} className="text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 p-1.5 rounded-lg transition-colors" title="Novo Ciclo">
-                    <FilePlus size={18} />
-                 </button>
+                 {!readOnly && (
+                    <button onClick={handleCreateNewPlan} className="text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 p-1.5 rounded-lg transition-colors" title="Novo Ciclo">
+                        <FilePlus size={18} />
+                    </button>
+                 )}
              </div>
              <div className="max-h-[500px] overflow-y-auto custom-scrollbar">
                  {plans.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map(plan => (
@@ -828,12 +837,14 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                              <span className={`text-xs font-bold uppercase px-1.5 py-0.5 rounded ${plan.status === 'active' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'}`}>
                                  {plan.status === 'active' ? 'Ativo' : 'Histórico'}
                              </span>
-                             <button 
-                                onClick={(e) => { e.stopPropagation(); handleDeletePlan(plan.id); }}
-                                className="text-slate-300 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                                <Trash2 size={14} />
-                             </button>
+                             {!readOnly && (
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); handleDeletePlan(plan.id); }}
+                                    className="text-slate-300 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                    <Trash2 size={14} />
+                                </button>
+                             )}
                          </div>
                          <h4 className={`font-semibold text-sm mb-1 ${selectedPlanId === plan.id ? 'text-blue-900 dark:text-blue-300' : 'text-slate-700 dark:text-slate-300'}`}>
                              {plan.name}
@@ -902,9 +913,11 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                                         {copied ? <Check size={16} className="text-blue-600 dark:text-blue-400" /> : <Copy size={16} />}
                                         <span className="hidden sm:inline">{copied ? 'Copiado' : 'Copiar Texto'}</span>
                                     </button>
-                                    <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-medium text-sm">
-                                        <Edit2 size={16} /> Editar
-                                    </button>
+                                    {!readOnly && (
+                                        <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-medium text-sm">
+                                            <Edit2 size={16} /> Editar
+                                        </button>
+                                    )}
                                 </>
                             )}
                         </div>

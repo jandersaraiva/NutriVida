@@ -8,12 +8,13 @@ interface ScheduleProps {
   onAddAppointment: (appointment: Appointment) => void;
   onUpdateAppointment: (appointment: Appointment) => void;
   onDeleteAppointment: (id: string) => void;
+  readOnly?: boolean;
 }
 
 // Helper seguro para IDs
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
-export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAddAppointment, onUpdateAppointment, onDeleteAppointment }) => {
+export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAddAppointment, onUpdateAppointment, onDeleteAppointment, readOnly = false }) => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   
@@ -166,13 +167,15 @@ export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAd
            <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Agenda de Consultas</h2>
            <p className="text-slate-500 dark:text-slate-400 text-sm">Gerencie seus horários e atendimentos</p>
         </div>
-        <button 
-          onClick={() => handleOpenAddModal()}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-xl hover:bg-blue-700 transition-colors shadow-sm font-medium"
-        >
-          <Plus size={20} />
-          Novo Agendamento
-        </button>
+        {!readOnly && (
+            <button 
+              onClick={() => handleOpenAddModal()}
+              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-xl hover:bg-blue-700 transition-colors shadow-sm font-medium"
+            >
+              <Plus size={20} />
+              Novo Agendamento
+            </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -304,12 +307,13 @@ export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAd
                                     {/* Botão de Checkbox */}
                                     <div className="flex items-center sm:items-start sm:pt-1">
                                         <button
-                                            onClick={() => onUpdateAppointment({ ...app, status: isCompleted ? 'Agendado' : 'Concluído' })}
+                                            onClick={() => !readOnly && onUpdateAppointment({ ...app, status: isCompleted ? 'Agendado' : 'Concluído' })}
+                                            disabled={readOnly}
                                             className={`shrink-0 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
                                                 isCompleted 
                                                 ? 'bg-blue-500 border-blue-500 text-white' 
                                                 : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-transparent hover:border-blue-400'
-                                            }`}
+                                            } ${readOnly ? 'cursor-default opacity-80' : ''}`}
                                             title={isCompleted ? "Marcar como pendente" : "Marcar como concluído"}
                                         >
                                             <Check size={14} strokeWidth={4} />
@@ -346,22 +350,24 @@ export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAd
                                             </div>
                                         </div>
 
-                                        <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-                                            <button 
-                                                onClick={() => handleEditClick(app)}
-                                                className="flex-1 sm:flex-none px-4 py-2 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 text-sm font-medium transition-colors flex items-center justify-center gap-2"
-                                            >
-                                                <Edit2 size={16} />
-                                                Editar
-                                            </button>
-                                            <button 
-                                                onClick={() => onDeleteAppointment(app.id)}
-                                                className="p-2 border border-slate-200 dark:border-slate-600 text-rose-500 dark:text-rose-400 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors flex items-center justify-center"
-                                                title="Excluir agendamento"
-                                            >
-                                                <Trash2 size={18} />
-                                            </button>
-                                        </div>
+                                        {!readOnly && (
+                                            <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                                                <button 
+                                                    onClick={() => handleEditClick(app)}
+                                                    className="flex-1 sm:flex-none px-4 py-2 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                                                >
+                                                    <Edit2 size={16} />
+                                                    Editar
+                                                </button>
+                                                <button 
+                                                    onClick={() => onDeleteAppointment(app.id)}
+                                                    className="p-2 border border-slate-200 dark:border-slate-600 text-rose-500 dark:text-rose-400 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors flex items-center justify-center"
+                                                    title="Excluir agendamento"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             )})}

@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
+import { PatientSidebar } from './components/PatientSidebar'; // Import PatientSidebar
 import { Dashboard } from './components/Dashboard'; // Patient Dashboard
 import { MainDashboard } from './components/MainDashboard'; // Clinic Dashboard
 import { HistoryTable } from './components/HistoryTable';
@@ -34,6 +35,7 @@ const App: React.FC = () => {
   // --- AUTH STATE (Supabase) ---
   const [session, setSession] = useState<Session | null>(null);
   const [isLoadingSession, setIsLoadingSession] = useState(true);
+  const [userType, setUserType] = useState<'nutritionist' | 'patient' | null>(null); // New state for user role
 
   useEffect(() => {
     // 1. Get initial session
@@ -48,6 +50,7 @@ const App: React.FC = () => {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setIsLoadingSession(false);
+      if (!session) setUserType(null); // Reset role on logout
     });
 
     return () => subscription.unsubscribe();
@@ -56,6 +59,13 @@ const App: React.FC = () => {
   const handleLogin = async (email: string, pass: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
     if (error) throw error;
+  };
+
+  const handleSignUp = async (email: string, pass: string) => {
+    const { error } = await supabase.auth.signUp({ email, password: pass });
+    if (error) throw error;
+    // O useEffect de onAuthStateChange vai pegar a sessão se o login for automático
+    // Se precisar de confirmação de email, o Supabase avisa no erro ou retorno
   };
 
   const handleLogout = async () => {
@@ -114,16 +124,139 @@ const App: React.FC = () => {
 
     try {
         const userId = session.user.id;
+        let isNutritionist = false;
 
-        // 1. Fetch Patients (Filtered by User)
-        const { data: patientsData, error: patientsError } = await supabase
-            .from('patients')
-            .select('*')
-            .eq('user_id', userId);
-        
-        if (patientsError) throw new Error(`Erro ao buscar pacientes: ${patientsError.message}`);
+        // 0. Check User Role (Nutritionist Profile Exists?)
+        const { data: profileCheck, error: profileCheckError } = await supabase
+            .from('nutritionist_profile')
+            .select('id')
+            .eq('user_id', userId)
+            .maybeSingle();
 
-        const patientIds = (patientsData || []).map(p => p.id);
+        if (profileCheck) {
+            isNutritionist = true;
+            setUserType('nutritionist');
+        } else {
+            // Se não tem perfil, assume paciente (ou novo usuário que ainda não configurou)
+            // Mas vamos verificar se existe um paciente vinculado a este auth_user_id
+            const { data: patientCheck, error: patientCheckError } = await supabase
+                .from('patients')
+                .select('id')
+                .eq('auth_user_id', userId)
+                .maybeSingle();
+            
+            if (patientCheck) {
+                isNutritionist = false;
+                setUserType('patient');
+            } else {
+                // Tenta encontrar paciente pelo email para vincular (Primeiro Acesso do Paciente)
+                const { data: emailMatch } = await supabase
+                    .from('patients')
+                    .select('id')
+                    .eq('email', session.user.email)
+                    .is('auth_user_id', null) // Só vincula se ainda não tiver dono
+                    .maybeSingle();
+
+                if (emailMatch) {
+                    // Vincula o usuário Auth ao registro de Paciente
+                    const { error: updateError } = await supabase
+                        .from('patients')
+                        .update({ auth_user_id: userId })
+                        .eq('id', emailMatch.id);
+                    
+                    if (!updateError) {
+                        isNutritionist = false;
+                        setUserType('patient');
+                        // O fluxo segue e vai buscar os dados desse paciente recém vinculado
+                    } else {
+                        // Se falhar o update, assume nutri (fallback) ou trata erro
+                        console.error("Erro ao vincular paciente:", updateError);
+                        isNutritionist = true; 
+                        setUserType('nutritionist');
+                    }
+                } else {
+                    // Caso de borda: usuário logado mas sem perfil nem paciente vinculado.
+                    // Pode ser um novo nutricionista que ainda não salvou perfil?
+                    // Vamos assumir nutricionista por padrão para permitir criar perfil.
+                    isNutritionist = true; 
+                    setUserType('nutritionist');
+                }
+            }
+        }
+
+        let patientsData: any[] = [];
+        let appointmentsData: any[] = [];
+        let profileData: any = null;
+
+        if (isNutritionist) {
+            // --- NUTRITIONIST FLOW ---
+
+            // 1. Fetch Patients (Created by this Nutritionist)
+            const { data: pData, error: pError } = await supabase
+                .from('patients')
+                .select('*')
+                .eq('user_id', userId);
+            
+            if (pError) throw new Error(`Erro ao buscar pacientes: ${pError.message}`);
+            patientsData = pData || [];
+
+            // 4. Fetch Appointments (For this Nutritionist)
+            const { data: aData, error: aError } = await supabase
+                .from('appointments')
+                .select('*')
+                .eq('user_id', userId);
+            
+            if (aError) throw new Error(`Erro ao buscar agendamentos: ${aError.message}`);
+            appointmentsData = aData || [];
+
+            // 5. Fetch Nutritionist Profile
+            const { data: profData, error: profError } = await supabase
+                .from('nutritionist_profile')
+                .select('*')
+                .eq('user_id', userId)
+                .maybeSingle();
+            
+            if (profData) profileData = profData;
+
+        } else {
+            // --- PATIENT FLOW ---
+            
+            // 1. Fetch THIS Patient (Linked by auth_user_id)
+            const { data: pData, error: pError } = await supabase
+                .from('patients')
+                .select('*')
+                .eq('auth_user_id', userId)
+                .single();
+            
+            if (pError) throw new Error(`Erro ao buscar dados do paciente: ${pError.message}`);
+            patientsData = pData ? [pData] : [];
+
+            // 4. Fetch Appointments (For this Patient) - Assuming we filter by patientId later or add RLS for patient view
+            // For now, let's fetch appointments where patientId matches this patient's ID
+            if (patientsData.length > 0) {
+                const patientId = patientsData[0].id;
+                const { data: aData, error: aError } = await supabase
+                    .from('appointments')
+                    .select('*')
+                    .eq('patientId', patientId);
+                
+                if (!aError) appointmentsData = aData || [];
+            }
+            
+            // Fetch Nutritionist Profile (of the nutritionist who created this patient)
+            // We need this to display nutritionist info on the dashboard
+            if (patientsData.length > 0) {
+                 const nutritionistId = patientsData[0].user_id; // The creator's ID
+                 const { data: profData } = await supabase
+                    .from('nutritionist_profile')
+                    .select('*')
+                    .eq('user_id', nutritionistId)
+                    .maybeSingle();
+                 if (profData) profileData = profData;
+            }
+        }
+
+        const patientIds = patientsData.map(p => p.id);
 
         // 2. Fetch CheckIns (Filtered by Patient IDs)
         let checkInsData: any[] = [];
@@ -149,43 +282,30 @@ const App: React.FC = () => {
             dietsData = data || [];
         }
 
-        // 4. Fetch Appointments (Filtered by User)
-        const { data: apptData, error: apptError } = await supabase
-            .from('appointments')
-            .select('*')
-            .eq('user_id', userId);
-        
-        if (apptError) throw new Error(`Erro ao buscar agendamentos: ${apptError.message}`);
-
-        // 5. Fetch Nutritionist Profile (Filtered by User)
-        const { data: profileData, error: profileError } = await supabase
-            .from('nutritionist_profile')
-            .select('*')
-            .eq('user_id', userId)
-            .maybeSingle(); 
-        
-        if (profileError && profileError.code !== 'PGRST116') {
-             console.error("Erro perfil:", profileError);
-             // Não lança erro fatal para perfil, usa default
-        }
-
         if (profileData) {
              setNutritionist(profileData);
         }
 
         // Montar a estrutura de objeto aninhado que o frontend espera
-        const assembledPatients: Patient[] = (patientsData || []).map(p => {
+        const assembledPatients: Patient[] = patientsData.map(p => {
             return {
                 ...p,
-                checkIns: (checkInsData || []).filter(c => c.patientId === p.id),
-                dietPlans: (dietsData || []).filter(d => d.patientId === p.id),
+                checkIns: checkInsData.filter(c => c.patientId === p.id),
+                dietPlans: dietsData.filter(d => d.patientId === p.id),
                 // Anamnesis já vem como JSONB no objeto do paciente se configurado no banco
                 anamnesis: p.anamnesis || undefined
             };
         });
 
         setPatients(assembledPatients);
-        setAppointments(apptData || []);
+        setAppointments(appointmentsData);
+        
+        // Se for paciente, seleciona automaticamente ele mesmo
+        if (!isNutritionist && assembledPatients.length > 0) {
+            setSelectedPatientId(assembledPatients[0].id);
+            // Mapeia a view inicial corretamente
+            if (currentView === 'home') setCurrentView('dashboard'); // Patient dashboard
+        }
         
         setHasInitialFetch(true); // Marca como carregado
 
@@ -596,6 +716,7 @@ const App: React.FC = () => {
     return (
       <LoginScreen 
         onLogin={handleLogin} 
+        onSignUp={handleSignUp}
         isDarkMode={isDarkMode} 
         toggleTheme={toggleTheme} 
       />
@@ -604,13 +725,39 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden font-sans transition-colors duration-200">
-      <Sidebar 
-        currentView={currentView} 
-        onViewChange={handleViewChange} 
-        isDarkMode={isDarkMode} 
-        toggleTheme={toggleTheme} 
-        onLogout={handleLogout}
-      />
+      {userType === 'patient' && activePatient ? (
+        <PatientSidebar 
+            currentView={
+                currentView === 'schedule' ? 'schedule' as ViewState :
+                activeTab === 'diet' ? 'diet' as ViewState :
+                activeTab === 'history' ? 'history' as ViewState :
+                'home' as ViewState
+            } 
+            onViewChange={(view) => {
+                const viewId = view as string;
+                if (viewId === 'schedule') {
+                    setCurrentView('schedule');
+                } else {
+                    setCurrentView('patients');
+                    if (viewId === 'home') setActiveTab('overview');
+                    if (viewId === 'history') setActiveTab('history');
+                    if (viewId === 'diet') setActiveTab('diet');
+                }
+            }} 
+            isDarkMode={isDarkMode} 
+            toggleTheme={toggleTheme} 
+            onLogout={handleLogout}
+            patientName={activePatient.name}
+        />
+      ) : (
+        <Sidebar 
+            currentView={currentView} 
+            onViewChange={handleViewChange} 
+            isDarkMode={isDarkMode} 
+            toggleTheme={toggleTheme} 
+            onLogout={handleLogout}
+        />
+      )}
 
       {/* Main Content Area: Added pb-24 for mobile nav clearance */}
       <main className="flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-8 print:p-0 print:overflow-visible">
@@ -677,7 +824,8 @@ const App: React.FC = () => {
                     <>
                         <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
                         {currentView === 'patients' && !selectedPatientId && 'Gestão de Pacientes'}
-                        {currentView === 'patients' && selectedPatientId && (activePatient?.name || 'Detalhes do Paciente')}
+                        {currentView === 'patients' && selectedPatientId && userType === 'nutritionist' && (activePatient?.name || 'Detalhes do Paciente')}
+                        {currentView === 'patients' && selectedPatientId && userType === 'patient' && 'Meu Painel'}
                         {currentView === 'schedule' && 'Agenda'}
                         {currentView === 'add_entry' && (checkInToEdit ? 'Editar Avaliação' : 'Nova Avaliação')}
                         {currentView === 'select_patient_for_entry' && 'Menu de Ações'}
@@ -685,7 +833,8 @@ const App: React.FC = () => {
                         </h1>
                         <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
                         {currentView === 'patients' && !selectedPatientId && 'Gerencie o acompanhamento dos seus alunos'}
-                        {currentView === 'patients' && selectedPatientId && 'Acompanhe a evolução e gerencie o plano'}
+                        {currentView === 'patients' && selectedPatientId && userType === 'nutritionist' && 'Acompanhe a evolução e gerencie o plano'}
+                        {currentView === 'patients' && selectedPatientId && userType === 'patient' && 'Acompanhe sua evolução e metas'}
                         {currentView === 'schedule' && 'Visualize seus próximos atendimentos'}
                         {currentView === 'select_patient_for_entry' && 'Selecione o que deseja criar ou gerenciar'}
                         {currentView === 'profile_settings' && 'Gerencie seus dados e informações da clínica'}
@@ -731,7 +880,7 @@ const App: React.FC = () => {
 
         <div className="w-full max-w-[1920px] mx-auto">
           
-          {currentView === 'home' && (
+          {currentView === 'home' && userType === 'nutritionist' && (
             <MainDashboard 
               patients={patients} 
               appointments={appointments}
@@ -739,7 +888,7 @@ const App: React.FC = () => {
             />
           )}
 
-          {currentView === 'active_diets' && (
+          {currentView === 'active_diets' && userType === 'nutritionist' && (
              <ActiveDietsList 
                 patients={patients}
                 onSelectPatient={handleSelectPatientDiet}
@@ -760,7 +909,7 @@ const App: React.FC = () => {
              />
           )}
 
-          {currentView === 'profile_settings' && (
+          {currentView === 'profile_settings' && userType === 'nutritionist' && (
             <NutritionistProfile 
                 data={nutritionist}
                 onSave={handleSaveProfile}
@@ -769,7 +918,7 @@ const App: React.FC = () => {
             />
           )}
 
-          {currentView === 'select_patient_for_entry' && (
+          {currentView === 'select_patient_for_entry' && userType === 'nutritionist' && (
             <PatientSelector 
               patients={patients}
               onSelectPatient={handleSelectPatientForEntry}
@@ -781,7 +930,7 @@ const App: React.FC = () => {
             />
           )}
 
-          {currentView === 'patients' && !selectedPatientId && (
+          {currentView === 'patients' && !selectedPatientId && userType === 'nutritionist' && (
             <PatientList 
               patients={patients} 
               onSelectPatient={handleSelectPatient}
@@ -800,12 +949,13 @@ const App: React.FC = () => {
               onAddAppointment={handleAddAppointment}
               onUpdateAppointment={handleUpdateAppointment}
               onDeleteAppointment={handleDeleteAppointment}
+              readOnly={userType === 'patient'}
             />
           )}
 
           {currentView === 'patients' && activePatient && (
             <div className="space-y-6">
-              {renderTabs()}
+              {userType === 'nutritionist' && renderTabs()}
 
               {activeTab === 'overview' && (
                 <Dashboard 
@@ -818,10 +968,11 @@ const App: React.FC = () => {
                   age={activePatient.age}
                   gender={activePatient.gender}
                   activityFactor={activePatient.activityFactor || 1.2}
+                  readOnly={userType === 'patient'}
                 />
               )}
 
-              {activeTab === 'anamnesis' && (
+              {activeTab === 'anamnesis' && userType === 'nutritionist' && (
                 <AnamnesisForm 
                     initialData={activePatient.anamnesis}
                     onSave={handleUpdateAnamnesis}
@@ -834,6 +985,7 @@ const App: React.FC = () => {
                     onEdit={handleEditCheckIn}
                     onDelete={handleDeleteCheckIn}
                     onViewReport={handleViewReport}
+                    readOnly={userType === 'patient'}
                 />
               )}
               
@@ -845,6 +997,7 @@ const App: React.FC = () => {
                     patientWeight={activeCheckIns[0]?.weight || 70}
                     targetCalories={(activeCheckIns[0]?.bmr || 0) * (activePatient.activityFactor || 1.2)} 
                     nutritionist={nutritionist}
+                    readOnly={userType === 'patient'}
                 />
               )}
 

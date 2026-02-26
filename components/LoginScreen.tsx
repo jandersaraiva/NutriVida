@@ -3,16 +3,18 @@ import { Activity, Mail, Lock, Eye, EyeOff, Loader2, ArrowRight, Sun, Moon, User
 
 interface LoginScreenProps {
   onLogin: (email: string, pass: string) => Promise<void>;
+  onSignUp: (email: string, pass: string) => Promise<void>;
   isDarkMode: boolean;
   toggleTheme: () => void;
 }
 
-export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, isDarkMode, toggleTheme }) => {
+export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onSignUp, isDarkMode, toggleTheme }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +28,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, isDarkMode, t
     }
 
     try {
-        await onLogin(email, password);
+        if (isSignUp) {
+            await onSignUp(email, password);
+        } else {
+            await onLogin(email, password);
+        }
     } catch (err: any) {
         console.error(err);
         
@@ -36,7 +42,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, isDarkMode, t
         if (msg.includes('Invalid login credentials')) {
             msg = 'E-mail ou senha incorretos.';
         } else if (msg.includes('User already registered')) {
-            msg = 'Este e-mail já está cadastrado.';
+            msg = 'Este e-mail já está cadastrado. Tente fazer login.';
         } else if (msg.includes('Password should be at least')) {
             msg = 'A senha deve ter pelo menos 6 caracteres.';
         } else if (msg.includes('Email not confirmed')) {
@@ -75,10 +81,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, isDarkMode, t
             <Activity size={32} />
           </div>
           <h1 className="text-3xl font-bold text-slate-800 dark:text-white mb-2 tracking-tight">
-            Bem-vindo ao NutriVida
+            {isSignUp ? 'Crie sua Conta' : 'Bem-vindo ao NutriVida'}
           </h1>
           <p className="text-slate-500 dark:text-slate-400">
-            Entre para gerenciar seus pacientes
+            {isSignUp ? 'Cadastre-se para acessar o sistema' : 'Entre para gerenciar seus pacientes'}
           </p>
         </div>
 
@@ -131,13 +137,15 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, isDarkMode, t
             </div>
           )}
 
-          <div className="flex items-center justify-between text-sm">
-              <label className="flex items-center gap-2 cursor-pointer group">
-              <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
-              <span className="text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors">Lembrar de mim</span>
-              </label>
-              <a href="#" className="text-blue-600 dark:text-blue-400 font-medium hover:underline">Esqueceu a senha?</a>
-          </div>
+          {!isSignUp && (
+            <div className="flex items-center justify-between text-sm">
+                <label className="flex items-center gap-2 cursor-pointer group">
+                <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                <span className="text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors">Lembrar de mim</span>
+                </label>
+                <a href="#" className="text-blue-600 dark:text-blue-400 font-medium hover:underline">Esqueceu a senha?</a>
+            </div>
+          )}
 
           <button 
             type="submit" 
@@ -148,12 +156,24 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, isDarkMode, t
               <Loader2 size={20} className="animate-spin" />
             ) : (
               <>
-                Entrar no Sistema
-                <LogIn size={20} />
+                {isSignUp ? 'Criar Conta' : 'Entrar no Sistema'}
+                {isSignUp ? <UserPlus size={20} /> : <LogIn size={20} />}
               </>
             )}
           </button>
         </form>
+
+        <div className="mt-6 text-center">
+            <button
+                onClick={() => {
+                    setIsSignUp(!isSignUp);
+                    setError('');
+                }}
+                className="text-sm text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors"
+            >
+                {isSignUp ? 'Já tem uma conta? Faça login' : 'Não tem conta? Cadastre-se'}
+            </button>
+        </div>
       </div>
       
       <div className="absolute bottom-6 text-center text-xs text-slate-400 dark:text-slate-600">

@@ -39,6 +39,7 @@ export const PatientList: React.FC<PatientListProps> = ({
   // Form State
   const [formData, setFormData] = useState({
     name: '',
+    email: '',
     birthDate: '', 
     gender: 'Masculino' as 'Masculino' | 'Feminino',
     profession: '',
@@ -77,6 +78,7 @@ export const PatientList: React.FC<PatientListProps> = ({
     setEditingId(null);
     setFormData({
       name: '',
+      email: '',
       birthDate: '',
       gender: 'Masculino',
       profession: '',
@@ -93,6 +95,7 @@ export const PatientList: React.FC<PatientListProps> = ({
     setEditingId(patient.id);
     setFormData({
       name: patient.name,
+      email: patient.email || '',
       birthDate: patient.birthDate, // Load actual birthDate
       gender: patient.gender,
       profession: patient.profession,
@@ -129,6 +132,7 @@ export const PatientList: React.FC<PatientListProps> = ({
             const updated: Patient = {
                 ...existingPatient,
                 name: formData.name,
+                email: formData.email, // Use form email
                 birthDate: formData.birthDate,
                 age: calculatedAge, // Auto calculated
                 gender: formData.gender,
@@ -145,7 +149,7 @@ export const PatientList: React.FC<PatientListProps> = ({
         const newPatient: Patient = {
             id: generateId(),
             name: formData.name,
-            email: `${formData.name.toLowerCase().replace(/\s/g, '.')}@email.com`, // Generated email
+            email: formData.email, // Use form email
             gender: formData.gender,
             birthDate: formData.birthDate,
             age: calculatedAge, // Auto calculated
@@ -346,6 +350,22 @@ export const PatientList: React.FC<PatientListProps> = ({
                             onChange={handleInputChange}
                             className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2.5 text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                         />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">E-mail</label>
+                        <input 
+                            type="email" 
+                            name="email"
+                            required
+                            placeholder="Ex: joao@email.com"
+                            value={formData.email}
+                            onChange={handleInputChange}
+                            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2.5 text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                        />
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            Este e-mail será usado para o login do paciente no aplicativo.
+                        </p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

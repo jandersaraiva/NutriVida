@@ -16,9 +16,10 @@ interface DashboardProps {
   age: number; // Current calculated age of the patient
   gender: 'Masculino' | 'Feminino';
   activityFactor: ActivityLevel; // Novo prop para calcular GET
+  readOnly?: boolean;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onViewReport, age, gender, activityFactor }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onViewReport, age, gender, activityFactor, readOnly = false }) => {
   // Estado para o gráfico de evolução interativo
   const [evolutionMetric, setEvolutionMetric] = useState<'weight' | 'imc' | 'bodyFat' | 'muscleMass'>('weight');
 
@@ -392,10 +393,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
   if (!current) {
     return (
       <div className="flex flex-col items-center justify-center h-96 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
-        <p className="text-slate-500 dark:text-slate-400 mb-4">Nenhuma avaliação registrada para este paciente.</p>
-        <button onClick={onAddEntry} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-          Realizar Primeira Avaliação
-        </button>
+        <p className="text-slate-500 dark:text-slate-400 mb-4">
+            {readOnly ? 'Nenhuma avaliação disponível no momento.' : 'Nenhuma avaliação registrada para este paciente.'}
+        </p>
+        {!readOnly && (
+            <button onClick={onAddEntry} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+            Realizar Primeira Avaliação
+            </button>
+        )}
       </div>
     );
   }
