@@ -150,14 +150,21 @@ const App: React.FC = () => {
                 setUserType('patient');
             } else {
                 // Tenta encontrar paciente pelo email para vincular (Primeiro Acesso do Paciente)
-                const { data: emailMatch } = await supabase
+                console.log("Tentando vincular paciente pelo email:", session.user.email);
+                
+                const { data: emailMatch, error: searchError } = await supabase
                     .from('patients')
                     .select('id')
                     .eq('email', session.user.email)
                     .is('auth_user_id', null) // Só vincula se ainda não tiver dono
                     .maybeSingle();
 
+                if (searchError) {
+                    console.error("Erro ao buscar paciente por email (Provável RLS):", searchError);
+                }
+
                 if (emailMatch) {
+                    console.log("Paciente encontrado para vínculo:", emailMatch.id);
                     // Vincula o usuário Auth ao registro de Paciente
                     const { error: updateError } = await supabase
                         .from('patients')
@@ -165,16 +172,18 @@ const App: React.FC = () => {
                         .eq('id', emailMatch.id);
                     
                     if (!updateError) {
+                        console.log("Paciente vinculado com sucesso!");
                         isNutritionist = false;
                         setUserType('patient');
                         // O fluxo segue e vai buscar os dados desse paciente recém vinculado
                     } else {
                         // Se falhar o update, assume nutri (fallback) ou trata erro
-                        console.error("Erro ao vincular paciente:", updateError);
+                        console.error("Erro ao vincular paciente (Update falhou):", updateError);
                         isNutritionist = true; 
                         setUserType('nutritionist');
                     }
                 } else {
+                    console.log("Nenhum paciente encontrado com este email ou já vinculado.");
                     // Caso de borda: usuário logado mas sem perfil nem paciente vinculado.
                     // Pode ser um novo nutricionista que ainda não salvou perfil?
                     // Vamos assumir nutricionista por padrão para permitir criar perfil.
