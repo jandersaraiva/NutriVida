@@ -224,12 +224,48 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const pdfRef = React.useRef<HTMLDivElement>(null);
 
-  const handleGeneratePDF = () => {
-    if (!currentPlan) return;
+  const handleGeneratePDF = async () => {
+    if (!currentPlan || !pdfRef.current) return;
+    setIsGeneratingPDF(true);
     
-    // Usar window.print() para gerar PDF nativo do navegador
-    // Isso garante texto selecionável, cabeçalhos repetidos e tamanho de arquivo mínimo
-    window.print();
+    try {
+        await new Promise(resolve => setTimeout(resolve, 100)); // Garantir render
+        
+        const canvas = await html2canvas(pdfRef.current, {
+            scale: 2, // Melhor qualidade
+            useCORS: true,
+            logging: false,
+            windowWidth: 1200 // Forçar largura desktop para layout
+        });
+        
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const imgWidth = pdfWidth;
+        const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+        
+        let heightLeft = imgHeight;
+        let position = 0;
+        
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pdfHeight;
+        
+        while (heightLeft >= 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pdfHeight;
+        }
+        
+        pdf.save(`Dieta_${patientName.replace(/\s+/g, '_')}.pdf`);
+        
+    } catch (error) {
+        console.error("Erro ao gerar PDF:", error);
+        alert("Erro ao gerar PDF. Tente novamente.");
+    } finally {
+        setIsGeneratingPDF(false);
+    }
   };
 
   // Load form when editing starts
