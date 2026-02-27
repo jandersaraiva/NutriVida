@@ -3,6 +3,7 @@ import { DietPlan as DietPlanType, Meal, FoodItem, Nutritionist } from '../types
 import { Clock, Plus, Trash2, Edit2, Save, X, ChefHat, Copy, Check, PieChart, Search, Calendar, Archive, FilePlus, ChevronLeft, Zap, Target, Droplets, FileDown } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { DietPDFReport } from './DietPDFReport';
 
 interface DietPlanProps {
   plans: DietPlanType[];
@@ -223,48 +224,12 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const pdfRef = React.useRef<HTMLDivElement>(null);
 
-  const handleGeneratePDF = async () => {
-    if (!currentPlan || !pdfRef.current) return;
-    setIsGeneratingPDF(true);
+  const handleGeneratePDF = () => {
+    if (!currentPlan) return;
     
-    try {
-        await new Promise(resolve => setTimeout(resolve, 100)); // Garantir render
-        
-        const canvas = await html2canvas(pdfRef.current, {
-            scale: 2, // Melhor qualidade
-            useCORS: true,
-            logging: false,
-            windowWidth: 1200 // Forçar largura desktop para layout
-        });
-        
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        const imgWidth = pdfWidth;
-        const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-        
-        let heightLeft = imgHeight;
-        let position = 0;
-        
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pdfHeight;
-        
-        while (heightLeft >= 0) {
-            position = heightLeft - imgHeight;
-            pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-            heightLeft -= pdfHeight;
-        }
-        
-        pdf.save(`Dieta_${patientName.replace(/\s+/g, '_')}.pdf`);
-        
-    } catch (error) {
-        console.error("Erro ao gerar PDF:", error);
-        alert("Erro ao gerar PDF. Tente novamente.");
-    } finally {
-        setIsGeneratingPDF(false);
-    }
+    // Usar window.print() para gerar PDF nativo do navegador
+    // Isso garante texto selecionável, cabeçalhos repetidos e tamanho de arquivo mínimo
+    window.print();
   };
 
   // Load form when editing starts
@@ -1288,115 +1253,13 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
 
         {/* PDF TEMPLATE (Hidden) */}
         {pdfPlanData && (
-            <div ref={pdfRef} className="absolute left-[-9999px] top-0 w-[800px] bg-white text-slate-800 p-10 font-sans">
-                {/* Header with Logo/Brand */}
-                <div className="flex justify-between items-end border-b-2 border-blue-600 pb-4 mb-8">
-                    <div>
-                        <div className="flex items-center gap-2 text-blue-700 mb-1">
-                            <ChefHat size={32} />
-                            <h1 className="text-3xl font-bold tracking-tight">NutriVida</h1>
-                        </div>
-                        <p className="text-slate-500 text-sm font-medium uppercase tracking-wide">Plano Alimentar Personalizado</p>
-                    </div>
-                    <div className="text-right">
-                        <h2 className="text-2xl font-bold text-slate-900">{patientName}</h2>
-                        <div className="text-sm text-slate-500 mt-1">
-                            <p>Nutricionista: <span className="font-semibold text-slate-700">{nutritionist.name}</span></p>
-                            <p>CRN: {nutritionist.crn}</p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Overview Grid */}
-                <div className="grid grid-cols-2 gap-6 mb-8">
-                     {/* Plan Info */}
-                     <div className="bg-slate-50 rounded-xl p-5 border border-slate-100">
-                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Detalhes do Plano</h3>
-                        <p className="text-lg font-bold text-slate-800 mb-1">{pdfPlanData.name}</p>
-                        <p className="text-sm text-slate-600">Criado em {new Date().toLocaleDateString('pt-BR')}</p>
-                     </div>
-
-                     {/* Hydration */}
-                     <div className="bg-blue-50 rounded-xl p-5 border border-blue-100 flex items-center gap-4">
-                        <div className="p-3 bg-white text-blue-600 rounded-full shadow-sm">
-                            <Droplets size={24} />
-                        </div>
-                        <div>
-                            <h3 className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-1">Meta de Hidratação</h3>
-                            <p className="text-blue-900">
-                                <span className="text-2xl font-bold">{((pdfPlanData.waterTarget || 2000) / 1000).toFixed(1)}</span>
-                                <span className="text-sm font-medium ml-1">Litros/dia</span>
-                            </p>
-                        </div>
-                     </div>
-                </div>
-
-                {/* Loop Days */}
-                <div className="space-y-8">
-                    {DAYS_OF_WEEK.map(day => {
-                        const dayMeals = pdfPlanData.days?.find((d: any) => d.day === day)?.meals || [];
-                        if (dayMeals.length === 0) return null;
-                        const dayTotals = calculateDayTotals(dayMeals);
-                        
-                        return (
-                            <div key={day} className="break-inside-avoid mb-8">
-                                {/* Day Header */}
-                                <div className="flex items-center gap-3 mb-4 border-b border-slate-200 pb-2">
-                                    <h3 className="text-xl font-bold text-slate-800">{day}</h3>
-                                    <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-full">
-                                        {dayMeals.length} refeições
-                                    </span>
-                                </div>
-                                
-                                {/* Macro Summary (Clean Version) */}
-                                <MacroSummary customTotals={dayTotals} isPdf={true} />
-
-                                {/* Meals Table Style */}
-                                <div className="mt-4 border border-slate-200 rounded-xl overflow-hidden">
-                                    {dayMeals.map((meal: any, index: number) => (
-                                        <div key={meal.id} className={`p-4 ${index !== dayMeals.length - 1 ? 'border-b border-slate-100' : ''}`}>
-                                            <div className="flex items-baseline justify-between mb-2">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-mono text-sm font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{meal.time}</span>
-                                                    <span className="font-bold text-slate-800 text-lg">{meal.name}</span>
-                                                </div>
-                                                {meal.isCheatMeal && <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-full uppercase tracking-wide">Refeição Livre</span>}
-                                            </div>
-                                            
-                                            {/* Items Grid */}
-                                            {meal.items.length > 0 ? (
-                                                <div className="grid grid-cols-1 gap-1">
-                                                    {meal.items.map((item: any) => (
-                                                        <div key={item.id} className="flex items-center justify-between text-sm py-1">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
-                                                                <span className="font-bold text-slate-700 w-16 text-right">{item.quantity}{item.unit || 'g'}</span>
-                                                                <span className="text-slate-600">{item.name}</span>
-                                                            </div>
-                                                            <div className="flex items-center gap-3 text-xs font-mono text-slate-400">
-                                                                <span>{item.calories.toFixed(0)} kcal</span>
-                                                                <span className="text-slate-300">|</span>
-                                                                <span className="text-rose-500 font-medium">P: {item.protein}g</span>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <p className="text-sm text-slate-400 italic pl-4">Sem alimentos cadastrados.</p>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-                
-                {/* Footer */}
-                <div className="mt-12 pt-6 border-t border-slate-100 flex justify-between items-center text-xs text-slate-400">
-                    <p>Gerado via NutriVida</p>
-                    <p>{new Date().toLocaleDateString('pt-BR')}</p>
-                </div>
+            <div className="absolute left-[-9999px] top-0">
+                <DietPDFReport 
+                    ref={pdfRef} 
+                    plan={pdfPlanData} 
+                    patientName={patientName} 
+                    nutritionist={nutritionist} 
+                />
             </div>
         )}
 

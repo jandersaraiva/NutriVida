@@ -1,6 +1,5 @@
 import React from 'react';
-import { DietPlan, Nutritionist } from '../types';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList } from 'recharts';
+import { DietPlan, Nutritionist, Meal } from '../types';
 
 interface DietPDFReportProps {
   plan: DietPlan;
@@ -9,145 +8,208 @@ interface DietPDFReportProps {
 }
 
 export const DietPDFReport = React.forwardRef<HTMLDivElement, DietPDFReportProps>(({ plan, patientName, nutritionist }, ref) => {
-  // Calculate daily stats
-  const dailyStats = (plan.days || []).map(day => {
-    let totalKcal = 0;
-    day.meals.forEach(meal => {
-        // Include cheat meals in calculation? Usually they are "free" or have estimated calories.
-        // If items exist, we sum them.
+  
+  // Cálculo de macros diários para o gráfico
+  const calculateDayStats = (meals: Meal[]) => {
+    let totalKcal = 0, totalP = 0, totalC = 0, totalF = 0;
+    meals.forEach(meal => {
+        if (meal.isCheatMeal) return;
         meal.items.forEach(item => {
-             totalKcal += Number(item.calories) || 0;
+            totalP += Number(item.protein) || 0;
+            totalC += Number(item.carbs) || 0;
+            totalF += Number(item.fats) || 0;
+            totalKcal += Number(item.calories) || 0;
         });
     });
-    return { name: day.day.substring(0, 3), fullDay: day.day, kcal: Math.round(totalKcal) };
-  });
+    return { kcal: totalKcal, p: totalP, c: totalC, f: totalF };
+  };
+
+  // Componente de Gráfico de Macros (SVG Puro para Impressão Perfeita)
+  const MacroChart = ({ p, c, f, kcal }: { p: number, c: number, f: number, kcal: number }) => {
+      if (kcal === 0) return null;
+      const total = p + c + f || 1;
+      const pctP = (p / total) * 100;
+      const pctC = (c / total) * 100;
+      const pctF = (f / total) * 100;
+
+      return (
+          <div className="flex flex-col gap-2 mb-4 break-inside-avoid">
+              <div className="flex items-end gap-2 mb-1">
+                  <span className="text-sm font-bold text-slate-700">{Math.round(kcal)} kcal</span>
+                  <span className="text-xs text-slate-400 mb-0.5">total diário</span>
+              </div>
+              {/* Barra de Progresso SVG */}
+              <svg width="100%" height="12" className="rounded-full overflow-hidden">
+                  <rect x="0" width={`${pctP}%`} height="100%" fill="#f43f5e" /> {/* Rose-500 */}
+                  <rect x={`${pctP}%`} width={`${pctC}%`} height="100%" fill="#3b82f6" /> {/* Blue-500 */}
+                  <rect x={`${pctP + pctC}%`} width={`${pctF}%`} height="100%" fill="#fbbf24" /> {/* Amber-400 */}
+              </svg>
+              {/* Legenda */}
+              <div className="flex justify-between text-[10px] text-slate-500 font-medium px-1">
+                  <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full bg-rose-500"></div>
+                      <span>Prot: {Math.round(p)}g ({Math.round(pctP)}%)</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                      <span>Carb: {Math.round(c)}g ({Math.round(pctC)}%)</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full bg-amber-400"></div>
+                      <span>Gord: {Math.round(f)}g ({Math.round(pctF)}%)</span>
+                  </div>
+              </div>
+          </div>
+      );
+  };
 
   return (
-    <div ref={ref} className="p-8 bg-white text-slate-900 w-[210mm] mx-auto" style={{ minHeight: '297mm' }}>
-      {/* Header */}
-      <div className="flex justify-between items-start mb-8 border-b-2 border-slate-800 pb-6">
-         <div>
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">Plano Alimentar</h1>
-            <p className="text-lg text-slate-600 font-medium">{plan.name}</p>
-         </div>
-         <div className="text-right">
-            <h2 className="text-xl font-bold text-slate-800">{patientName}</h2>
-            <p className="text-sm text-slate-500 mt-1">Gerado em {new Date().toLocaleDateString()}</p>
-            {nutritionist && (
-                <div className="mt-2 text-sm text-slate-600">
-                    <p className="font-medium">{nutritionist.name}</p>
-                    <p>CRN: {nutritionist.crn}</p>
-                </div>
-            )}
-         </div>
-      </div>
+    <div ref={ref} className="bg-white text-slate-900 w-full font-sans print-container hidden print:block">
+      <style>{`
+        @media print {
+            @page { margin: 15mm; size: A4; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white; }
+            .print-container { display: block !important; }
+            .no-print { display: none !important; }
+            /* Esconder elementos da UI principal */
+            nav, aside, header, button, .fixed { display: none !important; }
+        }
+      `}</style>
 
-      {/* Summary & Chart */}
-      <div className="mb-8 bg-slate-50 p-6 rounded-xl border border-slate-200 break-inside-avoid">
-        <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-            📊 Distribuição Calórica Semanal
-        </h3>
-        <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={dailyStats} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                    <YAxis axisLine={false} tickLine={false} />
-                    <Bar dataKey="kcal" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={40}>
-                        <LabelList dataKey="kcal" position="top" fill="#64748b" fontSize={12} formatter={(val: number) => val > 0 ? val : ''} />
-                        {dailyStats.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.kcal > 0 ? '#3b82f6' : '#e2e8f0'} />
-                        ))}
-                    </Bar>
-                </BarChart>
-            </ResponsiveContainer>
-        </div>
-        <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
-             <div className="bg-white p-3 rounded-lg border border-slate-100">
-                 <span className="text-slate-500 block">Meta de Água</span>
-                 <span className="text-lg font-bold text-blue-600">{plan.waterTarget ? (plan.waterTarget / 1000).toFixed(1) : '2.0'}L / dia</span>
-             </div>
-             <div className="bg-white p-3 rounded-lg border border-slate-100">
-                 <span className="text-slate-500 block">Observações</span>
-                 <span className="text-slate-700">{plan.notes || 'Nenhuma observação adicional.'}</span>
-             </div>
-        </div>
-      </div>
-
-      {/* Daily Plans */}
-      <div className="space-y-8">
-        {plan.days?.map((day) => (
-            <div key={day.day} className="break-inside-avoid pt-4">
-                <div className="flex items-center gap-3 mb-4 border-b border-slate-200 pb-2">
-                    <div className="bg-slate-900 text-white px-3 py-1 rounded-md font-bold text-sm uppercase tracking-wide">
-                        {day.day}
-                    </div>
-                    <div className="text-sm text-slate-500">
-                        {dailyStats.find(s => s.fullDay === day.day)?.kcal} kcal totais
-                    </div>
-                </div>
-
-                <div className="space-y-4">
-                    {day.meals.length === 0 && (
-                        <p className="text-slate-400 italic text-sm">Sem refeições planejadas para este dia.</p>
-                    )}
-                    {day.meals.map((meal) => (
-                        <div key={meal.id} className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm break-inside-avoid">
-                            <div className="bg-slate-50 px-4 py-2 border-b border-slate-100 flex justify-between items-center">
-                                <div className="flex items-center gap-2">
-                                    <span className="font-mono font-bold text-slate-700 bg-white border border-slate-200 px-2 py-0.5 rounded text-xs">
-                                        {meal.time}
-                                    </span>
-                                    <span className="font-semibold text-slate-800">{meal.name}</span>
-                                </div>
-                                {meal.isCheatMeal && (
-                                    <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-medium border border-yellow-200">
-                                        Refeição Livre
-                                    </span>
-                                )}
+      {/* Estrutura de Tabela para Repetição de Cabeçalho */}
+      <table className="w-full">
+        <thead className="table-header-group">
+            <tr>
+                <td>
+                    <div className="pb-6 mb-6 border-b-2 border-slate-800 flex justify-between items-end">
+                        <div>
+                            <div className="flex items-center gap-2 text-blue-700 mb-1">
+                                <h1 className="text-3xl font-bold tracking-tight">NutriVida</h1>
                             </div>
-                            
-                            <div className="p-4">
-                                {meal.items.length > 0 ? (
-                                    <table className="w-full text-sm">
-                                        <thead>
-                                            <tr className="text-left text-xs text-slate-400 uppercase tracking-wider border-b border-slate-100">
-                                                <th className="pb-2 font-medium w-1/2">Alimento</th>
-                                                <th className="pb-2 font-medium text-right">Qtd</th>
-                                                <th className="pb-2 font-medium text-right">Kcal</th>
-                                                <th className="pb-2 font-medium text-right">Macros (P/C/G)</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-50">
-                                            {meal.items.map((item) => (
-                                                <tr key={item.id}>
-                                                    <td className="py-2 text-slate-700 font-medium">{item.name}</td>
-                                                    <td className="py-2 text-right text-slate-600">{item.quantity} {item.unit || 'g'}</td>
-                                                    <td className="py-2 text-right text-slate-600 font-mono">{item.calories.toFixed(0)}</td>
-                                                    <td className="py-2 text-right text-slate-500 text-xs font-mono">
-                                                        {item.protein}g / {item.carbs}g / {item.fats}g
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                ) : (
-                                    <p className="text-slate-400 text-sm italic">
-                                        {meal.isCheatMeal ? 'Aproveite sua refeição livre!' : 'Nenhum alimento adicionado.'}
-                                    </p>
-                                )}
+                            <p className="text-slate-500 text-xs font-bold uppercase tracking-[0.2em]">Planejamento Nutricional</p>
+                        </div>
+                        <div className="text-right">
+                            <h2 className="text-xl font-bold text-slate-900">{patientName}</h2>
+                            <div className="text-xs text-slate-500 mt-1">
+                                {nutritionist && <span>Nutricionista: {nutritionist.name} • CRN: {nutritionist.crn}</span>}
                             </div>
                         </div>
-                    ))}
-                </div>
-            </div>
-        ))}
-      </div>
-      
-      {/* Footer */}
-      <div className="mt-12 pt-6 border-t border-slate-200 text-center">
-        <p className="text-slate-400 text-xs uppercase tracking-widest font-medium">NutriVida - Planejamento Nutricional Inteligente</p>
-      </div>
+                    </div>
+                </td>
+            </tr>
+        </thead>
+
+        <tbody>
+            <tr>
+                <td>
+                    {/* Conteúdo Principal */}
+                    <div className="space-y-8">
+                        
+                        {/* Resumo do Plano */}
+                        <div className="bg-slate-50 rounded-xl p-6 border border-slate-100 break-inside-avoid">
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Plano Ativo</h3>
+                                    <p className="text-2xl font-light text-slate-800">{plan.name}</p>
+                                </div>
+                                <div className="text-right">
+                                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Meta Hídrica</h3>
+                                    <p className="text-xl font-bold text-blue-600">{plan.waterTarget ? (plan.waterTarget / 1000).toFixed(1) : '2.0'}L <span className="text-sm text-slate-400 font-normal">/ dia</span></p>
+                                </div>
+                            </div>
+                            {plan.notes && (
+                                <div className="mt-4 pt-4 border-t border-slate-200">
+                                    <p className="text-sm text-slate-600 italic">"{plan.notes}"</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Dias da Semana */}
+                        {plan.days?.map((day) => {
+                            const stats = calculateDayStats(day.meals);
+                            if (day.meals.length === 0) return null;
+
+                            return (
+                                <div key={day.day} className="break-inside-avoid pt-4">
+                                    {/* Cabeçalho do Dia */}
+                                    <div className="flex items-center justify-between mb-4 border-b border-slate-200 pb-2">
+                                        <div className="flex items-center gap-3">
+                                            <h2 className="text-2xl font-bold text-slate-800">{day.day}</h2>
+                                            <span className="text-xs font-medium bg-slate-100 text-slate-500 px-2 py-1 rounded-full">
+                                                {day.meals.length} refeições
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Gráfico de Macros do Dia */}
+                                    <MacroChart {...stats} />
+
+                                    {/* Refeições */}
+                                    <div className="space-y-4 pl-2 border-l-2 border-slate-100 ml-1">
+                                        {day.meals.map((meal) => (
+                                            <div key={meal.id} className="break-inside-avoid relative pl-6 pb-2">
+                                                {/* Marcador de Tempo */}
+                                                <div className="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-white border-2 border-blue-500"></div>
+                                                
+                                                <div className="flex items-baseline justify-between mb-2">
+                                                    <div className="flex items-baseline gap-3">
+                                                        <span className="text-sm font-bold text-blue-600 font-mono">{meal.time}</span>
+                                                        <span className="text-lg font-medium text-slate-800">{meal.name}</span>
+                                                    </div>
+                                                    {meal.isCheatMeal && (
+                                                        <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full uppercase tracking-wide border border-amber-100">
+                                                            Refeição Livre
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                {/* Tabela de Alimentos Limpa */}
+                                                {meal.items.length > 0 ? (
+                                                    <div className="bg-slate-50/50 rounded-lg p-3 border border-slate-100">
+                                                        <table className="w-full text-sm table-fixed">
+                                                            <tbody className="text-slate-700">
+                                                                {meal.items.map((item) => (
+                                                                    <tr key={item.id} className="border-b border-slate-100 last:border-0">
+                                                                        <td className="py-1.5 w-1/2 align-top">
+                                                                            <span className="font-medium">{item.name}</span>
+                                                                        </td>
+                                                                        <td className="py-1.5 w-1/4 text-right align-top text-slate-600">
+                                                                            {item.quantity} <span className="text-xs text-slate-400">{item.unit || 'g'}</span>
+                                                                        </td>
+                                                                        <td className="py-1.5 w-1/4 text-right align-top font-mono text-xs text-slate-400">
+                                                                            {item.calories.toFixed(0)} kcal
+                                                                        </td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-sm text-slate-400 italic">
+                                                        {meal.isCheatMeal ? 'Aproveite com moderação.' : 'Nenhum alimento registrado.'}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+
+        <tfoot className="table-footer-group">
+            <tr>
+                <td>
+                    <div className="mt-8 pt-4 border-t border-slate-100 text-center">
+                        <p className="text-slate-300 text-[10px] uppercase tracking-[0.2em]">NutriVida • {new Date().toLocaleDateString()}</p>
+                    </div>
+                </td>
+            </tr>
+        </tfoot>
+      </table>
     </div>
   );
 });
