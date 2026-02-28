@@ -922,6 +922,103 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
 
       </div>
 
+      {/* NOVO: Evolução de Medidas Corporais */}
+      {current && (
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-2">
+                <Scale size={20} className="text-blue-500" />
+                Evolução de Medidas (cm)
+            </h3>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[
+                    { key: 'waistCircumference', label: 'Cintura' },
+                    { key: 'abdomenCircumference', label: 'Abdome' },
+                    { key: 'hipCircumference', label: 'Quadril' },
+                    { key: 'chestCircumference', label: 'Tórax' },
+                    { key: 'armCircumference', label: 'Braço' },
+                    { key: 'forearmCircumference', label: 'Antebraço' },
+                    { key: 'thighCircumference', label: 'Coxa' },
+                    { key: 'calfCircumference', label: 'Panturrilha' },
+                ].map((measure) => {
+                    const currentVal = current[measure.key as keyof CheckIn];
+                    // Se não tiver valor atual, não mostra
+                    if (currentVal === undefined || currentVal === null || currentVal === 0) return null;
+
+                    const prevVal = previous ? previous[measure.key as keyof CheckIn] : undefined;
+                    const prevValNum = prevVal !== undefined && prevVal !== null ? Number(prevVal) : null;
+                    const currentValNum = Number(currentVal);
+                    
+                    let diff = 0;
+                    let status = 'neutral';
+                    
+                    if (prevValNum !== null && prevValNum > 0) {
+                        diff = currentValNum - prevValNum;
+                        if (diff > 0.1) status = 'increase';
+                        if (diff < -0.1) status = 'decrease';
+                    }
+
+                    // Lógica de Cores
+                    // Cintura/Abdome/Quadril: Diminuir é geralmente bom (Verde), Aumentar é ruim (Vermelho)
+                    // Outros: Neutro (Azul/Roxo)
+                    const isCore = ['waistCircumference', 'abdomenCircumference', 'hipCircumference'].includes(measure.key);
+                    
+                    let colorClass = 'text-slate-500 dark:text-slate-400';
+                    let bgClass = 'bg-slate-50 dark:bg-slate-700/50';
+                    let icon = <Minus size={16} />;
+
+                    if (status === 'increase') {
+                        icon = <ArrowUp size={16} strokeWidth={2.5} />;
+                        if (isCore) {
+                            colorClass = 'text-rose-600 dark:text-rose-400';
+                            bgClass = 'bg-rose-50 dark:bg-rose-900/20';
+                        } else {
+                            colorClass = 'text-blue-600 dark:text-blue-400';
+                            bgClass = 'bg-blue-50 dark:bg-blue-900/20';
+                        }
+                    } else if (status === 'decrease') {
+                        icon = <ArrowDown size={16} strokeWidth={2.5} />;
+                        if (isCore) {
+                            colorClass = 'text-emerald-600 dark:text-emerald-400';
+                            bgClass = 'bg-emerald-50 dark:bg-emerald-900/20';
+                        } else {
+                            colorClass = 'text-indigo-600 dark:text-indigo-400';
+                            bgClass = 'bg-indigo-50 dark:bg-indigo-900/20';
+                        }
+                    }
+
+                    return (
+                        <div key={measure.key} className={`p-4 rounded-xl border border-slate-100 dark:border-slate-700 ${bgClass} flex flex-col justify-between h-full`}>
+                            <div className="flex justify-between items-start mb-2">
+                                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{measure.label}</span>
+                                {status !== 'neutral' && (
+                                    <span className={`text-xs font-bold ${colorClass} flex items-center`}>
+                                        {icon} {Math.abs(diff).toFixed(1)}
+                                    </span>
+                                )}
+                            </div>
+                            
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-2xl font-bold text-slate-800 dark:text-slate-100">{currentValNum}</span>
+                                <span className="text-sm font-medium text-slate-400">cm</span>
+                            </div>
+                            
+                            {prevValNum !== null ? (
+                                <p className="text-[10px] text-slate-400 mt-1">
+                                    Anterior: {prevValNum} cm
+                                </p>
+                            ) : (
+                                <p className="text-[10px] text-slate-400 mt-1">
+                                    Sem dados anteriores
+                                </p>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+      )}
+
     </div>
   );
 };

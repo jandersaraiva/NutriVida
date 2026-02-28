@@ -229,16 +229,18 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
     setIsGeneratingPDF(true);
     
     try {
-        await new Promise(resolve => setTimeout(resolve, 100)); // Garantir render
+        await new Promise(resolve => setTimeout(resolve, 500)); // Garantir render completo
         
         const canvas = await html2canvas(pdfRef.current, {
-            scale: 2, // Melhor qualidade
+            scale: 1.5, // Qualidade boa e tamanho ok
             useCORS: true,
             logging: false,
-            windowWidth: 1200 // Forçar largura desktop para layout
+            windowWidth: 1200, // Largura desktop para layout correto
+            backgroundColor: '#ffffff'
         });
         
-        const imgData = canvas.toDataURL('image/png');
+        // Usar JPEG com qualidade 0.8 para arquivo leve (~1-2MB)
+        const imgData = canvas.toDataURL('image/jpeg', 0.8);
         const pdf = new jsPDF('p', 'mm', 'a4');
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
@@ -248,13 +250,13 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
         let heightLeft = imgHeight;
         let position = 0;
         
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
         heightLeft -= pdfHeight;
         
         while (heightLeft >= 0) {
             position = heightLeft - imgHeight;
             pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
             heightLeft -= pdfHeight;
         }
         

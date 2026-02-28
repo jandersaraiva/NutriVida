@@ -1,6 +1,6 @@
 import React, { useRef, useState, useMemo } from 'react';
 import { CheckIn } from '../types';
-import { Calendar, Download, Pencil, Trash2, FileText, Loader2, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Calendar, Download, Pencil, Trash2, FileText, Loader2, TrendingUp, TrendingDown, Minus, Eye, X } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
@@ -12,9 +12,18 @@ interface HistoryTableProps {
   readOnly?: boolean;
 }
 
+const MetricCard = ({ label, value, compact = false }: { label: string, value: string | number, compact?: boolean }) => (
+    <div className={`bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-700 ${compact ? 'p-3' : 'p-4'}`}>
+        <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold mb-1">{label}</p>
+        <p className={`${compact ? 'text-base' : 'text-lg'} font-bold text-slate-800 dark:text-slate-100`}>{value}</p>
+    </div>
+);
+
 export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, onDelete, onViewReport, readOnly = false }) => {
   const tableRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [selectedCheckIn, setSelectedCheckIn] = useState<CheckIn | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Processar dados para incluir deltas
   const processedData = useMemo(() => {
@@ -126,7 +135,13 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, on
     }
   };
 
+  const handleOpenModal = (checkIn: CheckIn) => {
+      setSelectedCheckIn(checkIn);
+      setIsModalOpen(true);
+  };
+
   return (
+    <>
     <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
       <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
         <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100">Histórico Completo</h3>
@@ -223,6 +238,13 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, on
                 {!readOnly && (
                     <td className="px-6 py-4 text-right pdf-exclude">
                     <div className="flex justify-end gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                        <button 
+                            onClick={() => handleOpenModal(checkIn)}
+                            className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
+                            title="Visualizar Detalhes"
+                        >
+                            <Eye size={16} />
+                        </button>
                         {onViewReport && (
                             <button 
                                 onClick={() => onViewReport(checkIn)}
@@ -255,5 +277,107 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, on
         </table>
       </div>
     </div>
+
+    {/* Modal de Detalhes da Avaliação */}
+    {isModalOpen && selectedCheckIn && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center sticky top-0 bg-white dark:bg-slate-800 z-10">
+            <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">
+              Detalhes da Avaliação
+            </h3>
+            <button 
+              onClick={() => setIsModalOpen(false)}
+              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors"
+            >
+              <X size={20} className="text-slate-500" />
+            </button>
+          </div>
+          
+          <div className="p-6 space-y-6">
+            {/* Cabeçalho com Data */}
+            <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 mb-4">
+                <Calendar size={18} />
+                <span className="font-medium">
+                    {new Date(selectedCheckIn.date).toLocaleDateString('pt-BR', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                    })}
+                </span>
+            </div>
+
+            {/* Grid de Métricas Principais */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <MetricCard label="Peso" value={`${selectedCheckIn.weight} kg`} />
+                <MetricCard label="Altura" value={`${selectedCheckIn.height} cm`} />
+                <MetricCard label="IMC" value={selectedCheckIn.imc.toFixed(1)} />
+                <MetricCard label="Gordura Corporal" value={`${selectedCheckIn.bodyFat}%`} />
+                <MetricCard label="Massa Muscular" value={`${selectedCheckIn.muscleMass}%`} />
+                <MetricCard label="Gordura Visceral" value={selectedCheckIn.visceralFat} />
+                <MetricCard label="Idade Corporal" value={`${selectedCheckIn.bodyAge} anos`} />
+                <MetricCard label="Metabolismo Basal" value={`${selectedCheckIn.bmr} Kcal`} />
+            </div>
+
+            {/* Circunferências */}
+            <div>
+                <h4 className="font-semibold text-slate-700 dark:text-slate-200 mb-3 pb-2 border-b border-slate-100 dark:border-slate-700">
+                    Circunferências
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <MetricCard label="Cintura" value={selectedCheckIn.waistCircumference ? `${selectedCheckIn.waistCircumference} cm` : '-'} compact />
+                    <MetricCard label="Abdome" value={selectedCheckIn.abdomenCircumference ? `${selectedCheckIn.abdomenCircumference} cm` : '-'} compact />
+                    <MetricCard label="Quadril" value={selectedCheckIn.hipCircumference ? `${selectedCheckIn.hipCircumference} cm` : '-'} compact />
+                    <MetricCard label="Tórax" value={selectedCheckIn.chestCircumference ? `${selectedCheckIn.chestCircumference} cm` : '-'} compact />
+                    <MetricCard label="Braço" value={selectedCheckIn.armCircumference ? `${selectedCheckIn.armCircumference} cm` : '-'} compact />
+                    <MetricCard label="Antebraço" value={selectedCheckIn.forearmCircumference ? `${selectedCheckIn.forearmCircumference} cm` : '-'} compact />
+                    <MetricCard label="Coxa" value={selectedCheckIn.thighCircumference ? `${selectedCheckIn.thighCircumference} cm` : '-'} compact />
+                    <MetricCard label="Panturrilha" value={selectedCheckIn.calfCircumference ? `${selectedCheckIn.calfCircumference} cm` : '-'} compact />
+                </div>
+            </div>
+
+            {/* Dobras Cutâneas (se houver) */}
+            {(selectedCheckIn.tricepsFold || selectedCheckIn.subscapularFold) && (
+                <div>
+                    <h4 className="font-semibold text-slate-700 dark:text-slate-200 mb-3 pb-2 border-b border-slate-100 dark:border-slate-700">
+                        Dobras Cutâneas
+                    </h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <MetricCard label="Tríceps" value={selectedCheckIn.tricepsFold ? `${selectedCheckIn.tricepsFold} mm` : '-'} compact />
+                        <MetricCard label="Subescapular" value={selectedCheckIn.subscapularFold ? `${selectedCheckIn.subscapularFold} mm` : '-'} compact />
+                        <MetricCard label="Bíceps" value={selectedCheckIn.bicepsFold ? `${selectedCheckIn.bicepsFold} mm` : '-'} compact />
+                        <MetricCard label="Crista Ilíaca" value={selectedCheckIn.iliacCrestFold ? `${selectedCheckIn.iliacCrestFold} mm` : '-'} compact />
+                        <MetricCard label="Supraespinal" value={selectedCheckIn.supraspinaleFold ? `${selectedCheckIn.supraspinaleFold} mm` : '-'} compact />
+                        <MetricCard label="Abdominal" value={selectedCheckIn.abdominalFold ? `${selectedCheckIn.abdominalFold} mm` : '-'} compact />
+                        <MetricCard label="Coxa" value={selectedCheckIn.thighFold ? `${selectedCheckIn.thighFold} mm` : '-'} compact />
+                        <MetricCard label="Panturrilha" value={selectedCheckIn.calfFold ? `${selectedCheckIn.calfFold} mm` : '-'} compact />
+                    </div>
+                </div>
+            )}
+
+            {/* Observações */}
+            {selectedCheckIn.notes && (
+                <div>
+                    <h4 className="font-semibold text-slate-700 dark:text-slate-200 mb-2">Observações</h4>
+                    <p className="text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-900 p-4 rounded-lg text-sm">
+                        {selectedCheckIn.notes}
+                    </p>
+                </div>
+            )}
+          </div>
+          
+          <div className="p-6 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex justify-end">
+            <button 
+                onClick={() => setIsModalOpen(false)}
+                className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium shadow-sm"
+            >
+                Fechar
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 };
