@@ -28,6 +28,22 @@ export const PatientList: React.FC<PatientListProps> = ({
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'active' | 'trash'>('active');
+
+  const handleOpenAdd = () => {
+    setEditingId(null);
+    setFormData({
+      name: '',
+      email: '',
+      birthDate: '',
+      gender: 'Masculino',
+      profession: '',
+      phone: '',
+      instagram: '',
+      address: '',
+      activityFactor: 1.2
+    });
+    setShowModal(true);
+  };
   
   // Open modal if prop is true (on mount)
   useEffect(() => {
@@ -72,22 +88,6 @@ export const PatientList: React.FC<PatientListProps> = ({
         ...prev, 
         [name]: name === 'activityFactor' ? parseFloat(value) : value 
     }));
-  };
-
-  const handleOpenAdd = () => {
-    setEditingId(null);
-    setFormData({
-      name: '',
-      email: '',
-      birthDate: '',
-      gender: 'Masculino',
-      profession: '',
-      phone: '',
-      instagram: '',
-      address: '',
-      activityFactor: 1.2
-    });
-    setShowModal(true);
   };
 
   const handleOpenEdit = (e: React.MouseEvent, patient: Patient) => {

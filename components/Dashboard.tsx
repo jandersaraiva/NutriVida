@@ -50,10 +50,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
         setFeedbackStatus('success');
         setFeedbackText('');
         setTimeout(() => setFeedbackStatus('idle'), 3000);
-    } catch (error) {
+    } catch (error: any) {
         console.error('Erro ao enviar feedback:', error);
         setFeedbackStatus('error');
-        alert('Erro ao enviar feedback. Verifique se a tabela "feedbacks" existe no banco de dados.');
+        alert(`Erro ao enviar feedback: ${error.message || 'Erro desconhecido'}. Verifique as permissões (RLS) no Supabase.`);
     }
   };
 

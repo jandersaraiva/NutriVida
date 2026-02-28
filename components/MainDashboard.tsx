@@ -8,6 +8,22 @@ interface MainDashboardProps {
   onNavigateTo: (view: ViewState) => void;
 }
 
+const Card = ({ title, value, subtext, icon: Icon, colorClass, onClick }: any) => (
+  <div 
+      onClick={onClick}
+      className={`bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-between transition-all hover:shadow-md cursor-pointer group`}
+  >
+    <div>
+      <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">{title}</p>
+      <h3 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-1">{value}</h3>
+      <p className="text-xs text-slate-400 dark:text-slate-500">{subtext}</p>
+    </div>
+    <div className={`p-4 rounded-xl ${colorClass} bg-opacity-10 dark:bg-opacity-20 group-hover:scale-105 transition-transform`}>
+      <Icon size={28} className={colorClass.replace('bg-', 'text-')} />
+    </div>
+  </div>
+);
+
 export const MainDashboard: React.FC<MainDashboardProps> = ({ patients, appointments, onNavigateTo }) => {
   // KPIs
   const activePatients = patients.filter(p => p.status === 'active');
@@ -23,22 +39,6 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({ patients, appointm
     .slice(0, 3);
 
   const getPatientName = (id: string) => patients.find(p => p.id === id)?.name || 'Desconhecido';
-
-  const Card = ({ title, value, subtext, icon: Icon, colorClass, onClick }: any) => (
-    <div 
-        onClick={onClick}
-        className={`bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-between transition-all hover:shadow-md cursor-pointer group`}
-    >
-      <div>
-        <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">{title}</p>
-        <h3 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-1">{value}</h3>
-        <p className="text-xs text-slate-400 dark:text-slate-500">{subtext}</p>
-      </div>
-      <div className={`p-4 rounded-xl ${colorClass} bg-opacity-10 dark:bg-opacity-20 group-hover:scale-105 transition-transform`}>
-        <Icon size={28} className={colorClass.replace('bg-', 'text-')} />
-      </div>
-    </div>
-  );
 
   return (
     <div className="space-y-8">

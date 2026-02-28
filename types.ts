@@ -118,7 +118,19 @@ export interface Nutritionist {
   photo?: string; // URL ou Base64 da imagem
 }
 
-export type ViewState = 'home' | 'patients' | 'schedule' | 'add_entry' | 'select_patient_for_entry' | 'profile_settings' | 'active_diets' | 'assessment_report';
+export interface Feedback {
+  id: string;
+  patient_id: string;
+  message: string;
+  created_at: string;
+  read: boolean;
+  patient?: {
+    name: string;
+    avatarColor?: string;
+  };
+}
+
+export type ViewState = 'home' | 'patients' | 'schedule' | 'add_entry' | 'select_patient_for_entry' | 'profile_settings' | 'active_diets' | 'assessment_report' | 'feedbacks';
 
 export type PatientTab = 'overview' | 'anamnesis' | 'history' | 'diet' | 'profile';
 
