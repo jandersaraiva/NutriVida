@@ -6,8 +6,10 @@ import {
 } from 'recharts';
 import { 
   Scale, Activity, Zap, Flame, PieChart, Hourglass, TrendingDown, TrendingUp, 
-  Calculator, Calendar, AlertTriangle, CheckCircle, FileText, BarChart2, Dumbbell, Minus, ArrowUp, ArrowDown, Info
+  Calculator, Calendar, AlertTriangle, CheckCircle, FileText, BarChart2, Dumbbell, Minus, ArrowUp, ArrowDown, Info,
+  MessageSquare, Send
 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 interface DashboardProps {
   checkIns: CheckIn[];
@@ -17,11 +19,43 @@ interface DashboardProps {
   gender: 'Masculino' | 'Feminino';
   activityFactor: ActivityLevel; // Novo prop para calcular GET
   readOnly?: boolean;
+  patientId?: string; // ID do paciente para envio de feedback
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onViewReport, age, gender, activityFactor, readOnly = false }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onViewReport, age, gender, activityFactor, readOnly = false, patientId }) => {
   // Estado para o gráfico de evolução interativo
   const [evolutionMetric, setEvolutionMetric] = useState<'weight' | 'imc' | 'bodyFat' | 'muscleMass'>('weight');
+  
+  // Estado para Feedback
+  const [feedbackText, setFeedbackText] = useState('');
+  const [feedbackStatus, setFeedbackStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+
+  const handleSendFeedback = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!feedbackText.trim() || !patientId) return;
+
+    setFeedbackStatus('sending');
+
+    try {
+        const { error } = await supabase
+            .from('feedbacks')
+            .insert([{ 
+                patient_id: patientId, 
+                message: feedbackText,
+                read: false
+            }]);
+
+        if (error) throw error;
+
+        setFeedbackStatus('success');
+        setFeedbackText('');
+        setTimeout(() => setFeedbackStatus('idle'), 3000);
+    } catch (error) {
+        console.error('Erro ao enviar feedback:', error);
+        setFeedbackStatus('error');
+        alert('Erro ao enviar feedback. Verifique se a tabela "feedbacks" existe no banco de dados.');
+    }
+  };
 
   // We assume checkIns is already sorted (newest first) for card display
   const current = checkIns[0];
@@ -1015,6 +1049,53 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
                         </div>
                     );
                 })}
+            </div>
+        </div>
+      )}
+
+      {/* FEEDBACK SECTION (Only for Patients) */}
+      {readOnly && patientId && (
+        <div className="bg-gradient-to-br from-slate-800 to-slate-900 dark:from-slate-800 dark:to-slate-900 p-6 rounded-2xl shadow-lg text-white">
+            <div className="flex flex-col md:flex-row gap-6 items-start">
+                <div className="md:w-1/3">
+                    <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
+                        <MessageSquare size={24} className="text-blue-400" />
+                        Feedback ao Nutricionista
+                    </h3>
+                    <p className="text-slate-300 text-sm leading-relaxed">
+                        Tem alguma dúvida, sugestão ou quer relatar como está se sentindo com a nova dieta? Envie uma mensagem direta para seu nutricionista por aqui.
+                    </p>
+                </div>
+                <div className="md:w-2/3 w-full">
+                    <form onSubmit={handleSendFeedback} className="space-y-3">
+                        <textarea
+                            value={feedbackText}
+                            onChange={(e) => setFeedbackText(e.target.value)}
+                            placeholder="Escreva sua mensagem aqui..."
+                            className="w-full bg-slate-700/50 border border-slate-600 rounded-xl p-4 text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none h-32 transition-all"
+                            required
+                        />
+                        <div className="flex justify-end items-center gap-4">
+                            {feedbackStatus === 'success' && (
+                                <span className="text-emerald-400 text-sm font-medium animate-pulse">Mensagem enviada com sucesso!</span>
+                            )}
+                            {feedbackStatus === 'error' && (
+                                <span className="text-rose-400 text-sm font-medium">Erro ao enviar. Tente novamente.</span>
+                            )}
+                            <button 
+                                type="submit" 
+                                disabled={feedbackStatus === 'sending' || !feedbackText.trim()}
+                                className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 shadow-lg shadow-blue-900/20"
+                            >
+                                {feedbackStatus === 'sending' ? 'Enviando...' : (
+                                    <>
+                                        Enviar Mensagem <Send size={18} />
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
       )}

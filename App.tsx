@@ -16,6 +16,7 @@ import { AssessmentReport } from './components/AssessmentReport';
 import { LoginScreen } from './components/LoginScreen';
 import { CheckIn, ViewState, Patient, DietPlan as DietPlanType, PatientTab, Appointment, Nutritionist, Anamnesis } from './types';
 import { User, Activity, Utensils, FileText, LayoutDashboard, Stethoscope, Sun, Moon, LogOut, XCircle, AlertCircle } from 'lucide-react';
+import { PatientProfile } from './components/PatientProfile';
 import { supabase } from './lib/supabase';
 import { Session } from '@supabase/supabase-js';
 
@@ -1032,6 +1033,7 @@ const App: React.FC = () => {
                   gender={activePatient.gender}
                   activityFactor={activePatient.activityFactor || 1.2}
                   readOnly={userType === 'patient'}
+                  patientId={activePatient.id}
                 />
               )}
 
@@ -1065,72 +1067,11 @@ const App: React.FC = () => {
               )}
 
               {activeTab === 'profile' && (
-                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-8 max-w-4xl mx-auto border border-slate-100 dark:border-slate-700">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                    <div className="flex items-center gap-4 text-blue-600 dark:text-blue-400">
-                        <User size={32} />
-                        <h2 className="text-xl font-semibold">Dados Pessoais</h2>
-                    </div>
-                    <button 
-                        onClick={() => setActiveTab('anamnesis')}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors font-medium text-sm shadow-sm"
-                    >
-                        <Stethoscope size={18} />
-                        Editar Anamnese
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Nome Completo</label>
-                      <input type="text" value={activePatient.name} disabled className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 text-slate-700 dark:text-slate-300" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Email</label>
-                      <input type="text" value={activePatient.email} disabled className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 text-slate-700 dark:text-slate-300" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Idade</label>
-                      <input type="text" value={activePatient.age} disabled className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 text-slate-700 dark:text-slate-300" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Profissão</label>
-                      <input type="text" value={activePatient.profession} disabled className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 text-slate-700 dark:text-slate-300" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Telefone</label>
-                      <input type="text" value={activePatient.phone} disabled className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 text-slate-700 dark:text-slate-300" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Instagram</label>
-                      <input type="text" value={activePatient.instagram} disabled className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 text-slate-700 dark:text-slate-300" />
-                    </div>
-                    <div className="md:col-span-2 lg:col-span-3">
-                      <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Endereço</label>
-                      <input type="text" value={activePatient.address || ''} disabled className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 text-slate-700 dark:text-slate-300" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Objetivo</label>
-                      <input type="text" value={activePatient.objective} disabled className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 text-slate-700 dark:text-slate-300" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Gênero</label>
-                      <select disabled value={activePatient.gender} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 text-slate-700 dark:text-slate-300">
-                        <option value="Masculino">Masculino</option>
-                        <option value="Feminino">Feminino</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Fator de Atividade (FA)</label>
-                      <input type="text" value={
-                          activePatient.activityFactor === 1.2 ? '1.2 - Sedentário' :
-                          activePatient.activityFactor === 1.375 ? '1.375 - Levemente Ativo' :
-                          activePatient.activityFactor === 1.55 ? '1.55 - Moderadamente Ativo' :
-                          activePatient.activityFactor === 1.725 ? '1.725 - Muito Ativo' :
-                          '1.9 - Extremamente Ativo'
-                      } disabled className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 text-slate-700 dark:text-slate-300" />
-                    </div>
-                  </div>
-                </div>
+                <PatientProfile 
+                    patient={activePatient}
+                    onUpdate={handleUpdatePatient}
+                    readOnly={userType === 'patient'}
+                />
               )}
             </div>
           )}
