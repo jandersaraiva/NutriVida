@@ -8,16 +8,15 @@ interface SidebarProps {
   isDarkMode: boolean;
   toggleTheme: () => void;
   onLogout?: () => void;
-  unreadFeedbacksCount?: number;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, isDarkMode, toggleTheme, onLogout, unreadFeedbacksCount = 0 }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, isDarkMode, toggleTheme, onLogout }) => {
   const menuItems = [
     { id: 'home', label: 'Início', icon: LayoutDashboard },
     { id: 'patients', label: 'Pacientes', icon: Users },
     { id: 'select_patient_for_entry', label: 'Novo', icon: PlusCircle, isAction: true },
     { id: 'schedule', label: 'Agenda', icon: CalendarDays },
-    { id: 'feedbacks', label: 'Feedbacks', icon: MessageSquare, badge: unreadFeedbacksCount },
+    { id: 'feedbacks', label: 'Feedbacks', icon: MessageSquare },
     { id: 'profile_settings', label: 'Perfil', icon: Settings },
   ];
 

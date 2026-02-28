@@ -10,7 +10,6 @@ interface FeedbackListProps {
 export const FeedbackList: React.FC<FeedbackListProps> = ({ userId }) => {
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
 
   useEffect(() => {
     fetchFeedbacks();
@@ -91,14 +90,6 @@ export const FeedbackList: React.FC<FeedbackListProps> = ({ userId }) => {
     }
   };
 
-  const filteredFeedbacks = feedbacks.filter(f => {
-    if (filter === 'unread') return !f.read;
-    if (filter === 'read') return f.read;
-    return true;
-  });
-
-  const unreadCount = feedbacks.filter(f => !f.read).length;
-
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -119,55 +110,17 @@ export const FeedbackList: React.FC<FeedbackListProps> = ({ userId }) => {
             Gerencie as mensagens e feedbacks enviados pelos seus pacientes.
           </p>
         </div>
-
-        <div className="flex gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
-          <button
-            onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-              filter === 'all' 
-                ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' 
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-            }`}
-          >
-            Todos
-          </button>
-          <button
-            onClick={() => setFilter('unread')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
-              filter === 'unread' 
-                ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' 
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-            }`}
-          >
-            Não Lidos
-            {unreadCount > 0 && (
-              <span className="bg-rose-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                {unreadCount}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => setFilter('read')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-              filter === 'read' 
-                ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' 
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-            }`}
-          >
-            Lidos
-          </button>
-        </div>
       </div>
 
       <div className="grid gap-4">
-        {filteredFeedbacks.length === 0 ? (
+        {feedbacks.length === 0 ? (
           <div className="text-center py-12 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
             <MessageSquare size={48} className="mx-auto text-slate-300 dark:text-slate-600 mb-4" />
             <h3 className="text-lg font-medium text-slate-600 dark:text-slate-300">Nenhum feedback encontrado</h3>
             <p className="text-slate-400 dark:text-slate-500">Não há mensagens nesta categoria.</p>
           </div>
         ) : (
-          filteredFeedbacks.map((feedback) => (
+          feedbacks.map((feedback) => (
             <div 
               key={feedback.id} 
               className={`bg-white dark:bg-slate-800 rounded-xl p-5 border transition-all hover:shadow-md ${

@@ -25,6 +25,18 @@ interface DashboardProps {
 export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onViewReport, age, gender, activityFactor, readOnly = false, patientId }) => {
   // Estado para o gráfico de evolução interativo
   const [evolutionMetric, setEvolutionMetric] = useState<'weight' | 'imc' | 'bodyFat' | 'muscleMass'>('weight');
+  const [measurementMetric, setMeasurementMetric] = useState<string>('waistCircumference');
+
+  const measurementConfig: Record<string, { label: string; color: string }> = {
+    waistCircumference: { label: 'Cintura', color: '#f59e0b' },
+    abdomenCircumference: { label: 'Abdome', color: '#ea580c' },
+    hipCircumference: { label: 'Quadril', color: '#8b5cf6' },
+    chestCircumference: { label: 'Tórax', color: '#06b6d4' },
+    armCircumference: { label: 'Braço', color: '#10b981' },
+    forearmCircumference: { label: 'Antebraço', color: '#14b8a6' },
+    thighCircumference: { label: 'Coxa', color: '#ec4899' },
+    calfCircumference: { label: 'Panturrilha', color: '#6366f1' },
+  };
   
   // Estado para Feedback
   const [feedbackText, setFeedbackText] = useState('');
@@ -959,10 +971,55 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
       {/* NOVO: Evolução de Medidas Corporais */}
       {current && (
         <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-2">
-                <Scale size={20} className="text-blue-500" />
-                Evolução de Medidas (cm)
-            </h3>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                    <Scale size={20} className="text-blue-500" />
+                    Evolução de Medidas (cm)
+                </h3>
+                
+                <select 
+                    value={measurementMetric} 
+                    onChange={(e) => setMeasurementMetric(e.target.value)}
+                    className="bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 outline-none cursor-pointer"
+                >
+                    {Object.entries(measurementConfig).map(([key, config]) => (
+                        <option key={key} value={key}>{config.label}</option>
+                    ))}
+                </select>
+            </div>
+
+            {/* Gráfico de Medidas */}
+            <div className="h-[300px] w-full mb-8">
+                <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                        <defs>
+                            <linearGradient id="colorMeasurement" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor={measurementConfig[measurementMetric]?.color || '#3b82f6'} stopOpacity={0.3}/>
+                                <stop offset="95%" stopColor={measurementConfig[measurementMetric]?.color || '#3b82f6'} stopOpacity={0}/>
+                            </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" strokeOpacity={0.1} />
+                        <XAxis dataKey="dateFormatted" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dy={10} />
+                        <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} domain={['auto', 'auto']} unit=" cm" />
+                        <Tooltip 
+                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                            cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '4 4' }}
+                            formatter={(value: number) => [`${value} cm`, measurementConfig[measurementMetric]?.label]}
+                            labelStyle={{ color: '#64748b', marginBottom: '0.5rem' }}
+                        />
+                        <Area 
+                            type="monotone" 
+                            dataKey={measurementMetric} 
+                            name={measurementConfig[measurementMetric]?.label}
+                            stroke={measurementConfig[measurementMetric]?.color || '#3b82f6'} 
+                            strokeWidth={3} 
+                            fillOpacity={1} 
+                            fill="url(#colorMeasurement)" 
+                            activeDot={{ r: 6, strokeWidth: 0, fill: measurementConfig[measurementMetric]?.color || '#3b82f6' }}
+                        />
+                    </AreaChart>
+                </ResponsiveContainer>
+            </div>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[

@@ -102,60 +102,6 @@ const App: React.FC = () => {
   const [showLongLoadingOptions, setShowLongLoadingOptions] = useState(false); // Controle para mostrar opção de fechar
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  // --- FEEDBACK STATE ---
-  const [unreadFeedbacksCount, setUnreadFeedbacksCount] = useState(0);
-
-  useEffect(() => {
-    if (userType === 'nutritionist' && session?.user?.id) {
-      fetchUnreadFeedbacksCount();
-      
-      // Subscribe to new feedbacks
-      const channel = supabase
-        .channel('feedbacks_count')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'feedbacks',
-          },
-          () => {
-            fetchUnreadFeedbacksCount();
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    }
-  }, [userType, session]);
-
-  const fetchUnreadFeedbacksCount = async () => {
-    try {
-      // Get all patients for this nutritionist
-      const { data: patientsData } = await supabase
-        .from('patients')
-        .select('id')
-        .eq('user_id', session?.user?.id);
-      
-      if (!patientsData || patientsData.length === 0) return;
-      
-      const patientIds = patientsData.map(p => p.id);
-
-      const { count, error } = await supabase
-        .from('feedbacks')
-        .select('*', { count: 'exact', head: true })
-        .in('patient_id', patientIds)
-        .eq('read', false);
-
-      if (error) throw error;
-      setUnreadFeedbacksCount(count || 0);
-    } catch (error) {
-      console.error('Erro ao buscar contagem de feedbacks:', error);
-    }
-  };
-
   // Efeito para monitorar tempo de carregamento
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
@@ -875,7 +821,6 @@ const App: React.FC = () => {
             isDarkMode={isDarkMode} 
             toggleTheme={toggleTheme} 
             onLogout={handleLogout}
-            unreadFeedbacksCount={unreadFeedbacksCount}
         />
       )}
 

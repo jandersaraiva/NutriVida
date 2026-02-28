@@ -29,6 +29,19 @@ export const PatientList: React.FC<PatientListProps> = ({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'active' | 'trash'>('active');
 
+  // Form State
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    birthDate: '', 
+    gender: 'Masculino' as 'Masculino' | 'Feminino',
+    profession: '',
+    phone: '',
+    instagram: '',
+    address: '',
+    activityFactor: 1.2 as ActivityLevel
+  });
+
   const handleOpenAdd = () => {
     setEditingId(null);
     setFormData({
@@ -51,19 +64,6 @@ export const PatientList: React.FC<PatientListProps> = ({
       handleOpenAdd();
     }
   }, [initialOpenModal]);
-
-  // Form State
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    birthDate: '', 
-    gender: 'Masculino' as 'Masculino' | 'Feminino',
-    profession: '',
-    phone: '',
-    instagram: '',
-    address: '',
-    activityFactor: 1.2 as ActivityLevel
-  });
 
   const filteredPatients = patients.filter(p => 
     p.status === viewMode && // Filter by active or trash status
