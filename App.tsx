@@ -150,17 +150,19 @@ const App: React.FC = () => {
                 setUserType('patient');
             } else {
                 // Tenta encontrar paciente pelo email para vincular (Primeiro Acesso do Paciente)
-                console.log("Tentando vincular paciente pelo email:", session.user.email);
+                const userEmail = session.user.email?.trim();
+                console.log("Tentando vincular paciente pelo email:", userEmail);
                 
+                // Busca insensível a maiúsculas/minúsculas
                 const { data: emailMatch, error: searchError } = await supabase
                     .from('patients')
                     .select('id')
-                    .eq('email', session.user.email)
+                    .ilike('email', userEmail || '') 
                     .is('auth_user_id', null) // Só vincula se ainda não tiver dono
                     .maybeSingle();
 
                 if (searchError) {
-                    console.error("Erro ao buscar paciente por email (Provável RLS):", searchError);
+                    console.error("Erro ao buscar paciente por email:", searchError);
                 }
 
                 if (emailMatch) {
@@ -177,18 +179,24 @@ const App: React.FC = () => {
                         setUserType('patient');
                         // O fluxo segue e vai buscar os dados desse paciente recém vinculado
                     } else {
-                        // Se falhar o update, assume nutri (fallback) ou trata erro
                         console.error("Erro ao vincular paciente (Update falhou):", updateError);
+                        // Fallback seguro
                         isNutritionist = true; 
                         setUserType('nutritionist');
                     }
                 } else {
                     console.log("Nenhum paciente encontrado com este email ou já vinculado.");
-                    // Caso de borda: usuário logado mas sem perfil nem paciente vinculado.
-                    // Pode ser um novo nutricionista que ainda não salvou perfil?
-                    // Vamos assumir nutricionista por padrão para permitir criar perfil.
+                    
+                    // CASO DE BORDA: Novo usuário que não é paciente (ou email não bateu)
+                    // Assume Nutricionista, mas força a tela de perfil se for novo
                     isNutritionist = true; 
                     setUserType('nutritionist');
+                    
+                    // Se não tem perfil criado ainda, avisa e joga pro perfil
+                    if (!profileCheck) {
+                        alert("Não encontramos uma ficha de paciente vinculada a este email.\n\nSe você é um PACIENTE, verifique se o email cadastrado pelo seu nutricionista é exatamente este.\n\nSe você é um NUTRICIONISTA, bem-vindo! Complete seu perfil a seguir.");
+                        setCurrentView('profile_settings');
+                    }
                 }
             }
         }
