@@ -153,48 +153,49 @@ const App: React.FC = () => {
                 const userEmail = session.user.email?.trim();
                 console.log("Tentando vincular paciente pelo email:", userEmail);
                 
-                // Busca insensível a maiúsculas/minúsculas
-                const { data: emailMatch, error: searchError } = await supabase
+                // TENTATIVA OTIMISTA: Tenta atualizar direto. 
+                // Isso ajuda se o RLS permitir UPDATE no próprio email mas bloquear SELECT geral.
+                const { data: updatedPatient, error: updateError } = await supabase
                     .from('patients')
-                    .select('id')
+                    .update({ auth_user_id: userId })
                     .ilike('email', userEmail || '') 
                     .is('auth_user_id', null) // Só vincula se ainda não tiver dono
+                    .select('id') // Retorna o ID se funcionou
                     .maybeSingle();
 
-                if (searchError) {
-                    console.error("Erro ao buscar paciente por email:", searchError);
+                if (updateError) {
+                    console.error("Erro na tentativa de vínculo direto (Update):", updateError);
                 }
 
-                if (emailMatch) {
-                    console.log("Paciente encontrado para vínculo:", emailMatch.id);
-                    // Vincula o usuário Auth ao registro de Paciente
-                    const { error: updateError } = await supabase
-                        .from('patients')
-                        .update({ auth_user_id: userId })
-                        .eq('id', emailMatch.id);
-                    
-                    if (!updateError) {
-                        console.log("Paciente vinculado com sucesso!");
-                        isNutritionist = false;
-                        setUserType('patient');
-                        // O fluxo segue e vai buscar os dados desse paciente recém vinculado
-                    } else {
-                        console.error("Erro ao vincular paciente (Update falhou):", updateError);
-                        // Fallback seguro
-                        isNutritionist = true; 
-                        setUserType('nutritionist');
-                    }
+                if (updatedPatient) {
+                    console.log("Paciente vinculado com sucesso via Update Direto!", updatedPatient.id);
+                    isNutritionist = false;
+                    setUserType('patient');
                 } else {
-                    console.log("Nenhum paciente encontrado com este email ou já vinculado.");
+                    // Se o update direto não funcionou, pode ser que o email não exista 
+                    // OU que o RLS bloqueie até o update.
+                    // Vamos tentar um SELECT simples apenas para diagnóstico (ou fallback)
+                    console.log("Vínculo direto falhou. Verificando se o email existe no banco...");
                     
-                    // CASO DE BORDA: Novo usuário que não é paciente (ou email não bateu)
-                    // Assume Nutricionista, mas força a tela de perfil se for novo
+                    // Fallback: Assume Nutricionista
                     isNutritionist = true; 
                     setUserType('nutritionist');
                     
                     // Se não tem perfil criado ainda, avisa e joga pro perfil
                     if (!profileCheck) {
-                        alert("Não encontramos uma ficha de paciente vinculada a este email.\n\nSe você é um PACIENTE, verifique se o email cadastrado pelo seu nutricionista é exatamente este.\n\nSe você é um NUTRICIONISTA, bem-vindo! Complete seu perfil a seguir.");
+                        // Verifica se existe ALGUM paciente com esse email (mesmo que já vinculado)
+                        // Apenas para dar uma mensagem de erro melhor
+                        const { count } = await supabase
+                            .from('patients')
+                            .select('id', { count: 'exact', head: true })
+                            .ilike('email', userEmail || '');
+                        
+                        let msg = "Não encontramos uma ficha de paciente vinculada a este email.";
+                        if (count && count > 0) {
+                            msg = "Existe uma ficha com este email, mas ela já pode estar vinculada a outro usuário.";
+                        }
+
+                        alert(`${msg}\n\nEmail logado: ${userEmail}\n\nSe você é um PACIENTE, peça ao seu nutricionista para verificar o email cadastrado.\nSe você é um NUTRICIONISTA, complete seu perfil a seguir.`);
                         setCurrentView('profile_settings');
                     }
                 }

@@ -286,12 +286,14 @@ export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAd
                             </div>
                             <h3 className="text-lg font-semibold text-slate-600 dark:text-slate-300">Agenda Livre</h3>
                             <p className="text-slate-400 mb-6 max-w-xs">Não há consultas marcadas para este dia.</p>
-                            <button 
-                                onClick={() => handleOpenAddModal(selectedDate)}
-                                className="text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
-                            >
-                                <Plus size={18} /> Agendar neste dia
-                            </button>
+                            {!readOnly && (
+                                <button 
+                                    onClick={() => handleOpenAddModal(selectedDate)}
+                                    className="text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                                >
+                                    <Plus size={18} /> Agendar neste dia
+                                </button>
+                            )}
                         </div>
                     ) : (
                         <div className="space-y-4">
