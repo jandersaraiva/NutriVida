@@ -26,33 +26,39 @@ interface InputGroupProps {
 }
 
 // Componente extraído para fora para evitar re-renderização e perda de foco
-const InputGroup: React.FC<InputGroupProps> = ({ label, name, unit, step = "0.1", type = "number", value, onChange, readOnly }) => (
-  <div className="flex flex-col">
-    <label htmlFor={name} className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{label}</label>
-    <div className="relative">
-      <input
-        required={name === 'date' || name === 'weight' || name === 'height'} // Apenas campos essenciais obrigatórios
-        readOnly={readOnly}
-        type={type}
-        id={name}
-        name={name}
-        step={step}
-        value={value}
-        onChange={onChange}
-        className={`w-full rounded-lg border px-4 py-2.5 outline-none transition-all ${
-            readOnly 
-            ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed'
-            : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
-        }`}
-      />
-      {unit && (
-        <span className="absolute right-4 top-2.5 text-slate-400 text-sm pointer-events-none">
-          {unit}
-        </span>
-      )}
+const InputGroup: React.FC<InputGroupProps> = ({ label, name, unit, step = "0.1", type = "number", value, onChange, readOnly }) => {
+  // Melhora UX: Mostra vazio ao invés de 0 para medidas corporais, facilitando a digitação
+  const isCircumference = name.includes('Circumference');
+  const displayValue = (value === 0 && isCircumference) ? '' : value;
+
+  return (
+    <div className="flex flex-col">
+      <label htmlFor={name} className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{label}</label>
+      <div className="relative">
+        <input
+          required={name === 'date' || name === 'weight' || name === 'height'} // Apenas campos essenciais obrigatórios
+          readOnly={readOnly}
+          type={type}
+          id={name}
+          name={name}
+          step={step}
+          value={displayValue}
+          onChange={onChange}
+          className={`w-full rounded-lg border px-4 py-2.5 outline-none transition-all ${
+              readOnly 
+              ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed'
+              : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+          }`}
+        />
+        {unit && (
+          <span className="absolute right-4 top-2.5 text-slate-400 text-sm pointer-events-none">
+            {unit}
+          </span>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastRecord, patientBirthDate, initialData, patientGender }) => {
   const [activeTab, setActiveTab] = useState<'bioimpedance' | 'measurements'>('bioimpedance');
@@ -193,8 +199,9 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Data da Avaliação (Comum) */}
-          <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
+          <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700 grid grid-cols-1 md:grid-cols-2 gap-4">
              <InputGroup label="Data da Avaliação" name="date" type="date" value={formData.date} onChange={handleChange} />
+             <InputGroup label="Altura" name="height" unit="m" step="0.01" value={formData.height} onChange={handleChange} />
           </div>
 
           {/* Abas de Navegação */}
@@ -264,11 +271,6 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
           {/* Conteúdo da Aba: Medidas Corporais */}
           {activeTab === 'measurements' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              {/* Altura (Fundamental) */}
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800/50">
-                 <InputGroup label="Altura" name="height" unit="m" step="0.01" value={formData.height} onChange={handleChange} />
-              </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <InputGroup label="Tórax" name="chestCircumference" unit="cm" step="0.5" value={formData.chestCircumference || 0} onChange={handleChange} />
                 <InputGroup label="Abdome" name="abdomenCircumference" unit="cm" step="0.5" value={formData.abdomenCircumference || 0} onChange={handleChange} />
