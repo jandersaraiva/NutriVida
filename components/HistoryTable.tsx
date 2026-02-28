@@ -140,6 +140,26 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, on
       setIsModalOpen(true);
   };
 
+  // Helper para formatar data sem problemas de timezone (UTC vs Local)
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '-';
+    const [year, month, day] = dateString.split('-');
+    return `${day}/${month}/${year}`;
+  };
+
+  const formatLongDate = (dateString: string) => {
+    if (!dateString) return '-';
+    const [year, month, day] = dateString.split('-').map(Number);
+    // Cria data ao meio-dia local para evitar problemas de virada de dia
+    const date = new Date(year, month - 1, day, 12, 0, 0);
+    return date.toLocaleDateString('pt-BR', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    });
+  };
+
   return (
     <>
     <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
@@ -176,7 +196,7 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, on
                 <td className="px-6 py-4 font-medium text-slate-700 dark:text-slate-200">
                   <div className="flex items-center gap-2 mb-1">
                     <Calendar size={14} className="text-slate-400" />
-                    {new Date(checkIn.date).toLocaleDateString('pt-BR')}
+                    {formatDate(checkIn.date)}
                   </div>
                   <span className="text-[10px] text-slate-400 font-normal ml-6 block">
                       {checkIn.delta.weight === null ? 'Avaliação Inicial' : 'Retorno'}
@@ -299,12 +319,7 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, on
             <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 mb-4">
                 <Calendar size={18} />
                 <span className="font-medium">
-                    {new Date(selectedCheckIn.date).toLocaleDateString('pt-BR', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                    })}
+                    {formatLongDate(selectedCheckIn.date)}
                 </span>
             </div>
 
