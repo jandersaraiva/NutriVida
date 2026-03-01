@@ -15,7 +15,7 @@ import { AnamnesisForm } from './components/AnamnesisForm';
 import { AssessmentReport } from './components/AssessmentReport';
 import { LoginScreen } from './components/LoginScreen';
 import { CheckIn, ViewState, Patient, DietPlan as DietPlanType, PatientTab, Appointment, Nutritionist, Anamnesis } from './types';
-import { User, Activity, Utensils, FileText, LayoutDashboard, Stethoscope, Sun, Moon, LogOut, XCircle, AlertCircle } from 'lucide-react';
+import { User, Activity, Utensils, FileText, LayoutDashboard, Stethoscope, Sun, Moon, LogOut, XCircle, AlertCircle, MessageSquare } from 'lucide-react';
 import { PatientProfile } from './components/PatientProfile';
 import { FeedbackList } from './components/FeedbackList';
 import { supabase } from './lib/supabase';
@@ -912,6 +912,13 @@ const App: React.FC = () => {
 
               {/* Mobile Header Buttons (visible on all screens on mobile since sidebar is bottom nav) */}
               <div className="flex gap-2 lg:hidden">
+                 <button 
+                    onClick={() => setCurrentView('feedbacks')} 
+                    className={`p-2 rounded-full border transition-colors shadow-sm ${currentView === 'feedbacks' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400'}`}
+                    title="Feedbacks"
+                 >
+                    <MessageSquare size={20} />
+                 </button>
                  <button 
                     onClick={toggleTheme} 
                     className="p-2 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors shadow-sm"

@@ -183,6 +183,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
         const color = isGood ? 'text-emerald-600 dark:text-emerald-400' : isBad ? 'text-rose-600 dark:text-rose-400' : 'text-slate-500 dark:text-slate-400';
         const bgColor = isGood ? 'bg-emerald-50 dark:bg-emerald-900/20' : isBad ? 'bg-rose-50 dark:bg-rose-900/20' : 'bg-slate-50 dark:bg-slate-700/50';
         
+        // Determine color for percentage separately (e.g. if mass kg went up but % went down)
+        // For muscle: positive % is good. For fat: negative % is good.
+        const isMuscle = label === 'Massa Muscular';
+        const isFat = label === 'Gordura Corporal';
+        
+        let percColor = 'text-slate-400 dark:text-slate-500';
+        if (Math.abs(diffPerc) > 0.1) {
+            if (isMuscle) percColor = diffPerc > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
+            if (isFat) percColor = diffPerc < 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
+        }
+
         return (
             <div className={`flex-1 p-4 rounded-xl border border-slate-100 dark:border-slate-700 flex items-center justify-between ${bgColor}`}>
                 <div className="flex items-center gap-3">
@@ -199,9 +210,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
                         {diffKg > 0 ? <ArrowUp size={16} strokeWidth={3} /> : diffKg < 0 ? <ArrowDown size={16} strokeWidth={3} /> : <Minus size={16} />}
                         <span>{Math.abs(diffKg).toFixed(2)} kg</span>
                     </div>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
-                        ({diffPerc > 0 ? '+' : ''}{diffPerc.toFixed(1)}%) vs {comparisonDate}
-                    </span>
+                    <div className={`text-xs font-medium flex items-center justify-end gap-1 ${percColor}`}>
+                        <span>{diffPerc > 0 ? '+' : ''}{diffPerc.toFixed(1)}%</span>
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">vs {comparisonDate}</span>
+                    </div>
                 </div>
             </div>
         );

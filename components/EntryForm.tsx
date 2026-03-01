@@ -26,11 +26,7 @@ interface InputGroupProps {
 }
 
 // Componente extraído para fora para evitar re-renderização e perda de foco
-const InputGroup: React.FC<InputGroupProps> = ({ label, name, unit, step = "0.1", type = "number", value, onChange, readOnly }) => {
-  // Melhora UX: Mostra vazio ao invés de 0 para medidas corporais, facilitando a digitação
-  const isCircumference = name.includes('Circumference');
-  const displayValue = (value === 0 && isCircumference) ? '' : value;
-
+const InputGroup: React.FC<InputGroupProps> = ({ label, name, unit, value, onChange, readOnly, step }) => {
   return (
     <div className="flex flex-col">
       <label htmlFor={name} className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{label}</label>
@@ -38,11 +34,12 @@ const InputGroup: React.FC<InputGroupProps> = ({ label, name, unit, step = "0.1"
         <input
           required={name === 'date' || name === 'weight' || name === 'height'} // Apenas campos essenciais obrigatórios
           readOnly={readOnly}
-          type={type}
+          type={name === 'date' ? 'date' : 'text'}
+          inputMode={name === 'date' ? undefined : 'decimal'}
+          step={step}
           id={name}
           name={name}
-          step={step}
-          value={displayValue}
+          value={value}
           onChange={onChange}
           className={`w-full rounded-lg border px-4 py-2.5 outline-none transition-all ${
               readOnly 
@@ -76,58 +73,52 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
     return age;
   };
 
-  const [formData, setFormData] = useState<Omit<CheckIn, 'id'>>({
+  // State agora usa strings para permitir edição flexível (ex: apagar o 0, digitar vírgula)
+  const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
-    height: lastRecord?.height || 1.72,
-    weight: lastRecord?.weight || 0,
-    imc: 0,
-    bodyFat: 0,
-    muscleMass: 0,
-    bmr: 0,
-    age: patientBirthDate ? calculateAgeAtDate(patientBirthDate, new Date().toISOString().split('T')[0]) : (lastRecord?.age || 33),
-    bodyAge: lastRecord?.bodyAge || 0,
-    visceralFat: 0,
-    waistCircumference: 0,
-    hipCircumference: 0,
-    chestCircumference: 0,
-    abdomenCircumference: 0,
-    armCircumference: 0,
-    forearmCircumference: 0,
-    wristCircumference: 0,
-    thighCircumference: 0,
-    calfCircumference: 0,
+    height: lastRecord?.height?.toString() || '1.72',
+    weight: lastRecord?.weight?.toString() || '',
+    imc: '',
+    bodyFat: '',
+    muscleMass: '',
+    bmr: '',
+    age: patientBirthDate ? calculateAgeAtDate(patientBirthDate, new Date().toISOString().split('T')[0]).toString() : (lastRecord?.age?.toString() || '33'),
+    bodyAge: lastRecord?.bodyAge?.toString() || '',
+    visceralFat: '',
+    waistCircumference: '',
+    hipCircumference: '',
+    chestCircumference: '',
+    abdomenCircumference: '',
+    armCircumference: '',
+    forearmCircumference: '',
+    wristCircumference: '',
+    thighCircumference: '',
+    calfCircumference: '',
   });
 
   // Load initial data for editing
   useEffect(() => {
     if (initialData) {
-        const { 
-            date, height, weight, imc, bodyFat, muscleMass, 
-            bmr, age, bodyAge, visceralFat, waistCircumference, hipCircumference,
-            chestCircumference, abdomenCircumference, armCircumference, 
-            forearmCircumference, wristCircumference, thighCircumference, calfCircumference
-        } = initialData;
-
         setFormData({
-            date: date || new Date().toISOString().split('T')[0],
-            height: height || 0,
-            weight: weight || 0,
-            imc: imc || 0,
-            bodyFat: bodyFat || 0,
-            muscleMass: muscleMass || 0,
-            bmr: bmr || 0,
-            age: age || 0,
-            bodyAge: bodyAge || 0,
-            visceralFat: visceralFat || 0,
-            waistCircumference: waistCircumference || 0,
-            hipCircumference: hipCircumference || 0,
-            chestCircumference: chestCircumference || 0,
-            abdomenCircumference: abdomenCircumference || 0,
-            armCircumference: armCircumference || 0,
-            forearmCircumference: forearmCircumference || 0,
-            wristCircumference: wristCircumference || 0,
-            thighCircumference: thighCircumference || 0,
-            calfCircumference: calfCircumference || 0,
+            date: initialData.date || new Date().toISOString().split('T')[0],
+            height: initialData.height?.toString() || '',
+            weight: initialData.weight?.toString() || '',
+            imc: initialData.imc?.toString() || '',
+            bodyFat: initialData.bodyFat?.toString() || '',
+            muscleMass: initialData.muscleMass?.toString() || '',
+            bmr: initialData.bmr?.toString() || '',
+            age: initialData.age?.toString() || '',
+            bodyAge: initialData.bodyAge?.toString() || '',
+            visceralFat: initialData.visceralFat?.toString() || '',
+            waistCircumference: initialData.waistCircumference?.toString() || '',
+            hipCircumference: initialData.hipCircumference?.toString() || '',
+            chestCircumference: initialData.chestCircumference?.toString() || '',
+            abdomenCircumference: initialData.abdomenCircumference?.toString() || '',
+            armCircumference: initialData.armCircumference?.toString() || '',
+            forearmCircumference: initialData.forearmCircumference?.toString() || '',
+            wristCircumference: initialData.wristCircumference?.toString() || '',
+            thighCircumference: initialData.thighCircumference?.toString() || '',
+            calfCircumference: initialData.calfCircumference?.toString() || '',
         });
     }
   }, [initialData]);
@@ -135,24 +126,43 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
   // Recalcula idade se a data da avaliação mudar
   useEffect(() => {
     if (patientBirthDate && formData.date) {
-        setFormData(prev => ({ ...prev, age: calculateAgeAtDate(patientBirthDate, prev.date) }));
+        const newAge = calculateAgeAtDate(patientBirthDate, formData.date);
+        setFormData(prev => ({ ...prev, age: newAge.toString() }));
     }
   }, [formData.date, patientBirthDate]);
 
+  // Helper para converter string numérica (com . ou ,) para float
+  const parseNumber = (val: string) => {
+      if (!val) return 0;
+      return parseFloat(val.replace(',', '.'));
+  };
+
   // Auto-calculate IMC when weight or height changes
   useEffect(() => {
-    if (formData.weight > 0 && formData.height > 0) {
-      const imc = formData.weight / (formData.height * formData.height);
-      setFormData(prev => ({ ...prev, imc: parseFloat(imc.toFixed(1)) }));
+    const w = parseNumber(formData.weight);
+    const h = parseNumber(formData.height);
+    
+    if (w > 0 && h > 0) {
+      const imc = w / (h * h);
+      // Só atualiza se o valor calculado for diferente do atual (para evitar loop se usuário estiver editando)
+      // Mas aqui é calculado, então sobrescrevemos.
+      // Para evitar conflito de edição, idealmente só calculamos se o usuário não estiver editando o IMC manualmente.
+      // Como o IMC é readonly ou auto-calculado, vamos assumir que sobrescrever é ok, 
+      // mas vamos formatar para string com 1 casa decimal.
+      setFormData(prev => ({ ...prev, imc: imc.toFixed(1).replace('.', ',') }));
     }
   }, [formData.weight, formData.height]);
 
   // Auto-calculate BMR (Mifflin-St Jeor)
   useEffect(() => {
-    if (formData.weight > 0 && formData.height > 0 && formData.age > 0 && patientGender) {
-        const weightPart = 10 * formData.weight;
-        const heightPart = 6.25 * (formData.height * 100);
-        const agePart = 5 * formData.age;
+    const w = parseNumber(formData.weight);
+    const h = parseNumber(formData.height);
+    const a = parseNumber(formData.age);
+
+    if (w > 0 && h > 0 && a > 0 && patientGender) {
+        const weightPart = 10 * w;
+        const heightPart = 6.25 * (h * 100);
+        const agePart = 5 * a;
         
         let bmr = 0;
         if (patientGender === 'Masculino') {
@@ -161,24 +171,59 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
             bmr = weightPart + heightPart - agePart - 161;
         }
         
-        setFormData(prev => ({ ...prev, bmr: Math.round(bmr) }));
+        setFormData(prev => ({ ...prev, bmr: Math.round(bmr).toString() }));
     }
   }, [formData.weight, formData.height, formData.age, patientGender]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'date' ? value : parseFloat(value) || 0
-    }));
+    let { name, value } = e.target;
+    
+    if (name === 'date') {
+        setFormData(prev => ({ ...prev, [name]: value }));
+        return;
+    }
+
+    // Fix: Remove leading zero if user types a number after 0 (e.g., "05" -> "5")
+    // Keeps "0," or "0." as valid
+    if (value.length > 1 && value.startsWith('0') && !['.', ','].includes(value[1])) {
+        value = value.substring(1);
+    }
+
+    // Validação para permitir apenas números, ponto e vírgula
+    // Permite string vazia para apagar o campo
+    if (value === '' || /^[0-9]*[.,]?[0-9]*$/.test(value)) {
+        setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({
-      ...formData,
+    
+    // Converte de volta para o formato CheckIn (números)
+    const payload: CheckIn = {
       id: initialData?.id || generateId(),
-    });
+      date: formData.date,
+      height: parseNumber(formData.height),
+      weight: parseNumber(formData.weight),
+      imc: parseNumber(formData.imc),
+      bodyFat: parseNumber(formData.bodyFat),
+      muscleMass: parseNumber(formData.muscleMass),
+      bmr: parseNumber(formData.bmr),
+      age: parseNumber(formData.age),
+      bodyAge: parseNumber(formData.bodyAge),
+      visceralFat: parseNumber(formData.visceralFat),
+      waistCircumference: parseNumber(formData.waistCircumference),
+      hipCircumference: parseNumber(formData.hipCircumference),
+      chestCircumference: parseNumber(formData.chestCircumference),
+      abdomenCircumference: parseNumber(formData.abdomenCircumference),
+      armCircumference: parseNumber(formData.armCircumference),
+      forearmCircumference: parseNumber(formData.forearmCircumference),
+      wristCircumference: parseNumber(formData.wristCircumference),
+      thighCircumference: parseNumber(formData.thighCircumference),
+      calfCircumference: parseNumber(formData.calfCircumference),
+    };
+
+    onSave(payload);
   };
 
   return (
@@ -272,26 +317,26 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
           {activeTab === 'measurements' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <InputGroup label="Tórax" name="chestCircumference" unit="cm" step="0.5" value={formData.chestCircumference || 0} onChange={handleChange} />
-                <InputGroup label="Abdome" name="abdomenCircumference" unit="cm" step="0.5" value={formData.abdomenCircumference || 0} onChange={handleChange} />
+                <InputGroup label="Tórax" name="chestCircumference" unit="cm" step="0.5" value={formData.chestCircumference} onChange={handleChange} />
+                <InputGroup label="Abdome" name="abdomenCircumference" unit="cm" step="0.5" value={formData.abdomenCircumference} onChange={handleChange} />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <InputGroup label="Cintura" name="waistCircumference" unit="cm" step="0.5" value={formData.waistCircumference || 0} onChange={handleChange} />
-                <InputGroup label="Quadril" name="hipCircumference" unit="cm" step="0.5" value={formData.hipCircumference || 0} onChange={handleChange} />
+                <InputGroup label="Cintura" name="waistCircumference" unit="cm" step="0.5" value={formData.waistCircumference} onChange={handleChange} />
+                <InputGroup label="Quadril" name="hipCircumference" unit="cm" step="0.5" value={formData.hipCircumference} onChange={handleChange} />
               </div>
 
               <h3 className="font-semibold text-slate-700 dark:text-slate-300 text-sm uppercase tracking-wide pt-2 border-t border-slate-100 dark:border-slate-700">Membros Superiores</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <InputGroup label="Braço" name="armCircumference" unit="cm" step="0.5" value={formData.armCircumference || 0} onChange={handleChange} />
-                <InputGroup label="Antebraço" name="forearmCircumference" unit="cm" step="0.5" value={formData.forearmCircumference || 0} onChange={handleChange} />
-                <InputGroup label="Punho" name="wristCircumference" unit="cm" step="0.5" value={formData.wristCircumference || 0} onChange={handleChange} />
+                <InputGroup label="Braço" name="armCircumference" unit="cm" step="0.5" value={formData.armCircumference} onChange={handleChange} />
+                <InputGroup label="Antebraço" name="forearmCircumference" unit="cm" step="0.5" value={formData.forearmCircumference} onChange={handleChange} />
+                <InputGroup label="Punho" name="wristCircumference" unit="cm" step="0.5" value={formData.wristCircumference} onChange={handleChange} />
               </div>
 
               <h3 className="font-semibold text-slate-700 dark:text-slate-300 text-sm uppercase tracking-wide pt-2 border-t border-slate-100 dark:border-slate-700">Membros Inferiores</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <InputGroup label="Coxa" name="thighCircumference" unit="cm" step="0.5" value={formData.thighCircumference || 0} onChange={handleChange} />
-                <InputGroup label="Panturrilha" name="calfCircumference" unit="cm" step="0.5" value={formData.calfCircumference || 0} onChange={handleChange} />
+                <InputGroup label="Coxa" name="thighCircumference" unit="cm" step="0.5" value={formData.thighCircumference} onChange={handleChange} />
+                <InputGroup label="Panturrilha" name="calfCircumference" unit="cm" step="0.5" value={formData.calfCircumference} onChange={handleChange} />
               </div>
             </div>
           )}

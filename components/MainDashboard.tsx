@@ -48,8 +48,18 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({ patients, appointm
             <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Painel Geral</h2>
             <p className="text-slate-500 dark:text-slate-400">Bem-vindo ao NutriVida. Aqui está o resumo da sua clínica hoje.</p>
         </div>
-        <div className="text-sm text-slate-400 dark:text-slate-500 font-medium bg-white dark:bg-slate-800 px-4 py-2 rounded-full border border-slate-100 dark:border-slate-700 shadow-sm">
-            {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
+        <div className="flex items-center gap-3 bg-white dark:bg-slate-800 px-4 py-2 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
+            <div className="bg-blue-50 dark:bg-blue-900/30 p-2 rounded-lg text-blue-600 dark:text-blue-400">
+                <CalendarDays size={20} />
+            </div>
+            <div className="text-right">
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
+                    {new Date().toLocaleDateString('pt-BR', { weekday: 'long' })}
+                </p>
+                <p className="text-sm font-bold text-slate-800 dark:text-slate-100 leading-none">
+                    {new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' })}
+                </p>
+            </div>
         </div>
       </div>
 

@@ -16,9 +16,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, isD
     { id: 'patients', label: 'Pacientes', icon: Users },
     { id: 'select_patient_for_entry', label: 'Novo', icon: PlusCircle, isAction: true },
     { id: 'schedule', label: 'Agenda', icon: CalendarDays },
-    { id: 'feedbacks', label: 'Feedbacks', icon: MessageSquare },
     { id: 'profile_settings', label: 'Perfil', icon: Settings },
   ];
+
+  const feedbackItem = { id: 'feedbacks', label: 'Feedbacks', icon: MessageSquare };
 
   // Lógica de destaque
   const isItemActive = (id: string) => {
@@ -58,9 +59,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, isD
                 >
                   <Icon size={22} className={isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'} />
                   <span>{item.label}</span>
-                  {item.badge && item.badge > 0 && (
+                  {(item as any).badge && (item as any).badge > 0 && (
                     <span className="absolute right-4 bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] flex items-center justify-center">
-                        {item.badge}
+                        {(item as any).badge}
                     </span>
                   )}
                 </button>
@@ -70,6 +71,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, isD
         </div>
 
         <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+          {/* Feedback Button (Moved to bottom) */}
+          <button
+            onClick={() => onViewChange(feedbackItem.id as ViewState)}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group font-medium relative ${
+                isItemActive(feedbackItem.id)
+                  ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 shadow-sm ring-1 ring-blue-100 dark:ring-blue-800' 
+                  : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'
+            }`}
+          >
+            <feedbackItem.icon size={22} className={isItemActive(feedbackItem.id) ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'} />
+            <span>{feedbackItem.label}</span>
+          </button>
+
           <button
             onClick={toggleTheme}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200 transition-colors"
@@ -97,7 +111,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, isD
             const Icon = item.icon;
             const isActive = isItemActive(item.id);
             
-            if (item.isAction) {
+            if ((item as any).isAction) {
               return (
                 <div key={item.id} className="relative -top-5">
                   <button
@@ -122,9 +136,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, isD
               >
                 <Icon size={isActive ? 24 : 22} strokeWidth={isActive ? 2.5 : 2} className="transition-all" />
                 <span className="text-[10px] font-medium">{item.label}</span>
-                {item.badge && item.badge > 0 && (
+                {(item as any).badge && (item as any).badge > 0 && (
                     <span className="absolute top-2 right-4 bg-rose-500 text-white text-[9px] font-bold px-1 py-0.5 rounded-full min-w-[14px] flex items-center justify-center">
-                        {item.badge}
+                        {(item as any).badge}
                     </span>
                 )}
               </button>
