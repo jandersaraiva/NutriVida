@@ -9,7 +9,8 @@ interface PatientListProps {
   onUpdatePatient: (patient: Patient) => void;
   onTrashPatient: (patientId: string) => void;
   onRestorePatient: (patientId: string) => void;
-  initialOpenModal?: boolean; 
+  initialOpenModal?: boolean;
+  onCloseModal?: () => void;
 }
 
 // Helper seguro para IDs
@@ -22,7 +23,8 @@ export const PatientList: React.FC<PatientListProps> = ({
   onUpdatePatient,
   onTrashPatient,
   onRestorePatient,
-  initialOpenModal = false
+  initialOpenModal = false,
+  onCloseModal
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -333,7 +335,10 @@ export const PatientList: React.FC<PatientListProps> = ({
                     <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
                         {editingId ? 'Editar Paciente' : 'Novo Paciente'}
                     </h3>
-                    <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
+                    <button onClick={() => {
+                        setShowModal(false);
+                        onCloseModal?.();
+                    }} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
                         <X size={24} />
                     </button>
                 </div>
@@ -475,7 +480,10 @@ export const PatientList: React.FC<PatientListProps> = ({
                     <div className="flex gap-3 justify-end pt-6 border-t border-slate-50 dark:border-slate-700 mt-2">
                         <button 
                             type="button"
-                            onClick={() => setShowModal(false)}
+                            onClick={() => {
+                                setShowModal(false);
+                                onCloseModal?.();
+                            }}
                             className="px-6 py-3 text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl transition-colors"
                         >
                             Cancelar

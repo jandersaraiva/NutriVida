@@ -135,10 +135,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
     const currentFatKg = current.weight * (current.bodyFat / 100);
     const prevFatKg = monthComparison.weight * (monthComparison.bodyFat / 100);
     const diffFatKg = currentFatKg - prevFatKg;
+    const diffFatPerc = current.bodyFat - monthComparison.bodyFat;
 
     const currentMuscleKg = current.weight * (current.muscleMass / 100);
     const prevMuscleKg = monthComparison.weight * (monthComparison.muscleMass / 100);
     const diffMuscleKg = currentMuscleKg - prevMuscleKg;
+    const diffMusclePerc = current.muscleMass - monthComparison.muscleMass;
 
     // Determinar Status
     const fatStatus = diffFatKg < -0.1 ? 'good' : diffFatKg > 0.1 ? 'bad' : 'neutral';
@@ -175,7 +177,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
         veredictColor = "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400";
     }
 
-    const StatBlock = ({ label, valueKg, diffKg, status, icon: Icon }: any) => {
+    const StatBlock = ({ label, valueKg, diffKg, diffPerc, status, icon: Icon }: any) => {
         const isGood = status === 'good';
         const isBad = status === 'bad';
         const color = isGood ? 'text-emerald-600 dark:text-emerald-400' : isBad ? 'text-rose-600 dark:text-rose-400' : 'text-slate-500 dark:text-slate-400';
@@ -197,7 +199,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
                         {diffKg > 0 ? <ArrowUp size={16} strokeWidth={3} /> : diffKg < 0 ? <ArrowDown size={16} strokeWidth={3} /> : <Minus size={16} />}
                         <span>{Math.abs(diffKg).toFixed(2)} kg</span>
                     </div>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">vs {comparisonDate}</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                        ({diffPerc > 0 ? '+' : ''}{diffPerc.toFixed(1)}%) vs {comparisonDate}
+                    </span>
                 </div>
             </div>
         );
@@ -215,6 +219,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
                     label="Gordura Corporal" 
                     valueKg={currentFatKg} 
                     diffKg={diffFatKg} 
+                    diffPerc={diffFatPerc}
                     status={fatStatus} 
                     icon={Flame} 
                 />
@@ -222,6 +227,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
                     label="Massa Muscular" 
                     valueKg={currentMuscleKg} 
                     diffKg={diffMuscleKg} 
+                    diffPerc={diffMusclePerc}
                     status={muscleStatus} 
                     icon={Dumbbell} 
                 />

@@ -1010,6 +1010,12 @@ const App: React.FC = () => {
               onTrashPatient={handleTrashPatient}
               onRestorePatient={handleRestorePatient}
               initialOpenModal={shouldOpenAddPatientModal}
+              onCloseModal={() => {
+                if (shouldOpenAddPatientModal) {
+                    setCurrentView('select_patient_for_entry');
+                    setShouldOpenAddPatientModal(false);
+                }
+              }}
             />
           )}
 
