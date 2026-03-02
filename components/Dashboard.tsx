@@ -7,7 +7,7 @@ import {
 import { 
   Scale, Activity, Zap, Flame, PieChart, Hourglass, TrendingDown, TrendingUp, 
   Calculator, Calendar, AlertTriangle, CheckCircle, FileText, BarChart2, Dumbbell, Minus, ArrowUp, ArrowDown, Info,
-  MessageSquare, Send
+  MessageSquare, Send, Droplets
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -20,12 +20,29 @@ interface DashboardProps {
   activityFactor: ActivityLevel; // Novo prop para calcular GET
   readOnly?: boolean;
   patientId?: string; // ID do paciente para envio de feedback
+  waterTarget?: number; // Meta de água em ml
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onViewReport, age, gender, activityFactor, readOnly = false, patientId }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onViewReport, age, gender, activityFactor, readOnly = false, patientId, waterTarget = 2500 }) => {
   // Estado para o gráfico de evolução interativo
   const [evolutionMetric, setEvolutionMetric] = useState<'weight' | 'imc' | 'bodyFat' | 'muscleMass'>('weight');
   const [measurementMetric, setMeasurementMetric] = useState<string>('waistCircumference');
+
+  // Estado para Water Tracker
+  const [waterIntake, setWaterIntake] = useState(0);
+  const [waterHistory, setWaterHistory] = useState<number[]>([]);
+
+  const handleAddWater = (amount: number) => {
+    setWaterIntake(prev => prev + amount);
+    setWaterHistory(prev => [...prev, amount]);
+  };
+
+  const handleRemoveLastWater = () => {
+    if (waterHistory.length === 0) return;
+    const last = waterHistory[waterHistory.length - 1];
+    setWaterIntake(prev => Math.max(0, prev - last));
+    setWaterHistory(prev => prev.slice(0, -1));
+  };
 
   const measurementConfig: Record<string, { label: string; color: string }> = {
     waistCircumference: { label: 'Cintura', color: '#f59e0b' },

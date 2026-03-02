@@ -15,9 +15,11 @@ import { AnamnesisForm } from './components/AnamnesisForm';
 import { AssessmentReport } from './components/AssessmentReport';
 import { LoginScreen } from './components/LoginScreen';
 import { CheckIn, ViewState, Patient, DietPlan as DietPlanType, PatientTab, Appointment, Nutritionist, Anamnesis } from './types';
-import { User, Activity, Utensils, FileText, LayoutDashboard, Stethoscope, Sun, Moon, LogOut, XCircle, AlertCircle, MessageSquare } from 'lucide-react';
+import { User, Activity, Utensils, FileText, LayoutDashboard, Stethoscope, Sun, Moon, LogOut, XCircle, AlertCircle, MessageSquare, ChefHat, BookOpen } from 'lucide-react';
 import { PatientProfile } from './components/PatientProfile';
 import { FeedbackList } from './components/FeedbackList';
+import { RecipeLibrary } from './components/RecipeLibrary';
+import { FoodDiary } from './components/FoodDiary';
 import { supabase } from './lib/supabase';
 import { Session } from '@supabase/supabase-js';
 
@@ -804,15 +806,23 @@ const App: React.FC = () => {
   };
 
   // Render Tabs Logic
-  const renderTabs = () => (
-    <div className="flex items-center gap-1 bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 mb-6 w-full max-w-2xl mx-auto print:hidden overflow-x-auto">
-      {[
+  const renderTabs = () => {
+    const tabs = [
         { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard },
         { id: 'anamnesis', label: 'Anamnese', icon: Stethoscope },
         { id: 'history', label: 'Histórico', icon: FileText },
         { id: 'diet', label: 'Dieta', icon: Utensils },
         { id: 'profile', label: 'Perfil', icon: User },
-      ].map((tab) => {
+    ];
+
+    if (userType === 'patient') {
+        tabs.push({ id: 'recipes', label: 'Receitas', icon: ChefHat });
+        tabs.push({ id: 'food_diary', label: 'Diário', icon: BookOpen });
+    }
+
+    return (
+    <div className="flex items-center gap-1 bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 mb-6 w-full max-w-2xl mx-auto print:hidden overflow-x-auto">
+      {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeTab === tab.id;
         return (
@@ -831,7 +841,8 @@ const App: React.FC = () => {
         )
       })}
     </div>
-  );
+    );
+  };
 
   // --- RENDER CONDICIONAL (AUTH vs APP) ---
   if (isLoadingSession) {
@@ -860,10 +871,12 @@ const App: React.FC = () => {
       {userType === 'patient' && activePatient ? (
         <PatientSidebar 
             currentView={
-                currentView === 'schedule' ? 'schedule' as ViewState :
-                activeTab === 'diet' ? 'diet' as ViewState :
-                activeTab === 'history' ? 'history' as ViewState :
-                'home' as ViewState
+                currentView === 'schedule' ? 'schedule' :
+                activeTab === 'diet' ? 'diet' :
+                activeTab === 'history' ? 'history' :
+                activeTab === 'recipes' ? 'recipes' :
+                activeTab === 'food_diary' ? 'food_diary' :
+                'home'
             } 
             onViewChange={(view) => {
                 const viewId = view as string;
@@ -874,6 +887,8 @@ const App: React.FC = () => {
                     if (viewId === 'home') setActiveTab('overview');
                     if (viewId === 'history') setActiveTab('history');
                     if (viewId === 'diet') setActiveTab('diet');
+                    if (viewId === 'recipes') setActiveTab('recipes');
+                    if (viewId === 'food_diary') setActiveTab('food_diary');
                 }
             }} 
             isDarkMode={isDarkMode} 
@@ -1121,6 +1136,7 @@ const App: React.FC = () => {
                   activityFactor={activePatient.activityFactor || 1.2}
                   readOnly={userType === 'patient'}
                   patientId={activePatient.id}
+                  waterTarget={activePatient.dietPlans?.find(p => p.status === 'active')?.waterTarget}
                 />
               )}
 
@@ -1159,6 +1175,14 @@ const App: React.FC = () => {
                     onUpdate={handleUpdatePatient}
                     readOnly={userType === 'patient'}
                 />
+              )}
+
+              {activeTab === 'recipes' && (
+                <RecipeLibrary />
+              )}
+
+              {activeTab === 'food_diary' && (
+                <FoodDiary dietPlan={activePatient.dietPlans.find(p => p.status === 'active')} />
               )}
             </div>
           )}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { DietPlan as DietPlanType, Meal, FoodItem, Nutritionist } from '../types';
-import { Clock, Plus, Trash2, Edit2, Save, X, ChefHat, Copy, Check, PieChart, Search, Calendar, Archive, FilePlus, ChevronLeft, Zap, Target, Droplets, FileDown } from 'lucide-react';
+import { Clock, Plus, Trash2, Edit2, Save, X, ChefHat, Copy, Check, PieChart, Search, Calendar, Archive, FilePlus, ChevronLeft, Zap, Target, Droplets, FileDown, ShoppingCart } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { DietPDFReport } from './DietPDFReport';
@@ -230,7 +230,57 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
   const [newPlanType, setNewPlanType] = useState<'blank' | 'copy'>('copy');
 
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [showShoppingList, setShowShoppingList] = useState(false);
   const pdfRef = React.useRef<HTMLDivElement>(null);
+
+  // --- SHOPPING LIST LOGIC ---
+  const shoppingList = useMemo(() => {
+    if (!currentPlan) return [];
+    
+    // Map to store aggregated items: key = "name_unit"
+    const itemsMap: Record<string, { name: string, quantity: number, unit: string }> = {};
+
+    const processMeals = (meals: Meal[]) => {
+        meals.forEach(meal => {
+            // Skip cheat meals if desired, or include them if they have items
+            if (meal.isCheatMeal && meal.items.length === 0) return;
+
+            meal.items.forEach(item => {
+                const name = item.name.trim();
+                if (!name) return;
+                
+                const unit = item.unit || 'g';
+                const key = `${name.toLowerCase()}_${unit}`;
+                
+                if (!itemsMap[key]) {
+                    itemsMap[key] = { name, quantity: 0, unit };
+                }
+                
+                // Extract numeric quantity safely
+                const qtyStr = String(item.quantity).replace(',', '.');
+                const qty = parseFloat(qtyStr.replace(/[^0-9.]/g, '')) || 0;
+                
+                itemsMap[key].quantity += qty;
+            });
+        });
+    };
+
+    if (currentPlan.days && currentPlan.days.length > 0) {
+        currentPlan.days.forEach(d => processMeals(d.meals));
+    } else {
+        processMeals(currentPlan.meals || []);
+    }
+
+    return Object.values(itemsMap).sort((a, b) => a.name.localeCompare(b.name));
+  }, [currentPlan]);
+
+  const handleCopyShoppingList = () => {
+      const text = `🛒 Lista de Compras - ${patientName}\n\n` + 
+          shoppingList.map(item => `- ${item.name}: ${item.quantity.toFixed(0)}${item.unit}`).join('\n');
+      
+      navigator.clipboard.writeText(text);
+      alert('Lista de compras copiada para a área de transferência!');
+  };
 
   const handleGeneratePDF = async () => {
     if (!currentPlan || !pdfRef.current) return;
@@ -917,6 +967,9 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                             ) : (
                                 <>
 
+                                    <button onClick={() => setShowShoppingList(true)} className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors font-medium text-sm">
+                                        <ShoppingCart size={16} /> <span className="hidden sm:inline">Lista de Compras</span>
+                                    </button>
                                     <button onClick={handleGeneratePDF} disabled={isGeneratingPDF} className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors font-medium text-sm disabled:opacity-50">
                                         <FileDown size={16} /> <span className="hidden sm:inline">{isGeneratingPDF ? 'Gerando...' : 'Baixar PDF'}</span>
                                     </button>
@@ -1292,6 +1345,51 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                     <div className="flex justify-end gap-3 mt-6">
                         <button onClick={() => setShowNewPlanModal(false)} className="px-4 py-2 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg text-sm font-medium">Cancelar</button>
                         <button onClick={confirmCreateNewPlan} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium shadow-sm">Criar Ciclo</button>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* MODAL: SHOPPING LIST */}
+        {showShoppingList && (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-xl border border-slate-200 dark:border-slate-700 max-h-[80vh] flex flex-col">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                            <ShoppingCart size={20} className="text-blue-600" />
+                            Lista de Compras
+                        </h3>
+                        <button onClick={() => setShowShoppingList(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                            <X size={20} />
+                        </button>
+                    </div>
+                    
+                    <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
+                        {shoppingList.length > 0 ? (
+                            <ul className="space-y-2">
+                                {shoppingList.map((item, idx) => (
+                                    <li key={idx} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-700">
+                                        <span className="font-medium text-slate-700 dark:text-slate-300 capitalize">{item.name}</span>
+                                        <span className="font-bold text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 px-2 py-1 rounded border border-slate-200 dark:border-slate-700 text-sm">
+                                            {item.quantity.toFixed(0)}{item.unit}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <div className="text-center py-8 text-slate-400">
+                                Nenhuma lista gerada. Adicione alimentos ao plano.
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700 flex gap-3">
+                        <button 
+                            onClick={handleCopyShoppingList}
+                            className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                        >
+                            <Copy size={18} /> Copiar Lista
+                        </button>
                     </div>
                 </div>
             </div>
