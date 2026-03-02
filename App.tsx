@@ -307,7 +307,18 @@ const App: React.FC = () => {
                 .in('patientId', patientIds);
             
             if (error) throw new Error(`Erro ao buscar dietas: ${error.message}`);
-            dietsData = data || [];
+            
+            // Normalizar dados: Se 'meals' contiver estrutura de dias (semanal), mover para 'days'
+            dietsData = (data || []).map((d: any) => {
+                if (Array.isArray(d.meals) && d.meals.length > 0 && 'day' in d.meals[0]) {
+                    return {
+                        ...d,
+                        days: d.meals,
+                        meals: [] // Limpa meals para evitar duplicação visual se o app usar ambos
+                    };
+                }
+                return d;
+            });
         }
 
         if (profileData) {
@@ -464,7 +475,10 @@ const App: React.FC = () => {
     try {
         for (const plan of newDietPlans) {
             // Sanitiza o objeto antes de enviar
-            // REMOVIDO totalCalories pois pode não existir na tabela e causar erro
+            // ADAPTAÇÃO: O banco não tem coluna 'days', então salvamos 'days' dentro de 'meals' se for um plano semanal.
+            // O fetch normaliza isso de volta.
+            const hasDays = plan.days && plan.days.length > 0;
+            
             const payload = {
                 id: plan.id,
                 patientId: activePatient.id,
@@ -472,8 +486,8 @@ const App: React.FC = () => {
                 status: plan.status,
                 createdAt: plan.createdAt,
                 lastUpdated: plan.lastUpdated,
-                meals: plan.meals, // JSONB
-                days: plan.days,   // JSONB
+                meals: hasDays ? plan.days : plan.meals, // Salva dias em meals se houver
+                // days: plan.days, // REMOVIDO pois a coluna não existe
                 notes: plan.notes,
                 waterTarget: plan.waterTarget,
                 macros: plan.macros
