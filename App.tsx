@@ -21,8 +21,16 @@ import { FeedbackList } from './components/FeedbackList';
 import { supabase } from './lib/supabase';
 import { Session } from '@supabase/supabase-js';
 
-// Helper seguro para IDs
-const generateId = () => Math.random().toString(36).substr(2, 9);
+// Helper seguro para IDs (UUID)
+const generateId = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
 
 const SEED_NUTRITIONIST: Nutritionist = {
   name: 'Dr. João Nutri',
@@ -341,9 +349,18 @@ const App: React.FC = () => {
     }
   };
 
+  // Ref para rastrear o último ID de usuário para evitar refetch desnecessário
+  const lastUserIdRef = React.useRef<string | null>(null);
+
   useEffect(() => {
-    if (session) {
-        fetchData();
+    if (session?.user?.id) {
+        // Só busca dados se o usuário mudou ou se é a primeira carga
+        if (session.user.id !== lastUserIdRef.current) {
+            lastUserIdRef.current = session.user.id;
+            fetchData();
+        }
+    } else {
+        lastUserIdRef.current = null;
     }
   }, [session]);
 
@@ -383,6 +400,8 @@ const App: React.FC = () => {
     return [...activePatient.checkIns].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [activePatient]);
 
+  const [isSaving, setIsSaving] = useState(false);
+
   // Actions
   const handleAddPatient = async (newPatient: Patient) => {
     // Remover campos relacionais (arrays) antes de salvar na tabela 'patients'
@@ -390,10 +409,12 @@ const App: React.FC = () => {
     
     if (!session) return;
 
+    setIsSaving(true);
     const { error } = await supabase.from('patients').insert({
         ...patientData,
         user_id: session.user.id
     });
+    setIsSaving(false);
     
     if (error) {
         console.error("Erro ao salvar paciente:", error);
@@ -412,10 +433,12 @@ const App: React.FC = () => {
   const handleUpdatePatient = async (updatedPatient: Patient) => {
     const { checkIns, dietPlans, ...patientData } = updatedPatient;
 
+    setIsSaving(true);
     const { error } = await supabase
         .from('patients')
         .update(patientData)
         .eq('id', updatedPatient.id);
+    setIsSaving(false);
 
     if (error) {
         console.error("Erro ao atualizar paciente:", error);
@@ -428,30 +451,60 @@ const App: React.FC = () => {
   const handleUpdateDietPlans = async (newDietPlans: DietPlanType[]) => {
     if (!activePatient) return;
 
-    for (const plan of newDietPlans) {
-        const { error } = await supabase
-            .from('diet_plans')
-            .upsert({
-                ...plan,
-                patientId: activePatient.id
-            });
-        
-        if (error) console.error("Erro ao salvar dieta:", error);
-    }
-
-    const currentIds = newDietPlans.map(d => d.id);
-    const idsToDelete = activePatient.dietPlans.filter(d => !currentIds.includes(d.id)).map(d => d.id);
-    
-    if (idsToDelete.length > 0) {
-        await supabase.from('diet_plans').delete().in('id', idsToDelete);
-    }
-
+    // Atualiza estado local imediatamente (Optimistic Update)
     const updatedPatient: Patient = {
         ...activePatient,
         dietPlans: newDietPlans
     };
     
     setPatients(prev => prev.map(p => p.id === updatedPatient.id ? updatedPatient : p));
+
+    // Sincroniza com o Supabase em background
+    setIsSaving(true);
+    try {
+        for (const plan of newDietPlans) {
+            // Sanitiza o objeto antes de enviar
+            // REMOVIDO totalCalories pois pode não existir na tabela e causar erro
+            const payload = {
+                id: plan.id,
+                patientId: activePatient.id,
+                name: plan.name,
+                status: plan.status,
+                createdAt: plan.createdAt,
+                lastUpdated: plan.lastUpdated,
+                meals: plan.meals, // JSONB
+                days: plan.days,   // JSONB
+                notes: plan.notes,
+                waterTarget: plan.waterTarget,
+                macros: plan.macros
+            };
+
+            const { error } = await supabase
+                .from('diet_plans')
+                .upsert(payload);
+            
+            if (error) {
+                console.error("Erro ao salvar dieta:", error);
+                // Tenta detalhar o erro para o usuário
+                alert(`Erro ao salvar dieta "${plan.name}" no banco de dados:\n\n${error.message}\n(Código: ${error.code})\n\nVerifique se você tem permissão ou se os dados estão corretos.`);
+            }
+        }
+
+        const currentIds = newDietPlans.map(d => d.id);
+        const idsToDelete = activePatient.dietPlans.filter(d => !currentIds.includes(d.id)).map(d => d.id);
+        
+        if (idsToDelete.length > 0) {
+            const { error } = await supabase.from('diet_plans').delete().in('id', idsToDelete);
+            if (error) {
+                console.error("Erro ao deletar dietas antigas:", error);
+            }
+        }
+    } catch (err) {
+        console.error("Erro inesperado ao salvar dietas:", err);
+        alert("Ocorreu um erro inesperado ao salvar as dietas. Verifique sua conexão.");
+    } finally {
+        setIsSaving(false);
+    }
   };
 
   const handleUpdateAnamnesis = async (newAnamnesis: Anamnesis) => {
