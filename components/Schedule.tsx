@@ -11,8 +11,16 @@ interface ScheduleProps {
   readOnly?: boolean;
 }
 
-// Helper seguro para IDs
-const generateId = () => Math.random().toString(36).substr(2, 9);
+// Helper seguro para IDs (UUID)
+const generateId = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
 
 export const Schedule: React.FC<ScheduleProps> = ({ patients, appointments, onAddAppointment, onUpdateAppointment, onDeleteAppointment, readOnly = false }) => {
   const [showAddModal, setShowAddModal] = useState(false);

@@ -140,8 +140,16 @@ const FOOD_DATABASE = [
   { name: 'Chocolate 70% Cacau', protein: 8.0, carbs: 34.0, fats: 42.0, calories: 580, unitWeight: 25, defaultUnit: 'g' },
 ];
 
-// Helper seguro para IDs
-const generateId = () => Math.random().toString(36).substr(2, 9);
+// Helper seguro para IDs (UUID)
+const generateId = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
 
 // Helper para remover acentos para busca
 const normalizeText = (text: string) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
