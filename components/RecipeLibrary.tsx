@@ -133,6 +133,229 @@ const RECIPES: Recipe[] = [
       'Se ficar muito grosso, adicione um pouco mais de água.',
       'Sirva imediatamente.'
     ]
+  },
+  {
+    id: '6',
+    title: 'Omelete de Espinafre e Queijo Branco',
+    category: 'Café da Manhã',
+    time: '10 min',
+    calories: 250,
+    protein: 20,
+    carbs: 3,
+    fats: 18,
+    ingredients: [
+      '2 ovos inteiros',
+      '1 xícara de espinafre picado',
+      '2 fatias de queijo minas frescal em cubos',
+      'Sal e pimenta a gosto',
+      'Fio de azeite para untar'
+    ],
+    instructions: [
+      'Bata os ovos com um garfo e tempere com sal e pimenta.',
+      'Misture o espinafre e o queijo.',
+      'Aqueça uma frigideira untada e despeje a mistura.',
+      'Cozinhe em fogo baixo até firmar, vire e doure o outro lado.'
+    ]
+  },
+  {
+    id: '7',
+    title: 'Panqueca de Banana Fit',
+    category: 'Café da Manhã',
+    time: '10 min',
+    calories: 280,
+    protein: 10,
+    carbs: 45,
+    fats: 6,
+    ingredients: [
+      '1 banana madura amassada',
+      '1 ovo',
+      '2 colheres de sopa de aveia em flocos finos',
+      'Canela a gosto',
+      'Fio de mel para finalizar (opcional)'
+    ],
+    instructions: [
+      'Misture a banana amassada, o ovo e a aveia até formar uma massa homogênea.',
+      'Adicione canela a gosto.',
+      'Em uma frigideira antiaderente, faça pequenos discos de massa.',
+      'Doure dos dois lados e sirva com um fio de mel se desejar.'
+    ]
+  },
+  {
+    id: '8',
+    title: 'Filé de Tilápia com Legumes Assados',
+    category: 'Almoço/Jantar',
+    time: '30 min',
+    calories: 350,
+    protein: 40,
+    carbs: 20,
+    fats: 12,
+    ingredients: [
+      '150g de filé de tilápia',
+      '1/2 abobrinha em rodelas',
+      '1/2 cenoura em palitos',
+      '1/2 cebola roxa em pétalas',
+      'Azeite, limão, sal e ervas finas'
+    ],
+    instructions: [
+      'Tempere o peixe com limão, sal e ervas.',
+      'Em uma assadeira, disponha o peixe e os legumes.',
+      'Regue com azeite e tempere os legumes.',
+      'Leve ao forno pré-aquecido a 200°C por cerca de 20-25 minutos.'
+    ]
+  },
+  {
+    id: '9',
+    title: 'Strogonoff de Frango Fit',
+    category: 'Almoço/Jantar',
+    time: '25 min',
+    calories: 380,
+    protein: 45,
+    carbs: 10,
+    fats: 15,
+    ingredients: [
+      '150g de peito de frango em cubos',
+      '1 colher de sopa de mostarda zero',
+      '2 colheres de sopa de molho de tomate caseiro',
+      '2 colheres de sopa de iogurte natural desnatado ou creme de ricota',
+      'Champignon a gosto',
+      'Alho e cebola para refogar'
+    ],
+    instructions: [
+      'Refogue o frango com alho e cebola até dourar.',
+      'Adicione a mostarda, o molho de tomate e o champignon.',
+      'Desligue o fogo e misture o iogurte/creme de ricota para não talhar.',
+      'Sirva com arroz integral ou batata doce.'
+    ]
+  },
+  {
+    id: '10',
+    title: 'Mousse de Chocolate Proteico',
+    category: 'Sobremesa',
+    time: '5 min (+2h geladeira)',
+    calories: 180,
+    protein: 15,
+    carbs: 12,
+    fats: 8,
+    ingredients: [
+      '1 pote de iogurte grego zero gordura',
+      '1 colher de sopa de cacau em pó 100%',
+      '1 colher de sopa de adoçante culinário (xilitol ou eritritol)',
+      'Raspas de chocolate 70% para decorar'
+    ],
+    instructions: [
+      'Misture vigorosamente o iogurte, o cacau e o adoçante até ficar homogêneo.',
+      'Coloque em uma taça e leve à geladeira por 2 horas.',
+      'Decore com raspas de chocolate antes de servir.'
+    ]
+  },
+  {
+    id: '11',
+    title: 'Wrap de Couve com Frango',
+    category: 'Lanche/Jantar',
+    time: '10 min',
+    calories: 200,
+    protein: 25,
+    carbs: 5,
+    fats: 8,
+    ingredients: [
+      '2 folhas grandes de couve manteiga (inteiras e higienizadas)',
+      '100g de frango desfiado',
+      '2 colheres de sopa de cenoura ralada',
+      '1 colher de sopa de hummus ou pasta de grão de bico'
+    ],
+    instructions: [
+      'Retire o talo grosso central da couve para facilitar o enrolar.',
+      'Passe uma camada de hummus na folha.',
+      'Adicione o frango e a cenoura.',
+      'Enrole bem apertado como um charuto e corte ao meio.'
+    ]
+  },
+  {
+    id: '12',
+    title: 'Mingau de Aveia com Whey',
+    category: 'Café da Manhã/Pós-Treino',
+    time: '10 min',
+    calories: 350,
+    protein: 30,
+    carbs: 40,
+    fats: 6,
+    ingredients: [
+      '30g de aveia em flocos',
+      '200ml de água ou leite desnatado',
+      '1 scoop de Whey Protein sabor Chocolate ou Baunilha',
+      'Canela em pó a gosto'
+    ],
+    instructions: [
+      'Leve a aveia e a água/leite ao fogo baixo, mexendo sempre até engrossar.',
+      'Desligue o fogo e espere amornar um pouco.',
+      'Misture o Whey Protein (não coloque com a mistura fervendo para não perder propriedades).',
+      'Polvilhe canela e sirva.'
+    ]
+  },
+  {
+    id: '13',
+    title: 'Abacate Recheado com Ovo',
+    category: 'Café da Manhã (Low Carb)',
+    time: '15 min',
+    calories: 320,
+    protein: 14,
+    carbs: 8,
+    fats: 26,
+    ingredients: [
+      '1/2 abacate maduro',
+      '1 ovo pequeno',
+      'Sal, pimenta e cebolinha',
+      '1 fatia de bacon picadinho (opcional)'
+    ],
+    instructions: [
+      'Retire um pouco da polpa do abacate para caber o ovo.',
+      'Quebre o ovo dentro da cavidade do abacate.',
+      'Tempere com sal e pimenta.',
+      'Leve ao forno ou airfryer a 180°C por 10-15 minutos até a clara firmar.',
+      'Finalize com cebolinha.'
+    ]
+  },
+  {
+    id: '14',
+    title: 'Chips de Batata Doce Assada',
+    category: 'Lanche',
+    time: '25 min',
+    calories: 150,
+    protein: 2,
+    carbs: 35,
+    fats: 1,
+    ingredients: [
+      '1 batata doce média',
+      'Sal e alecrim a gosto',
+      'Spray de azeite'
+    ],
+    instructions: [
+      'Corte a batata doce em rodelas bem finas (use um mandolim se tiver).',
+      'Disponha em uma assadeira sem sobrepor.',
+      'Borrife azeite e tempere.',
+      'Asse em forno pré-aquecido a 200°C até ficarem crocantes (vire na metade do tempo).'
+    ]
+  },
+  {
+    id: '15',
+    title: 'Hambúrguer de Patinho Caseiro',
+    category: 'Almoço/Jantar',
+    time: '20 min',
+    calories: 280,
+    protein: 35,
+    carbs: 0,
+    fats: 14,
+    ingredients: [
+      '150g de patinho moído',
+      'Sal e pimenta do reino',
+      '1/2 cebola picadinha (opcional)'
+    ],
+    instructions: [
+      'Misture a carne com a cebola e tempere.',
+      'Modele no formato de hambúrguer.',
+      'Grelhe em frigideira bem quente ou na churrasqueira até o ponto desejado.',
+      'Sirva com salada ou no pão integral.'
+    ]
   }
 ];
 

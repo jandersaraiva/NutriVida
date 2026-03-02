@@ -282,6 +282,104 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
       alert('Lista de compras copiada para a área de transferência!');
   };
 
+  const handleDownloadShoppingListPDF = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    
+    // --- HEADER ---
+    // Background Header
+    doc.setFillColor(37, 99, 235); // Blue-600
+    doc.rect(0, 0, pageWidth, 40, 'F');
+    
+    // Title
+    doc.setFontSize(24);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Lista de Compras', 20, 20);
+    
+    // Subtitle (App Name)
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text('NutriVida App', pageWidth - 20, 20, { align: 'right' });
+    
+    // Patient Info Box
+    doc.setFillColor(248, 250, 252); // Slate-50
+    doc.setDrawColor(226, 232, 240); // Slate-200
+    doc.roundedRect(20, 50, pageWidth - 40, 25, 3, 3, 'FD');
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139); // Slate-500
+    doc.text('PACIENTE', 30, 60);
+    doc.text('DATA DE GERAÇÃO', 120, 60);
+    
+    doc.setFontSize(12);
+    doc.setTextColor(30, 41, 59); // Slate-800
+    doc.setFont('helvetica', 'bold');
+    doc.text(patientName, 30, 68);
+    doc.text(new Date().toLocaleDateString('pt-BR'), 120, 68);
+    
+    // --- LIST ITEMS ---
+    let y = 90;
+    
+    // Table Header
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139); // Slate-500
+    doc.text('ITEM', 30, y);
+    doc.text('QUANTIDADE', 150, y);
+    
+    y += 5;
+    doc.setDrawColor(226, 232, 240); // Slate-200
+    doc.line(20, y, pageWidth - 20, y);
+    y += 10;
+    
+    doc.setFontSize(11);
+    doc.setTextColor(51, 65, 85); // Slate-700
+    
+    shoppingList.forEach((item, index) => {
+        if (y > pageHeight - 30) {
+            doc.addPage();
+            
+            // Header on new page
+            doc.setFillColor(37, 99, 235);
+            doc.rect(0, 0, pageWidth, 15, 'F');
+            y = 30;
+        }
+        
+        // Striped background for odd rows
+        if (index % 2 === 0) {
+            doc.setFillColor(248, 250, 252); // Slate-50
+            doc.rect(20, y - 6, pageWidth - 40, 10, 'F');
+        }
+        
+        // Checkbox
+        doc.setDrawColor(148, 163, 184); // Slate-400
+        doc.setLineWidth(0.5);
+        doc.circle(25, y - 1.5, 2);
+        
+        // Item Name
+        doc.setFont('helvetica', 'bold');
+        doc.text(item.name, 35, y);
+        
+        // Quantity
+        doc.setFont('helvetica', 'normal');
+        doc.text(`${item.quantity.toFixed(0)}${item.unit}`, 150, y);
+        
+        y += 10;
+    });
+    
+    // --- FOOTER ---
+    const totalPages = doc.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(9);
+        doc.setTextColor(148, 163, 184); // Slate-400
+        doc.text(`NutriVida - Seu assistente nutricional • Página ${i} de ${totalPages}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+    }
+    
+    doc.save(`Lista_Compras_${patientName.replace(/\s+/g, '_')}.pdf`);
+  };
+
   const handleGeneratePDF = async () => {
     if (!currentPlan || !pdfRef.current) return;
     setIsGeneratingPDF(true);
@@ -1386,9 +1484,15 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                     <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700 flex gap-3">
                         <button 
                             onClick={handleCopyShoppingList}
+                            className="flex-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 py-2.5 rounded-xl font-bold hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-2"
+                        >
+                            <Copy size={18} /> Copiar
+                        </button>
+                        <button 
+                            onClick={handleDownloadShoppingListPDF}
                             className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
                         >
-                            <Copy size={18} /> Copiar Lista
+                            <FileDown size={18} /> Baixar PDF
                         </button>
                     </div>
                 </div>
