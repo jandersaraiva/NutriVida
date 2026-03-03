@@ -793,12 +793,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
       {/* Charts Section: Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
         
-        {/* Chart 1: Weight & IMC */}
+        {/* Chart 1: Weight */}
         <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
               <Activity size={18} className="text-blue-500" />
-              Evolução de Peso & IMC
+              Evolução de Peso
             </h3>
           </div>
           <div className="h-[280px] w-full">
@@ -813,7 +813,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" strokeOpacity={0.2} />
                 <XAxis dataKey="dateFormatted" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dy={10} />
                 <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} domain={['auto', 'auto']} unit="kg" />
-                <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} domain={['dataMin - 1', 'dataMax + 1']} hide />
                 <Tooltip 
                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                     itemStyle={{ fontSize: '13px', fontWeight: 500 }}
@@ -831,18 +830,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
                   fill="url(#colorWeight)" 
                   dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }}
                   activeDot={{ r: 6, strokeWidth: 0, fill: '#2563eb' }}
-                />
-                {/* IMC Line with Dot - Stroke removed */}
-                <Line 
-                  yAxisId="right" 
-                  type="monotone" 
-                  dataKey="imc" 
-                  name="IMC" 
-                  stroke="#8b5cf6" 
-                  strokeWidth={2} 
-                  strokeDasharray="5 5" 
-                  dot={{ r: 4, fill: '#8b5cf6', strokeWidth: 0 }}
-                  activeDot={{ r: 6, strokeWidth: 0, fill: '#7c3aed' }}
                 />
               </ComposedChart>
             </ResponsiveContainer>
@@ -1048,15 +1035,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
                     Evolução de Medidas (cm)
                 </h3>
                 
-                <select 
-                    value={measurementMetric} 
-                    onChange={(e) => setMeasurementMetric(e.target.value)}
-                    className="bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 outline-none cursor-pointer"
-                >
+                <div className="flex overflow-x-auto pb-2 gap-2 custom-scrollbar max-w-full">
                     {Object.entries(measurementConfig).map(([key, config]) => (
-                        <option key={key} value={key}>{config.label}</option>
+                        <button
+                            key={key}
+                            onClick={() => setMeasurementMetric(key)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0 ${
+                                measurementMetric === key 
+                                ? 'bg-blue-600 text-white shadow-sm' 
+                                : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'
+                            }`}
+                        >
+                            {config.label}
+                        </button>
                     ))}
-                </select>
+                </div>
             </div>
 
             {/* Gráfico de Medidas */}
