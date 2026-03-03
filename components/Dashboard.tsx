@@ -904,6 +904,42 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
 
       </div>
 
+      {/* Charts Section: Glucose Evolution */}
+      <div className="grid grid-cols-1 gap-6 pt-2">
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+              <Activity size={18} className="text-emerald-500" />
+              Evolução da Glicemia (mg/dL)
+            </h3>
+          </div>
+          <div className="h-[280px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" strokeOpacity={0.2} />
+                <XAxis dataKey="dateFormatted" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} domain={['auto', 'auto']} unit=" mg/dL" />
+                <Tooltip 
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    itemStyle={{ fontSize: '13px', fontWeight: 500 }}
+                />
+                <Legend iconType="circle" wrapperStyle={{paddingTop: '20px'}} />
+                <Line 
+                  type="monotone" 
+                  dataKey="glucose" 
+                  name="Glicemia" 
+                  stroke="#10b981" 
+                  strokeWidth={3} 
+                  dot={{ r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#fff' }}
+                  activeDot={{ r: 6, strokeWidth: 0, fill: '#059669' }}
+                  connectNulls
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
       {/* Charts Section: Row 2 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
           

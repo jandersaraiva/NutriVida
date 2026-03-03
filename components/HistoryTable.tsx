@@ -42,7 +42,8 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, on
                 bodyFat: prev ? current.bodyFat - prev.bodyFat : null,
                 muscleMass: prev ? current.muscleMass - prev.muscleMass : null,
                 visceralFat: prev ? current.visceralFat - prev.visceralFat : null,
-                bmr: prev ? current.bmr - prev.bmr : null
+                bmr: prev ? current.bmr - prev.bmr : null,
+                glucose: prev && current.glucose && prev.glucose ? current.glucose - prev.glucose : null
             }
         };
     });
@@ -186,6 +187,7 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, on
               <th className="px-6 py-4">Músculo</th>
               <th className="px-6 py-4">Idade Corp.</th>
               <th className="px-6 py-4">TMB (Kcal)</th>
+              <th className="px-6 py-4">Glicemia</th>
               <th className="px-6 py-4 text-center">Visceral</th>
               {!readOnly && <th className="px-6 py-4 text-right pdf-exclude">Ações</th>}
             </tr>
@@ -244,6 +246,11 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, on
                 <td className="px-6 py-4">
                     <div className="text-slate-600 dark:text-slate-300">{checkIn.bmr}</div>
                     {renderDelta(checkIn.delta.bmr, 'standard')}
+                </td>
+
+                <td className="px-6 py-4">
+                    <div className="text-slate-600 dark:text-slate-300 font-medium">{checkIn.glucose ? `${checkIn.glucose} mg/dL` : '-'}</div>
+                    {checkIn.glucose && renderDelta(checkIn.delta.glucose, 'inverse', ' mg/dL')}
                 </td>
 
                 <td className="px-6 py-4 text-center">
@@ -333,6 +340,7 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, on
                 <MetricCard label="Gordura Visceral" value={selectedCheckIn.visceralFat} />
                 <MetricCard label="Idade Corporal" value={`${selectedCheckIn.bodyAge} anos`} />
                 <MetricCard label="Metabolismo Basal" value={`${selectedCheckIn.bmr} Kcal`} />
+                <MetricCard label="Glicemia" value={selectedCheckIn.glucose ? `${selectedCheckIn.glucose} mg/dL` : '-'} />
             </div>
 
             {/* Circunferências */}

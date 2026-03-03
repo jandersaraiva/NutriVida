@@ -102,6 +102,7 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
     wristCircumference: '',
     thighCircumference: '',
     calfCircumference: '',
+    glucose: lastRecord?.glucose?.toString() || '',
   });
 
   // Load initial data for editing
@@ -127,6 +128,7 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
             wristCircumference: initialData.wristCircumference?.toString() || '',
             thighCircumference: initialData.thighCircumference?.toString() || '',
             calfCircumference: initialData.calfCircumference?.toString() || '',
+            glucose: initialData.glucose?.toString() || '',
         });
     }
   }, [initialData]);
@@ -229,6 +231,7 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
       wristCircumference: parseNumber(formData.wristCircumference),
       thighCircumference: parseNumber(formData.thighCircumference),
       calfCircumference: parseNumber(formData.calfCircumference),
+      glucose: parseNumber(formData.glucose),
     };
 
     onSave(payload);
@@ -307,7 +310,7 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
                 <InputGroup label="Gordura Visceral" name="visceralFat" step="1" value={formData.visceralFat} onChange={handleChange} />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="relative">
                     <InputGroup label="Taxa Metabólica Basal" name="bmr" unit="Kcal" step="1" value={formData.bmr} onChange={handleChange} />
                     <div className="absolute top-0 right-0">
@@ -317,6 +320,7 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
                     </div>
                 </div>
                 <InputGroup label="Idade Corporal" name="bodyAge" unit="anos" step="1" value={formData.bodyAge} onChange={handleChange} />
+                <InputGroup label="Glicemia" name="glucose" unit="mg/dL" step="1" value={formData.glucose} onChange={handleChange} />
               </div>
             </div>
           )}

@@ -51,8 +51,17 @@ const App: React.FC = () => {
 
   useEffect(() => {
     // 1. Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error("Auth error:", error);
+        // If the refresh token is invalid, clear the session
+        if (error.message.includes("Refresh Token Not Found") || error.message.includes("Invalid Refresh Token")) {
+          supabase.auth.signOut();
+          setSession(null);
+        }
+      } else {
+        setSession(session);
+      }
       setIsLoadingSession(false);
     });
 

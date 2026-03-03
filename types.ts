@@ -20,6 +20,7 @@ export interface CheckIn {
   wristCircumference?: number; // cm (Punho)
   thighCircumference?: number; // cm (Coxa)
   calfCircumference?: number; // cm (Panturrilha)
+  glucose?: number; // mg/dL (Glicemia)
 }
 
 export interface FoodItem {
