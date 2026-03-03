@@ -14,7 +14,7 @@ export const ActiveDietsList: React.FC<ActiveDietsListProps> = ({ patients, onSe
   const patientsWithActiveDiet = patients.filter(p => 
     p.status === 'active' && 
     p.dietPlans && 
-    p.dietPlans.some(d => d.status === 'active') &&
+    p.dietPlans.some(d => d.status === 'active' && d.meals.length > 0) &&
     p.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -89,11 +89,7 @@ export const ActiveDietsList: React.FC<ActiveDietsListProps> = ({ patients, onSe
                                     <div className="space-y-2">
                                         <div className="flex justify-between text-sm">
                                             <span className="text-slate-500 dark:text-slate-400">Refeições</span>
-                                            <span className="font-semibold text-slate-700 dark:text-slate-300">
-                                                {activeDiet?.days && activeDiet.days.length > 0
-                                                    ? 'Plano Semanal' 
-                                                    : `${activeDiet?.meals.length || 0} refeições`}
-                                            </span>
+                                            <span className="font-semibold text-slate-700 dark:text-slate-300">{activeDiet?.meals.length || 0} diárias</span>
                                         </div>
                                         <div className="flex justify-between text-sm">
                                             <span className="text-slate-500 dark:text-slate-400">Última Atualização</span>
