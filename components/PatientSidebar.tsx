@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, FileText, Utensils, LogOut, Calendar, User, ChefHat, BookOpen } from 'lucide-react';
+import { LayoutDashboard, FileText, Utensils, LogOut, Calendar, User, ChefHat } from 'lucide-react';
 import { ViewState } from '../types';
 
 interface PatientSidebarProps {
@@ -24,7 +24,6 @@ export const PatientSidebar: React.FC<PatientSidebarProps> = ({
     { id: 'history', label: 'Histórico', icon: FileText },
     { id: 'diet', label: 'Minha Dieta', icon: Utensils },
     { id: 'recipes', label: 'Receitas', icon: ChefHat },
-    { id: 'food_diary', label: 'Diário', icon: BookOpen },
     { id: 'schedule', label: 'Agenda', icon: Calendar },
   ];
 

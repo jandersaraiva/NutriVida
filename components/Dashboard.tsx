@@ -487,15 +487,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
   }
 
   // Common card style
-  const Card = ({ title, value, unit, icon: Icon, colorClass, delta, gauge }: any) => (
+  const Card = ({ title, value, unit, icon: Icon, colorClass, delta, gauge, hideValue }: any) => (
     <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between h-full hover:shadow-md transition-shadow relative overflow-hidden">
       <div className="flex justify-between items-start mb-2 relative z-10">
          <div>
             <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">{title}</p>
-            <div className="flex items-baseline gap-1">
-              <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{value}</h3>
-              <span className="text-sm text-slate-400 dark:text-slate-500 font-medium">{unit}</span>
-            </div>
+            {!hideValue && (
+                <div className="flex items-baseline gap-1">
+                <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{value}</h3>
+                <span className="text-sm text-slate-400 dark:text-slate-500 font-medium">{unit}</span>
+                </div>
+            )}
          </div>
          <div className={`p-2 rounded-lg ${colorClass} bg-opacity-10 dark:bg-opacity-20`}>
             <Icon size={20} className={colorClass.replace('bg-', 'text-')} />
@@ -516,7 +518,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
   );
 
   // Helper para renderizar o Gauge Linear
-  const LinearGauge = ({ value, min, max, ranges, formatValue }: any) => {
+  const LinearGauge = ({ value, min, max, ranges }: any) => {
     const percentage = Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100));
     
     return (
@@ -533,8 +535,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
                     return (
                         <div 
                             key={idx}
-                            className={`absolute top-0 h-full ${range.color}`}
-                            style={{ left: `${start}%`, width: `${width}%` }}
+                            className="absolute top-0 h-full"
+                            style={{ left: `${start}%`, width: `${width}%`, backgroundColor: range.color }}
                         />
                     );
                 })}
@@ -564,25 +566,131 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
     );
   };
 
-  // Configuração dos Ranges para IMC
+  // Helper para renderizar o Velocímetro (Speedometer)
+  const SpeedometerGauge = ({ value, min, max, ranges, unit }: any) => {
+    // SVG Dimensions
+    const width = 200;
+    const height = 100;
+    const cx = 100;
+    const cy = 90; // Center Y (slightly up to fit text below if needed)
+    const r = 80;
+    const strokeWidth = 12;
+
+    // Angles (180 to 0 degrees)
+    const startAngle = 180;
+    const endAngle = 0;
+
+    // Helper to convert polar to cartesian
+    const polarToCartesian = (centerX: number, centerY: number, radius: number, angleInDegrees: number) => {
+        const angleInRadians = (angleInDegrees - 180) * Math.PI / 180.0;
+        return {
+            x: centerX + (radius * Math.cos(angleInRadians)),
+            y: centerY + (radius * Math.sin(angleInRadians))
+        };
+    };
+
+    // Helper to create arc path
+    const describeArc = (x: number, y: number, radius: number, startAngle: number, endAngle: number) => {
+        const start = polarToCartesian(x, y, radius, endAngle);
+        const end = polarToCartesian(x, y, radius, startAngle);
+        const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+        return [
+            "M", start.x, start.y, 
+            "A", radius, radius, 0, largeArcFlag, 0, end.x, end.y
+        ].join(" ");
+    };
+
+    // Calculate needle angle
+    const percentage = Math.min(1, Math.max(0, (value - min) / (max - min)));
+    const needleAngle = startAngle - (percentage * (startAngle - endAngle));
+    const needleCoords = polarToCartesian(cx, cy, r - 10, needleAngle); // Needle slightly shorter than radius
+
+    return (
+        <div className="w-full flex flex-col items-center justify-center -mt-2">
+            <svg width="100%" viewBox={`0 0 ${width} ${height}`} className="overflow-visible">
+                {/* Background Track (Gray) */}
+                <path 
+                    d={describeArc(cx, cy, r, startAngle, endAngle)} 
+                    fill="none" 
+                    stroke="#e2e8f0" 
+                    strokeWidth={strokeWidth} 
+                    strokeLinecap="round"
+                    className="dark:stroke-slate-700"
+                />
+
+                {/* Ranges Segments */}
+                {ranges.map((range: any, idx: number) => {
+                    // Normalize range values to angles
+                    const rangeStartPerc = Math.max(0, (range.start - min) / (max - min));
+                    const rangeEndPerc = Math.min(1, (range.end - min) / (max - min));
+                    
+                    // If range is out of bounds, skip
+                    if (rangeStartPerc >= rangeEndPerc) return null;
+
+                    const rangeStartAngle = startAngle - (rangeStartPerc * (startAngle - endAngle));
+                    const rangeEndAngle = startAngle - (rangeEndPerc * (startAngle - endAngle));
+
+                    return (
+                        <path
+                            key={idx}
+                            d={describeArc(cx, cy, r, rangeStartAngle, rangeEndAngle)}
+                            fill="none"
+                            stroke={range.color}
+                            strokeWidth={strokeWidth}
+                            strokeLinecap="butt" // Butt to connect segments cleanly
+                        />
+                    );
+                })}
+
+                {/* Needle */}
+                <line
+                    x1={cx}
+                    y1={cy}
+                    x2={needleCoords.x}
+                    y2={needleCoords.y}
+                    stroke="#1e293b"
+                    strokeWidth="3"
+                    className="dark:stroke-white transition-all duration-500 ease-out"
+                />
+                <circle cx={cx} cy={cy} r="4" fill="#1e293b" className="dark:fill-white" />
+                
+                {/* Value Text */}
+                <text x={cx} y={cy - 20} textAnchor="middle" className="text-2xl font-bold fill-slate-800 dark:fill-slate-100" style={{ fontSize: '24px' }}>
+                    {value}
+                </text>
+                {unit && (
+                    <text x={cx} y={cy - 5} textAnchor="middle" className="text-xs font-medium fill-slate-400" style={{ fontSize: '10px' }}>
+                        {unit}
+                    </text>
+                )}
+                
+                {/* Min/Max Labels */}
+                <text x={10} y={cy} className="text-[10px] fill-slate-400">{min}</text>
+                <text x={190} y={cy} textAnchor="end" className="text-[10px] fill-slate-400">{max}</text>
+            </svg>
+        </div>
+    );
+  };
+
+  // Configuração dos Ranges para IMC (Hex Colors)
   const imcRanges = [
-      { start: 10, end: 18.5, color: 'bg-yellow-300' },
-      { start: 18.5, end: 25, color: 'bg-emerald-400' },
-      { start: 25, end: 30, color: 'bg-orange-400' },
-      { start: 30, end: 45, color: 'bg-rose-500' }
+      { start: 10, end: 18.5, color: '#fde047' }, // yellow-300
+      { start: 18.5, end: 25, color: '#34d399' }, // emerald-400
+      { start: 25, end: 30, color: '#fb923c' },   // orange-400
+      { start: 30, end: 45, color: '#f43f5e' }    // rose-500
   ];
 
-  // Configuração dos Ranges para Gordura (Exemplo Genérico, idealmente varia por sexo/idade)
+  // Configuração dos Ranges para Gordura (Hex Colors)
   const fatRanges = gender === 'Masculino' ? [
-      { start: 2, end: 6, color: 'bg-yellow-300' },
-      { start: 6, end: 24, color: 'bg-emerald-400' },
-      { start: 24, end: 30, color: 'bg-orange-400' },
-      { start: 30, end: 50, color: 'bg-rose-500' }
+      { start: 2, end: 6, color: '#fde047' },
+      { start: 6, end: 24, color: '#34d399' },
+      { start: 24, end: 30, color: '#fb923c' },
+      { start: 30, end: 50, color: '#f43f5e' }
   ] : [
-      { start: 10, end: 14, color: 'bg-yellow-300' },
-      { start: 14, end: 31, color: 'bg-emerald-400' },
-      { start: 31, end: 36, color: 'bg-orange-400' },
-      { start: 36, end: 55, color: 'bg-rose-500' }
+      { start: 10, end: 14, color: '#fde047' },
+      { start: 14, end: 31, color: '#34d399' },
+      { start: 31, end: 36, color: '#fb923c' },
+      { start: 36, end: 55, color: '#f43f5e' }
   ];
 
   // Configuração para Peso (Min/Max do histórico)
@@ -654,7 +762,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
             icon={Calculator}
             colorClass={getImcColor(current.imc)}
             delta={renderDelta(current.imc, previous?.imc, true)}
-            gauge={<LinearGauge value={current.imc} min={10} max={45} ranges={imcRanges} />}
+            gauge={<SpeedometerGauge value={current.imc} min={10} max={45} ranges={imcRanges} unit="kg/m²" />}
+            hideValue
         />
         <Card 
           title="Gordura Corporal" 
@@ -663,7 +772,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
           icon={PieChart} 
           colorClass="text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-700"
           delta={renderDelta(current.bodyFat, previous?.bodyFat, true, " %")}
-          gauge={<LinearGauge value={current.bodyFat} min={gender === 'Masculino' ? 2 : 10} max={gender === 'Masculino' ? 50 : 55} ranges={fatRanges} />}
+          gauge={<SpeedometerGauge value={current.bodyFat} min={gender === 'Masculino' ? 2 : 10} max={gender === 'Masculino' ? 50 : 55} ranges={fatRanges} unit="%" />}
+          hideValue
         />
         <Card 
           title="Massa Muscular" 
