@@ -23,15 +23,7 @@ import { supabase } from './lib/supabase';
 import { Session } from '@supabase/supabase-js';
 
 // Helper seguro para IDs (UUID)
-const generateId = () => {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
-};
+// const generateId = () => { ... } // REMOVIDO: Unused
 
 const SEED_NUTRITIONIST: Nutritionist = {
   name: 'Dr. João Nutri',
@@ -133,7 +125,7 @@ const App: React.FC = () => {
   }, [isLoadingData]);
 
   // Carregar dados do Supabase
-  const fetchData = async () => {
+  const fetchData = React.useCallback(async () => {
     if (!session) return; // Só busca se estiver autenticado
     
     setFetchError(null);
@@ -147,7 +139,7 @@ const App: React.FC = () => {
         let isNutritionist = false;
 
         // 0. Check User Role (Nutritionist Profile Exists?)
-        const { data: profileCheck, error: profileCheckError } = await supabase
+        const { data: profileCheck } = await supabase
             .from('nutritionist_profile')
             .select('id')
             .eq('user_id', userId)
@@ -159,7 +151,7 @@ const App: React.FC = () => {
         } else {
             // Se não tem perfil, assume paciente (ou novo usuário que ainda não configurou)
             // Mas vamos verificar se existe um paciente vinculado a este auth_user_id
-            const { data: patientCheck, error: patientCheckError } = await supabase
+            const { data: patientCheck } = await supabase
                 .from('patients')
                 .select('id')
                 .eq('auth_user_id', userId)
@@ -248,7 +240,7 @@ const App: React.FC = () => {
             appointmentsData = aData || [];
 
             // 5. Fetch Nutritionist Profile
-            const { data: profData, error: profError } = await supabase
+            const { data: profData } = await supabase
                 .from('nutritionist_profile')
                 .select('*')
                 .eq('user_id', userId)
@@ -368,7 +360,7 @@ const App: React.FC = () => {
     } finally {
         setIsLoadingData(false);
     }
-  };
+  }, [session, hasInitialFetch, currentView]);
 
   // Ref para rastrear o último ID de usuário para evitar refetch desnecessário
   const lastUserIdRef = React.useRef<string | null>(null);
@@ -383,7 +375,7 @@ const App: React.FC = () => {
     } else {
         lastUserIdRef.current = null;
     }
-  }, [session]);
+  }, [session, fetchData]);
 
   // --- RESET HANDLER ---
   const handleResetData = async () => {
@@ -421,21 +413,20 @@ const App: React.FC = () => {
     return [...activePatient.checkIns].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [activePatient]);
 
-  const [isSaving, setIsSaving] = useState(false);
-
   // Actions
   const handleAddPatient = async (newPatient: Patient) => {
     // Remover campos relacionais (arrays) antes de salvar na tabela 'patients'
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { checkIns, dietPlans, ...patientData } = newPatient;
     
     if (!session) return;
 
-    setIsSaving(true);
+    // setIsSaving(true); // Removed unused state
     const { error } = await supabase.from('patients').insert({
         ...patientData,
         user_id: session.user.id
     });
-    setIsSaving(false);
+    // setIsSaving(false); // Removed unused state
     
     if (error) {
         console.error("Erro ao salvar paciente:", error);
@@ -452,14 +443,15 @@ const App: React.FC = () => {
   };
 
   const handleUpdatePatient = async (updatedPatient: Patient) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { checkIns, dietPlans, ...patientData } = updatedPatient;
 
-    setIsSaving(true);
+    // setIsSaving(true); // Removed unused state
     const { error } = await supabase
         .from('patients')
         .update(patientData)
         .eq('id', updatedPatient.id);
-    setIsSaving(false);
+    // setIsSaving(false); // Removed unused state
 
     if (error) {
         console.error("Erro ao atualizar paciente:", error);
@@ -728,7 +720,7 @@ const App: React.FC = () => {
       return crypto.randomUUID();
     }
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+      const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
       return v.toString(16);
     });
   };
@@ -753,6 +745,7 @@ const App: React.FC = () => {
       let error;
 
       // Sanitizar dados: remover 'id' para não tentar inserir/atualizar PK explicitamente
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { id, ...profileData } = data as any;
 
       if (existingProfile) {
@@ -1142,6 +1135,7 @@ const App: React.FC = () => {
                   readOnly={userType === 'patient'}
                   patientId={activePatient.id}
                   waterTarget={activePatient.dietPlans?.find(p => p.status === 'active')?.waterTarget}
+                  dietPlan={activePatient.dietPlans?.find(p => p.status === 'active')}
                 />
               )}
 

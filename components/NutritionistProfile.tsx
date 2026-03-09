@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { Nutritionist } from '../types';
 import { User, Phone, Mail, BadgeCheck, Save, Camera, Calendar, Trash2, Upload, LogOut } from 'lucide-react';
 
@@ -20,12 +20,6 @@ export const NutritionistProfile: React.FC<NutritionistProfileProps> = ({ data, 
   });
   const [showSuccess, setShowSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (data) {
-        setFormData(data);
-    }
-  }, [data]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

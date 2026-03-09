@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Patient } from '../types';
-import { UserPlus, Activity, Utensils, Search, ChevronRight, ArrowLeft, User } from 'lucide-react';
+import { UserPlus, Activity, Utensils, Search, ChevronRight, ArrowLeft } from 'lucide-react';
 
 interface PatientSelectorProps {
   patients: Patient[];

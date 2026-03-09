@@ -89,7 +89,6 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, on
         // Detecta tema para fundo
         const isDark = document.documentElement.classList.contains('dark');
         const backgroundColor = isDark ? '#1e293b' : '#ffffff'; // slate-800 vs white
-        const textColor = isDark ? '#f8fafc' : '#1e293b';
 
         // Captura a tabela como imagem
         const canvas = await html2canvas(tableRef.current, {

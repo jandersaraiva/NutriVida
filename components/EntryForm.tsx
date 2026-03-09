@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { CheckIn } from '../types';
 import { Save, X, Calculator, Flame, Activity, Ruler } from 'lucide-react';
 
@@ -17,7 +17,7 @@ const generateId = () => {
     return crypto.randomUUID();
   }
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
   });
 };
@@ -83,63 +83,31 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
 
   // State agora usa strings para permitir edição flexível (ex: apagar o 0, digitar vírgula)
   const [formData, setFormData] = useState({
-    date: new Date().toISOString().split('T')[0],
-    height: lastRecord?.height?.toString() || '1.72',
-    weight: lastRecord?.weight?.toString() || '',
-    imc: '',
-    bodyFat: '',
-    muscleMass: '',
-    bmr: '',
-    age: patientBirthDate ? calculateAgeAtDate(patientBirthDate, new Date().toISOString().split('T')[0]).toString() : (lastRecord?.age?.toString() || '33'),
-    bodyAge: lastRecord?.bodyAge?.toString() || '',
-    visceralFat: '',
-    waistCircumference: '',
-    hipCircumference: '',
-    chestCircumference: '',
-    abdomenCircumference: '',
-    armCircumference: '',
-    forearmCircumference: '',
-    wristCircumference: '',
-    thighCircumference: '',
-    calfCircumference: '',
-    glucose: lastRecord?.glucose?.toString() || '',
+    date: initialData?.date || new Date().toISOString().split('T')[0],
+    height: initialData?.height?.toString() || lastRecord?.height?.toString() || '1.72',
+    weight: initialData?.weight?.toString() || lastRecord?.weight?.toString() || '',
+    imc: initialData?.imc?.toString() || '',
+    bodyFat: initialData?.bodyFat?.toString() || '',
+    muscleMass: initialData?.muscleMass?.toString() || '',
+    bmr: initialData?.bmr?.toString() || '',
+    age: initialData?.age?.toString() || (patientBirthDate ? calculateAgeAtDate(patientBirthDate, new Date().toISOString().split('T')[0]).toString() : (lastRecord?.age?.toString() || '33')),
+    bodyAge: initialData?.bodyAge?.toString() || lastRecord?.bodyAge?.toString() || '',
+    visceralFat: initialData?.visceralFat?.toString() || '',
+    waistCircumference: initialData?.waistCircumference?.toString() || '',
+    hipCircumference: initialData?.hipCircumference?.toString() || '',
+    chestCircumference: initialData?.chestCircumference?.toString() || '',
+    abdomenCircumference: initialData?.abdomenCircumference?.toString() || '',
+    armCircumference: initialData?.armCircumference?.toString() || '',
+    forearmCircumference: initialData?.forearmCircumference?.toString() || '',
+    wristCircumference: initialData?.wristCircumference?.toString() || '',
+    thighCircumference: initialData?.thighCircumference?.toString() || '',
+    calfCircumference: initialData?.calfCircumference?.toString() || '',
+    glucose: initialData?.glucose?.toString() || lastRecord?.glucose?.toString() || '',
   });
 
-  // Load initial data for editing
-  useEffect(() => {
-    if (initialData) {
-        setFormData({
-            date: initialData.date || new Date().toISOString().split('T')[0],
-            height: initialData.height?.toString() || '',
-            weight: initialData.weight?.toString() || '',
-            imc: initialData.imc?.toString() || '',
-            bodyFat: initialData.bodyFat?.toString() || '',
-            muscleMass: initialData.muscleMass?.toString() || '',
-            bmr: initialData.bmr?.toString() || '',
-            age: initialData.age?.toString() || '',
-            bodyAge: initialData.bodyAge?.toString() || '',
-            visceralFat: initialData.visceralFat?.toString() || '',
-            waistCircumference: initialData.waistCircumference?.toString() || '',
-            hipCircumference: initialData.hipCircumference?.toString() || '',
-            chestCircumference: initialData.chestCircumference?.toString() || '',
-            abdomenCircumference: initialData.abdomenCircumference?.toString() || '',
-            armCircumference: initialData.armCircumference?.toString() || '',
-            forearmCircumference: initialData.forearmCircumference?.toString() || '',
-            wristCircumference: initialData.wristCircumference?.toString() || '',
-            thighCircumference: initialData.thighCircumference?.toString() || '',
-            calfCircumference: initialData.calfCircumference?.toString() || '',
-            glucose: initialData.glucose?.toString() || '',
-        });
-    }
-  }, [initialData]);
 
-  // Recalcula idade se a data da avaliação mudar
-  useEffect(() => {
-    if (patientBirthDate && formData.date) {
-        const newAge = calculateAgeAtDate(patientBirthDate, formData.date);
-        setFormData(prev => ({ ...prev, age: newAge.toString() }));
-    }
-  }, [formData.date, patientBirthDate]);
+
+
 
   // Helper para converter string numérica (com . ou ,) para float
   const parseNumber = (val: string) => {
@@ -147,49 +115,17 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
       return parseFloat(val.replace(',', '.'));
   };
 
-  // Auto-calculate IMC when weight or height changes
-  useEffect(() => {
-    const w = parseNumber(formData.weight);
-    const h = parseNumber(formData.height);
-    
-    if (w > 0 && h > 0) {
-      const imc = w / (h * h);
-      // Só atualiza se o valor calculado for diferente do atual (para evitar loop se usuário estiver editando)
-      // Mas aqui é calculado, então sobrescrevemos.
-      // Para evitar conflito de edição, idealmente só calculamos se o usuário não estiver editando o IMC manualmente.
-      // Como o IMC é readonly ou auto-calculado, vamos assumir que sobrescrever é ok, 
-      // mas vamos formatar para string com 1 casa decimal.
-      setFormData(prev => ({ ...prev, imc: imc.toFixed(1).replace('.', ',') }));
-    }
-  }, [formData.weight, formData.height]);
-
-  // Auto-calculate BMR (Mifflin-St Jeor)
-  useEffect(() => {
-    const w = parseNumber(formData.weight);
-    const h = parseNumber(formData.height);
-    const a = parseNumber(formData.age);
-
-    if (w > 0 && h > 0 && a > 0 && patientGender) {
-        const weightPart = 10 * w;
-        const heightPart = 6.25 * (h * 100);
-        const agePart = 5 * a;
-        
-        let bmr = 0;
-        if (patientGender === 'Masculino') {
-            bmr = weightPart + heightPart - agePart + 5;
-        } else {
-            bmr = weightPart + heightPart - agePart - 161;
-        }
-        
-        setFormData(prev => ({ ...prev, bmr: Math.round(bmr).toString() }));
-    }
-  }, [formData.weight, formData.height, formData.age, patientGender]);
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let { name, value } = e.target;
+    const { name, value } = e.target;
     
     if (name === 'date') {
-        setFormData(prev => ({ ...prev, [name]: value }));
+        setFormData(prev => {
+            const newData = { ...prev, [name]: value };
+            if (patientBirthDate) {
+                newData.age = calculateAgeAtDate(patientBirthDate, value).toString();
+            }
+            return newData;
+        });
         return;
     }
 
@@ -202,7 +138,37 @@ export const EntryForm: React.FC<EntryFormProps> = ({ onSave, onCancel, lastReco
     // Validação para permitir apenas números, ponto e vírgula
     // Permite string vazia para apagar o campo
     if (value === '' || /^[0-9]*[.,]?[0-9]*$/.test(value)) {
-        setFormData(prev => ({ ...prev, [name]: value }));
+        setFormData(prev => {
+            const newData = { ...prev, [name]: value };
+            
+            // Recalcular IMC e BMR se mudar peso, altura ou idade
+            if (name === 'weight' || name === 'height' || name === 'age') {
+                const w = parseNumber(newData.weight);
+                const h = parseNumber(newData.height);
+                const a = parseNumber(newData.age);
+
+                // IMC
+                if (w > 0 && h > 0) {
+                    newData.imc = (w / (h * h)).toFixed(1).replace('.', ',');
+                }
+
+                // BMR
+                if (w > 0 && h > 0 && a > 0 && patientGender) {
+                    const weightPart = 10 * w;
+                    const heightPart = 6.25 * (h * 100);
+                    const agePart = 5 * a;
+                    
+                    let bmr = 0;
+                    if (patientGender === 'Masculino') {
+                        bmr = weightPart + heightPart - agePart + 5;
+                    } else {
+                        bmr = weightPart + heightPart - agePart - 161;
+                    }
+                    newData.bmr = Math.round(bmr).toString();
+                }
+            }
+            return newData;
+        });
     }
   };
 

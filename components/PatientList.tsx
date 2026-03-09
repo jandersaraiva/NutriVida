@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Patient, ActivityLevel } from '../types';
 import { Search, Plus, User, ChevronRight, Calendar, X, Pencil, Trash2, RefreshCcw, Archive, MapPin, Zap } from 'lucide-react';
 
@@ -19,7 +19,7 @@ const generateId = () => {
     return crypto.randomUUID();
   }
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
   });
 };
@@ -35,7 +35,7 @@ export const PatientList: React.FC<PatientListProps> = ({
   onCloseModal
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [showModal, setShowModal] = useState(false);
+  const [showModal, setShowModal] = useState(initialOpenModal);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'active' | 'trash'>('active');
 
@@ -68,12 +68,7 @@ export const PatientList: React.FC<PatientListProps> = ({
     setShowModal(true);
   };
   
-  // Open modal if prop is true (on mount)
-  useEffect(() => {
-    if (initialOpenModal) {
-      handleOpenAdd();
-    }
-  }, [initialOpenModal]);
+
 
   const filteredPatients = patients.filter(p => 
     p.status === viewMode && // Filter by active or trash status
