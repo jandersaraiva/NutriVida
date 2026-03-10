@@ -131,9 +131,9 @@ export interface Feedback {
   };
 }
 
-export type ViewState = 'home' | 'patients' | 'schedule' | 'add_entry' | 'select_patient_for_entry' | 'profile_settings' | 'active_diets' | 'assessment_report' | 'feedbacks' | 'recipes';
+export type ViewState = 'home' | 'patients' | 'schedule' | 'add_entry' | 'select_patient_for_entry' | 'profile_settings' | 'active_diets' | 'assessment_report' | 'feedbacks' | 'recipes' | 'food_diary';
 
-export type PatientTab = 'overview' | 'anamnesis' | 'history' | 'diet' | 'profile' | 'recipes';
+export type PatientTab = 'overview' | 'anamnesis' | 'history' | 'diet' | 'profile' | 'recipes' | 'food_diary';
 
 export interface MetricConfig {
   key: keyof CheckIn;

@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { DietPlan as DietPlanType, Meal, FoodItem, Nutritionist } from '../types';
 import { Clock, Plus, Trash2, Edit2, Save, X, ChefHat, Copy, Check, PieChart, Search, Calendar, Archive, FilePlus, ChevronLeft, Zap, Target, Droplets, FileDown, ShoppingCart } from 'lucide-react';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import html2canvas from 'html2canvas';
+import { DietPDFReport } from './DietPDFReport';
 
 interface DietPlanProps {
   plans: DietPlanType[];
@@ -200,6 +201,21 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
   // Derived state for the active view
   const currentPlan = useMemo(() => plans.find(p => p.id === selectedPlanId), [plans, selectedPlanId]);
 
+  // Prepare data for PDF (handle migration for display)
+  const pdfPlanData = useMemo(() => {
+      if (!currentPlan) return null;
+      const plan = JSON.parse(JSON.stringify(currentPlan)); // Deep copy
+      
+      // Migration logic: If days are missing, populate them with the main meals
+      if (!plan.days || plan.days.length === 0) {
+          plan.days = DAYS_OF_WEEK.map((day: string) => ({
+              day,
+              meals: JSON.parse(JSON.stringify(plan.meals || []))
+          }));
+      }
+      return plan;
+  }, [currentPlan]);
+
   // Mode States
   const [isEditing, setIsEditing] = useState(false);
   const [showNewPlanModal, setShowNewPlanModal] = useState(false);
@@ -215,7 +231,7 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
 
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [showShoppingList, setShowShoppingList] = useState(false);
-  // pdfRef removed as we are generating programmatically
+  const pdfRef = React.useRef<HTMLDivElement>(null);
 
   // --- SHOPPING LIST LOGIC ---
   const shoppingList = useMemo(() => {
@@ -364,172 +380,44 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
     doc.save(`Lista_Compras_${patientName.replace(/\s+/g, '_')}.pdf`);
   };
 
-  const handleGeneratePDF = () => {
-    if (!currentPlan) return;
+  const handleGeneratePDF = async () => {
+    if (!currentPlan || !pdfRef.current) return;
     setIsGeneratingPDF(true);
-
+    
     try {
-        const doc = new jsPDF();
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const pageHeight = doc.internal.pageSize.getHeight();
-        const margin = 15;
-
-        // --- HEADER ---
-        doc.setFillColor(37, 99, 235); // Blue-600
-        doc.rect(0, 0, pageWidth, 40, 'F');
-
-        doc.setFontSize(22);
-        doc.setTextColor(255, 255, 255);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Plano Alimentar', margin, 20);
-
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'normal');
-        doc.text('NutriVida App', pageWidth - margin, 20, { align: 'right' });
-
-        // --- PATIENT INFO ---
-        doc.setFillColor(248, 250, 252); // Slate-50
-        doc.setDrawColor(226, 232, 240); // Slate-200
-        doc.roundedRect(margin, 45, pageWidth - (margin * 2), 25, 3, 3, 'FD');
-
-        doc.setFontSize(9);
-        doc.setTextColor(100, 116, 139); // Slate-500
-        doc.text('PACIENTE', margin + 5, 53);
-        doc.text('NUTRICIONISTA', margin + 70, 53);
-        doc.text('DATA', margin + 130, 53);
-
-        doc.setFontSize(11);
-        doc.setTextColor(30, 41, 59); // Slate-800
-        doc.setFont('helvetica', 'bold');
-        doc.text(patientName, margin + 5, 60);
-        doc.text(nutritionist.name, margin + 70, 60);
-        doc.text(new Date().toLocaleDateString('pt-BR'), margin + 130, 60);
-
-        // Water Target
-        doc.setFontSize(9);
-        doc.setTextColor(100, 116, 139);
-        doc.text('META DE ÁGUA:', margin + 5, 66);
-        doc.setFontSize(11);
-        doc.setTextColor(37, 99, 235); // Blue-600
-        doc.setFont('helvetica', 'bold');
-        doc.text(`${((currentPlan.waterTarget || 2000) / 1000).toFixed(1)} Litros / dia`, margin + 32, 66);
-
-        let currentY = 80;
-
-        // --- DAYS LOOP ---
-        const daysToPrint = (currentPlan.days && currentPlan.days.length > 0) 
-            ? currentPlan.days 
-            : [{ day: 'Dieta Padrão', meals: currentPlan.meals }];
-
-        daysToPrint.forEach((dayPlan, dayIndex) => {
-            // Add page break for new days (except first) if needed, or just a header
-            if (dayIndex > 0) {
-                if (currentY > pageHeight - 50) {
-                    doc.addPage();
-                    currentY = 20;
-                } else {
-                    currentY += 5;
-                }
-            }
-
-            // Day Header
-            doc.setFillColor(241, 245, 249); // Slate-100
-            doc.rect(0, currentY - 8, pageWidth, 12, 'F');
-            
-            doc.setFontSize(14);
-            doc.setTextColor(30, 41, 59);
-            doc.setFont('helvetica', 'bold');
-            doc.text(dayPlan.day.toUpperCase(), margin, currentY);
-            
-            currentY += 10;
-
-            // --- MEALS LOOP ---
-            dayPlan.meals.forEach((meal) => {
-                // Check if we need a new page before starting a meal table
-                if (currentY > pageHeight - 30) {
-                    doc.addPage();
-                    currentY = 20;
-                }
-
-                // Meal Title
-                doc.setFontSize(11);
-                doc.setTextColor(37, 99, 235); // Blue-600
-                doc.setFont('helvetica', 'bold');
-                doc.text(`${meal.time} - ${meal.name}`, margin, currentY);
-                
-                if (meal.isCheatMeal) {
-                    doc.setFontSize(9);
-                    doc.setTextColor(239, 68, 68); // Red-500
-                    doc.text('(Refeição Livre)', margin + doc.getTextWidth(`${meal.time} - ${meal.name}`) + 5, currentY);
-                }
-
-                currentY += 3;
-
-                // Prepare Table Data
-                const tableBody = meal.items.map(item => [
-                    item.name,
-                    `${item.quantity}${item.unit || 'g'}`,
-                    item.calories.toFixed(0),
-                    item.protein.toFixed(1),
-                    item.carbs.toFixed(1),
-                    item.fats.toFixed(1)
-                ]);
-
-                // AutoTable
-                autoTable(doc, {
-                    startY: currentY,
-                    head: [['Alimento', 'Qtd', 'Kcal', 'Prot', 'Carb', 'Gord']],
-                    body: tableBody,
-                    theme: 'striped',
-                    headStyles: { fillColor: [248, 250, 252], textColor: [71, 85, 105], fontStyle: 'bold', minCellHeight: 8 },
-                    bodyStyles: { textColor: [51, 65, 85], minCellHeight: 6 },
-                    alternateRowStyles: { fillColor: [255, 255, 255] },
-                    styles: { fontSize: 9, cellPadding: 1.5, overflow: 'linebreak' },
-                    columnStyles: {
-                        0: { cellWidth: 'auto' }, // Alimento
-                        1: { cellWidth: 20, halign: 'center' }, // Qtd
-                        2: { cellWidth: 15, halign: 'center' }, // Kcal
-                        3: { cellWidth: 15, halign: 'center' }, // Prot
-                        4: { cellWidth: 15, halign: 'center' }, // Carb
-                        5: { cellWidth: 15, halign: 'center' }, // Gord
-                    },
-                    margin: { left: margin, right: margin },
-                });
-
-                // Update Y position
-                currentY = (doc as any).lastAutoTable.finalY + 8;
-            });
-            
-            // Daily Totals (Optional, if desired)
-            const dayTotals = calculateDayTotals(dayPlan.meals);
-            if (currentY > pageHeight - 25) {
-                doc.addPage();
-                currentY = 20;
-            }
-            
-            doc.setFillColor(240, 253, 244); // Green-50
-            doc.roundedRect(margin, currentY - 4, pageWidth - (margin * 2), 12, 1.5, 1.5, 'F');
-            
-            doc.setFontSize(9);
-            doc.setTextColor(22, 101, 52); // Green-800
-            doc.setFont('helvetica', 'bold');
-            doc.text(`Totais do Dia: ${dayTotals.kcal.toFixed(0)} kcal  |  P: ${dayTotals.p.toFixed(1)}g  |  C: ${dayTotals.c.toFixed(1)}g  |  G: ${dayTotals.f.toFixed(1)}g`, margin + 5, currentY + 4);
-            
-            currentY += 15;
+        await new Promise(resolve => setTimeout(resolve, 500)); // Garantir render completo
+        
+        const canvas = await html2canvas(pdfRef.current, {
+            scale: 1.5, // Qualidade boa e tamanho ok
+            useCORS: true,
+            logging: false,
+            windowWidth: 1200, // Largura desktop para layout correto
+            backgroundColor: '#ffffff'
         });
-
-        // --- FOOTER ---
-        const totalPages = doc.getNumberOfPages();
-        for (let i = 1; i <= totalPages; i++) {
-            doc.setPage(i);
-            doc.setFontSize(8);
-            doc.setTextColor(148, 163, 184); // Slate-400
-            doc.text(`Página ${i} de ${totalPages}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
-            doc.text(`Gerado em ${new Date().toLocaleString('pt-BR')}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
+        
+        // Usar JPEG com qualidade 0.8 para arquivo leve (~1-2MB)
+        const imgData = canvas.toDataURL('image/jpeg', 0.8);
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const imgWidth = pdfWidth;
+        const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+        
+        let heightLeft = imgHeight;
+        let position = 0;
+        
+        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pdfHeight;
+        
+        while (heightLeft >= 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pdfHeight;
         }
-
-        doc.save(`Plano_Alimentar_${patientName.replace(/\s+/g, '_')}.pdf`);
-
+        
+        pdf.save(`Dieta_${patientName.replace(/\s+/g, '_')}.pdf`);
+        
     } catch (error) {
         console.error("Erro ao gerar PDF:", error);
         alert("Erro ao gerar PDF. Tente novamente.");
@@ -1608,6 +1496,18 @@ export const DietPlan: React.FC<DietPlanProps> = ({ plans = [], onUpdatePlans, p
                         </button>
                     </div>
                 </div>
+            </div>
+        )}
+
+        {/* PDF TEMPLATE (Hidden) */}
+        {pdfPlanData && (
+            <div className="absolute left-[-9999px] top-0">
+                <DietPDFReport 
+                    ref={pdfRef} 
+                    plan={pdfPlanData} 
+                    patientName={patientName} 
+                    nutritionist={nutritionist} 
+                />
             </div>
         )}
 

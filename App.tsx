@@ -15,10 +15,11 @@ import { AnamnesisForm } from './components/AnamnesisForm';
 import { AssessmentReport } from './components/AssessmentReport';
 import { LoginScreen } from './components/LoginScreen';
 import { CheckIn, ViewState, Patient, DietPlan as DietPlanType, PatientTab, Appointment, Nutritionist, Anamnesis } from './types';
-import { User, Activity, Utensils, FileText, LayoutDashboard, Stethoscope, Sun, Moon, LogOut, XCircle, AlertCircle, MessageSquare, ChefHat } from 'lucide-react';
+import { User, Activity, Utensils, FileText, LayoutDashboard, Stethoscope, Sun, Moon, LogOut, XCircle, AlertCircle, MessageSquare, ChefHat, BookOpen } from 'lucide-react';
 import { PatientProfile } from './components/PatientProfile';
 import { FeedbackList } from './components/FeedbackList';
 import { RecipeLibrary } from './components/RecipeLibrary';
+import { FoodDiary } from './components/FoodDiary';
 import { supabase } from './lib/supabase';
 import { Session } from '@supabase/supabase-js';
 
@@ -825,6 +826,7 @@ const App: React.FC = () => {
 
     if (userType === 'patient') {
         tabs.push({ id: 'recipes', label: 'Receitas', icon: ChefHat });
+        tabs.push({ id: 'food_diary', label: 'Diário', icon: BookOpen });
     }
 
     return (
@@ -882,6 +884,7 @@ const App: React.FC = () => {
                 activeTab === 'diet' ? 'diet' :
                 activeTab === 'history' ? 'history' :
                 activeTab === 'recipes' ? 'recipes' :
+                activeTab === 'food_diary' ? 'food_diary' :
                 'home'
             } 
             onViewChange={(view) => {
@@ -894,6 +897,7 @@ const App: React.FC = () => {
                     if (viewId === 'history') setActiveTab('history');
                     if (viewId === 'diet') setActiveTab('diet');
                     if (viewId === 'recipes') setActiveTab('recipes');
+                    if (viewId === 'food_diary') setActiveTab('food_diary');
                 }
             }} 
             isDarkMode={isDarkMode} 
@@ -1184,6 +1188,10 @@ const App: React.FC = () => {
 
               {activeTab === 'recipes' && (
                 <RecipeLibrary />
+              )}
+
+              {activeTab === 'food_diary' && (
+                <FoodDiary dietPlan={activePatient.dietPlans.find(p => p.status === 'active')} />
               )}
             </div>
           )}
