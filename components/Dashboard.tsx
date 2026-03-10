@@ -762,7 +762,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
             icon={Calculator}
             colorClass={getImcColor(current.imc)}
             delta={renderDelta(current.imc, previous?.imc, true)}
-            gauge={<LinearGauge value={current.imc} min={10} max={45} ranges={imcRanges} />}
+            gauge={<SpeedometerGauge value={current.imc} min={10} max={45} ranges={imcRanges} unit="kg/m²" />}
+            hideValue
         />
         <Card 
           title="Gordura Corporal" 
@@ -771,7 +772,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
           icon={PieChart} 
           colorClass="text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-700"
           delta={renderDelta(current.bodyFat, previous?.bodyFat, true, " %")}
-          gauge={<LinearGauge value={current.bodyFat} min={gender === 'Masculino' ? 2 : 10} max={gender === 'Masculino' ? 50 : 55} ranges={fatRanges} />}
+          gauge={<SpeedometerGauge value={current.bodyFat} min={gender === 'Masculino' ? 2 : 10} max={gender === 'Masculino' ? 50 : 55} ranges={fatRanges} unit="%" />}
+          hideValue
         />
         <Card 
           title="Massa Muscular" 

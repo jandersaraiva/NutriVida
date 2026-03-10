@@ -363,7 +363,7 @@ interface RecipeLibraryProps {
   onBack?: () => void;
 }
 
-export const RecipeLibrary: React.FC<RecipeLibraryProps> = () => {
+export const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onBack }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);

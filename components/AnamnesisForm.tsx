@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Anamnesis } from '../types';
-import { Save, AlertCircle, Coffee, Moon, Pill, Stethoscope, CheckCircle } from 'lucide-react';
+import { Save, FileText, AlertCircle, Coffee, Moon, Pill, Stethoscope, CheckCircle } from 'lucide-react';
 
 interface AnamnesisFormProps {
   initialData?: Anamnesis;
@@ -21,6 +21,10 @@ export const AnamnesisForm: React.FC<AnamnesisFormProps> = ({ initialData, onSav
   });
 
   const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    if (initialData) setFormData(initialData);
+  }, [initialData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;

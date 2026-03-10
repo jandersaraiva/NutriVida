@@ -51,7 +51,7 @@ export const PatientProfile: React.FC<PatientProfileProps> = ({ patient, onUpdat
         if (error) throw error;
 
         // Atualiza localmente
-        // Nota: auth_user_id não está na interface Patient padrão, mas o Supabase retorna.
+        const updated = { ...patient, auth_user_id: null }; // Nota: auth_user_id não está na interface Patient padrão, mas o Supabase retorna.
         // Como não temos auth_user_id na interface Patient, vamos apenas chamar onUpdate com os dados atuais para forçar refresh se necessário,
         // mas o ideal seria recarregar os dados.
         // Vamos assumir que o onUpdate lida com isso ou que o pai recarrega.
