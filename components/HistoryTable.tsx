@@ -159,13 +159,14 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, on
         };
 
         // Table configuration
-        const head = [['Data', 'Peso (kg)', 'IMC', 'Gordura (%)', 'Músculo (%)', 'TMB (Kcal)', 'Visceral', 'Glicemia']];
+        const head = [['Data', 'Peso (kg)', 'IMC', 'Gordura (%)', 'Músculo (%)', 'Idade Corp.', 'TMB (Kcal)', 'Visceral', 'Glicemia']];
         const tableData = processedData.map(checkIn => [
             formatDate(checkIn.date),
             formatWithDiff(checkIn.weight, checkIn.delta?.weight, 'inverse'),
             formatWithDiff(checkIn.imc, checkIn.delta?.imc, 'inverse'),
             formatWithDiff(checkIn.bodyFat, checkIn.delta?.bodyFat, 'inverse'),
             formatWithDiff(checkIn.muscleMass, checkIn.delta?.muscleMass, 'standard'),
+            formatWithDiff(checkIn.bodyAge?.toString(), undefined, 'neutral'),
             formatWithDiff(checkIn.bmr, checkIn.delta?.bmr, 'standard'),
             formatWithDiff(checkIn.visceralFat, checkIn.delta?.visceralFat, 'inverse'),
             formatWithDiff(checkIn.glucose, checkIn.delta?.glucose, 'inverse')
@@ -199,7 +200,8 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, on
                 4: { halign: 'center' },
                 5: { halign: 'center' },
                 6: { halign: 'center' },
-                7: { halign: 'center' }
+                7: { halign: 'center' },
+                8: { halign: 'center' }
             },
             alternateRowStyles: {
                 fillColor: [248, 250, 252] // slate-50
