@@ -90,11 +90,32 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
   const current = checkIns[0];
   const previous = checkIns[1];
 
+  // Helper functions for safe date parsing
+  const formatSafeDate = (dateString: string) => {
+    if (!dateString) return '';
+    const [year, month, day] = dateString.split('-');
+    return `${day}/${month}/${year}`;
+  };
+
+  const formatSafeShortDate = (dateString: string) => {
+    if (!dateString) return '';
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(year, month - 1, day, 12, 0, 0);
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: '2-digit' });
+  };
+  
+  const formatSafeDayMonth = (dateString: string) => {
+    if (!dateString) return '';
+    const [year, month, day] = dateString.split('-');
+    return `${day}/${month}`;
+  };
+
   // Encontrar o check-in mais próximo de 30 dias atrás para comparação de recomposição
   const monthComparison = useMemo(() => {
       if (checkIns.length < 2) return null;
       
-      const targetDate = new Date(current.date);
+      const [year, month, day] = current.date.split('-').map(Number);
+      const targetDate = new Date(year, month - 1, day, 12, 0, 0);
       targetDate.setDate(targetDate.getDate() - 30);
       
       // Candidatos são todos exceto o atual
@@ -102,16 +123,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
       
       // Encontrar o mais próximo da data alvo
       return candidates.reduce((prev, curr) => {
-          const prevDiff = Math.abs(new Date(prev.date).getTime() - targetDate.getTime());
-          const currDiff = Math.abs(new Date(curr.date).getTime() - targetDate.getTime());
+          const prevDate = new Date(prev.date.split('-')[0] as any, (prev.date.split('-')[1] as any) - 1, prev.date.split('-')[2] as any, 12, 0, 0);
+          const currDate = new Date(curr.date.split('-')[0] as any, (curr.date.split('-')[1] as any) - 1, curr.date.split('-')[2] as any, 12, 0, 0);
+          const prevDiff = Math.abs(prevDate.getTime() - targetDate.getTime());
+          const currDiff = Math.abs(currDate.getTime() - targetDate.getTime());
           return currDiff < prevDiff ? curr : prev;
       });
   }, [checkIns, current]);
 
   // For charts, we need chronological order (oldest to newest)
-  const chartData = [...checkIns].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).map(c => ({
+  const chartData = [...checkIns].sort((a, b) => {
+      const aDate = new Date(a.date.split('-')[0] as any, (a.date.split('-')[1] as any) - 1, a.date.split('-')[2] as any, 12, 0, 0);
+      const bDate = new Date(b.date.split('-')[0] as any, (b.date.split('-')[1] as any) - 1, b.date.split('-')[2] as any, 12, 0, 0);
+      return aDate.getTime() - bDate.getTime();
+  }).map(c => ({
     ...c,
-    dateFormatted: new Date(c.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: '2-digit' }),
+    dateFormatted: formatSafeShortDate(c.date),
     // Formatação para tooltips
     weightNum: c.weight,
     imcNum: c.imc,
@@ -146,7 +173,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
   const renderRecompositionAnalysis = () => {
     if (!current || !monthComparison) return null;
 
-    const comparisonDate = new Date(monthComparison.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    const comparisonDate = formatSafeDayMonth(monthComparison.date);
 
     // Calcular Massas em KG
     const currentFatKg = current.weight * (current.bodyFat / 100);
@@ -618,7 +645,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ checkIns, onAddEntry, onVi
                 <Calendar size={20} />
              </div>
              <div>
-                <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Última Avaliação: {new Date(current.date).toLocaleDateString('pt-BR')}</h3>
+                <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Última Avaliação: {formatSafeDate(current.date)}</h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">Confira a evolução detalhada e gere o PDF.</p>
              </div>
          </div>

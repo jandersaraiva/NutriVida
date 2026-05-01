@@ -182,12 +182,30 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
     return Math.max(0, Math.min(100, Math.round(score)));
   }, [checkIn, patient.gender]);
 
+  // --- Helper functions para data segura ---
+  const formatSafeDate = (dateString: string) => {
+    if (!dateString) return '';
+    const [year, month, day] = dateString.split('-');
+    return `${day}/${month}/${year}`;
+  };
+
+  const formatSafeShortDate = (dateString: string) => {
+    if (!dateString) return '';
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(year, month - 1, day, 12, 0, 0);
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+  };
+
   // --- DADOS PARA GRÁFICOS ---
   const chartData = useMemo(() => {
     return [...allCheckIns]
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .sort((a, b) => {
+          const aDate = new Date(a.date.split('-')[0] as any, (a.date.split('-')[1] as any) - 1, a.date.split('-')[2] as any, 12, 0, 0);
+          const bDate = new Date(b.date.split('-')[0] as any, (b.date.split('-')[1] as any) - 1, b.date.split('-')[2] as any, 12, 0, 0);
+          return aDate.getTime() - bDate.getTime();
+      })
       .map(c => ({
-        date: new Date(c.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }),
+        date: formatSafeShortDate(c.date),
         weight: c.weight,
         bodyFat: c.bodyFat,
         muscleMass: c.muscleMass,
@@ -325,7 +343,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ checkIn, pat
                     <div className="text-right">
                         <h1 className="text-xl font-bold text-slate-900 dark:text-white">{patient.name}</h1>
                         <p className="text-slate-500 dark:text-slate-400 text-sm">
-                            {patient.age} anos • {patient.gender} • {new Date(checkIn.date).toLocaleDateString('pt-BR')}
+                            {patient.age} anos • {patient.gender} • {formatSafeDate(checkIn.date)}
                         </p>
                     </div>
                 </div>
