@@ -1163,6 +1163,8 @@ const App: React.FC = () => {
                     onDelete={handleDeleteCheckIn}
                     onViewReport={handleViewReport}
                     readOnly={userType === 'patient'}
+                    patient={activePatient}
+                    nutritionist={nutritionist}
                 />
               )}
               

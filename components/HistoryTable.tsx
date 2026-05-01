@@ -1,8 +1,15 @@
 import React, { useRef, useState, useMemo } from 'react';
-import { CheckIn } from '../types';
+import { CheckIn, Patient, Nutritionist } from '../types';
 import { Calendar, Download, Pencil, Trash2, FileText, Loader2, TrendingUp, TrendingDown, Minus, Eye, X } from 'lucide-react';
-import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
+
+import 'jspdf-autotable';
+import { UserOptions } from 'jspdf-autotable';
+
+interface jsPDFWithAutoTable extends jsPDF {
+    autoTable: (options: UserOptions) => void;
+    lastAutoTable: { finalY: number };
+}
 
 interface HistoryTableProps {
   checkIns: CheckIn[];
@@ -10,6 +17,8 @@ interface HistoryTableProps {
   onDelete: (id: string) => void;
   onViewReport?: (checkIn: CheckIn) => void;
   readOnly?: boolean;
+  patient?: Patient | null;
+  nutritionist?: Nutritionist | null;
 }
 
 const MetricCard = ({ label, value, compact = false }: { label: string, value: string | number, compact?: boolean }) => (
@@ -19,7 +28,7 @@ const MetricCard = ({ label, value, compact = false }: { label: string, value: s
     </div>
 );
 
-export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, onDelete, onViewReport, readOnly = false }) => {
+export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, onDelete, onViewReport, readOnly = false, patient, nutritionist }) => {
   const tableRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [selectedCheckIn, setSelectedCheckIn] = useState<CheckIn | null>(null);
@@ -78,7 +87,7 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, on
   };
   
   const handleExportPDF = async () => {
-    if (checkIns.length === 0 || !tableRef.current) {
+    if (checkIns.length === 0) {
       alert("Não há dados para exportar.");
       return;
     }
@@ -86,47 +95,109 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, on
     setIsExporting(true);
 
     try {
-        // Detecta tema para fundo
-        const isDark = document.documentElement.classList.contains('dark');
-        const backgroundColor = isDark ? '#1e293b' : '#ffffff'; // slate-800 vs white
-        const textColor = isDark ? '#f8fafc' : '#1e293b';
+        const pdf = new jsPDF('p', 'mm', 'a4') as jsPDFWithAutoTable;
+        
+        // Define margins and line position
+        const margin = 14;
+        let yPos = margin;
 
-        // Captura a tabela como imagem
-        const canvas = await html2canvas(tableRef.current, {
-            scale: 2, // Melhor resolução
-            backgroundColor: backgroundColor,
-            ignoreElements: (element) => {
-                // Ignora elementos com a classe 'pdf-exclude' (Coluna Ações)
-                return element.classList.contains('pdf-exclude');
+        // Draw header
+        pdf.setFontSize(18);
+        pdf.setTextColor(30, 41, 59); // slate-800
+        pdf.text("Histórico de Avaliações", margin, yPos);
+        yPos += 8;
+
+        pdf.setFontSize(10);
+        pdf.setTextColor(100, 116, 139); // slate-500
+        const dateStr = new Date().toLocaleDateString('pt-BR');
+        pdf.text(`Gerado em: ${dateStr}`, margin, yPos);
+        yPos += 10;
+
+        if (patient) {
+            pdf.setFontSize(11);
+            pdf.setTextColor(30, 41, 59);
+            pdf.text(`Paciente: ${patient.name}`, margin, yPos);
+            yPos += 6;
+            pdf.setFontSize(10);
+            pdf.setTextColor(100, 116, 139);
+            pdf.text(`Idade: ${patient.age} | Sexo: ${patient.gender} | Objetivo: ${patient.objective || '-'}`, margin, yPos);
+            yPos += 10;
+        }
+
+        if (nutritionist && nutritionist.name) {
+            pdf.setFontSize(10);
+            pdf.setTextColor(100, 116, 139);
+            pdf.text(`Nutricionista: ${nutritionist.name} - CRN: ${nutritionist.crn || '-'}`, margin, yPos);
+            yPos += 10;
+        }
+
+        pdf.setDrawColor(226, 232, 240); // slate-200
+        pdf.line(margin, yPos, 210 - margin, yPos);
+        yPos += 10;
+
+        // Table configuration
+        const head = [['Data', 'Peso (kg)', 'IMC', 'Gordura (%)', 'Músculo (%)', 'TMB (Kcal)', 'Visceral', 'Glicemia (mg/dL)']];
+        const tableData = processedData.map(checkIn => [
+            formatDate(checkIn.date),
+            checkIn.weight.toFixed(1),
+            checkIn.imc.toFixed(1),
+            checkIn.bodyFat.toFixed(1),
+            checkIn.muscleMass.toFixed(1),
+            checkIn.bmr,
+            checkIn.visceralFat,
+            checkIn.glucose || '-'
+        ]);
+
+        pdf.autoTable({
+            startY: yPos,
+            head: head,
+            body: tableData,
+            theme: 'grid',
+            styles: {
+                font: 'helvetica',
+                fontSize: 9,
+                textColor: [51, 65, 85], // slate-700
+                lineColor: [226, 232, 240], // slate-200
+                lineWidth: 0.1,
+            },
+            headStyles: {
+                fillColor: [248, 250, 252], // slate-50
+                textColor: [71, 85, 105], // slate-500
+                fontSize: 9,
+                fontStyle: 'bold',
+                halign: 'center'
+            },
+            columnStyles: {
+                0: { halign: 'center' },
+                1: { halign: 'center' },
+                2: { halign: 'center' },
+                3: { halign: 'center' },
+                4: { halign: 'center' },
+                5: { halign: 'center' },
+                6: { halign: 'center' },
+                7: { halign: 'center' }
+            },
+            alternateRowStyles: {
+                fillColor: [248, 250, 252] // slate-50
             }
         });
 
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pdfWidth = 210;
-        const pdfHeight = 297;
-        const margin = 10;
-        
-        // Calcula altura proporcional
-        const imgProps = pdf.getImageProperties(imgData);
-        const contentWidth = pdfWidth - (margin * 2);
-        const imgHeight = (imgProps.height * contentWidth) / imgProps.width;
-
-        // Pinta o fundo da página inteira se for modo escuro
-        if (isDark) {
-            pdf.setFillColor(30, 41, 59); // slate-800 RGB
-            pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
+        // Add footer
+        const pageCount = pdf.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            pdf.setPage(i);
+            pdf.setFontSize(8);
+            pdf.setTextColor(148, 163, 184); // slate-400
+            pdf.text(
+                `Página ${i} de ${pageCount}`,
+                pdf.internal.pageSize.width / 2,
+                pdf.internal.pageSize.height - 10,
+                { align: 'center' }
+            );
         }
 
-        // Título do Documento
-        pdf.setFontSize(14);
-        pdf.setTextColor(isDark ? 255 : 0, isDark ? 255 : 0, isDark ? 255 : 0);
-        pdf.text("Histórico de Avaliações", margin, margin + 5);
-
-        // Adiciona a imagem da tabela
-        pdf.addImage(imgData, 'PNG', margin, margin + 10, contentWidth, imgHeight);
-
-        pdf.save(`historico_avaliacoes_${new Date().toISOString().split('T')[0]}.pdf`);
+        const fileName = patient ? `historico_${patient.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf` : `historico_avaliacoes_${new Date().toISOString().split('T')[0]}.pdf`;
+        pdf.save(fileName);
 
     } catch (error) {
         console.error("Erro ao exportar PDF:", error);
