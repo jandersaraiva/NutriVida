@@ -2,14 +2,7 @@ import React, { useRef, useState, useMemo } from 'react';
 import { CheckIn, Patient, Nutritionist } from '../types';
 import { Calendar, Download, Pencil, Trash2, FileText, Loader2, TrendingUp, TrendingDown, Minus, Eye, X } from 'lucide-react';
 import { jsPDF } from 'jspdf';
-
-import 'jspdf-autotable';
-import { UserOptions } from 'jspdf-autotable';
-
-interface jsPDFWithAutoTable extends jsPDF {
-    autoTable: (options: UserOptions) => void;
-    lastAutoTable: { finalY: number };
-}
+import autoTable from 'jspdf-autotable';
 
 interface HistoryTableProps {
   checkIns: CheckIn[];
@@ -95,60 +88,90 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, on
     setIsExporting(true);
 
     try {
-        const pdf = new jsPDF('p', 'mm', 'a4') as jsPDFWithAutoTable;
+        const pdf = new jsPDF('p', 'mm', 'a4');
         
         // Define margins and line position
         const margin = 14;
         let yPos = margin;
 
-        // Draw header
-        pdf.setFontSize(18);
-        pdf.setTextColor(30, 41, 59); // slate-800
-        pdf.text("Histórico de Avaliações", margin, yPos);
-        yPos += 8;
+        // Header color bar (minimalist accent)
+        pdf.setFillColor(16, 185, 129); // emerald-500
+        pdf.rect(0, 0, 210, 4, 'F');
+        yPos += 10;
 
+        // Title
+        pdf.setFontSize(22);
+        pdf.setTextColor(30, 41, 59); // slate-800
+        pdf.setFont("helvetica", "bold");
+        pdf.text("Histórico de Avaliações", margin, yPos);
+        
+        // Date generated
         pdf.setFontSize(10);
+        pdf.setFont("helvetica", "normal");
         pdf.setTextColor(100, 116, 139); // slate-500
         const dateStr = new Date().toLocaleDateString('pt-BR');
-        pdf.text(`Gerado em: ${dateStr}`, margin, yPos);
+        pdf.text(`Gerado em: ${dateStr}`, 210 - margin, yPos, { align: 'right' });
         yPos += 10;
+
+        // Info Box
+        pdf.setDrawColor(226, 232, 240); // slate-200
+        pdf.setFillColor(248, 250, 252); // slate-50
+        const boxHeight = (patient && nutritionist) ? 28 : (patient ? 22 : 18);
+        pdf.roundedRect(margin, yPos, 210 - (margin * 2), boxHeight, 2, 2, 'FD');
+        
+        yPos += 8;
 
         if (patient) {
             pdf.setFontSize(11);
-            pdf.setTextColor(30, 41, 59);
-            pdf.text(`Paciente: ${patient.name}`, margin, yPos);
+            pdf.setTextColor(15, 23, 42); // slate-900
+            pdf.setFont("helvetica", "bold");
+            pdf.text(`Paciente: ${patient.name}`, margin + 5, yPos);
+            
             yPos += 6;
             pdf.setFontSize(10);
-            pdf.setTextColor(100, 116, 139);
-            pdf.text(`Idade: ${patient.age} | Sexo: ${patient.gender} | Objetivo: ${patient.objective || '-'}`, margin, yPos);
-            yPos += 10;
+            pdf.setFont("helvetica", "normal");
+            pdf.setTextColor(71, 85, 105); // slate-600
+            pdf.text(`Idade: ${patient.age}  |  Sexo: ${patient.gender}  |  Objetivo: ${patient.objective || '-'}`, margin + 5, yPos);
+            yPos += 8;
         }
 
         if (nutritionist && nutritionist.name) {
             pdf.setFontSize(10);
-            pdf.setTextColor(100, 116, 139);
-            pdf.text(`Nutricionista: ${nutritionist.name} - CRN: ${nutritionist.crn || '-'}`, margin, yPos);
-            yPos += 10;
+            pdf.setFont("helvetica", "italic");
+            pdf.setTextColor(100, 116, 139); // slate-500
+            pdf.text(`Nutricionista: ${nutritionist.name} - CRN: ${nutritionist.crn || '-'}`, margin + 5, yPos);
+            yPos += 8;
+        } else {
+            yPos += 2;
         }
+        
+        yPos += 8;
 
-        pdf.setDrawColor(226, 232, 240); // slate-200
-        pdf.line(margin, yPos, 210 - margin, yPos);
-        yPos += 10;
+        // Formatador para a tabela
+        const formatWithDiff = (value: number | string | null | undefined, diff: number | null | undefined, type: 'inverse' | 'standard' | 'neutral') => {
+            if (value === null || value === undefined) return { content: '-' };
+            const valStr = typeof value === 'number' ? value.toFixed(1) : String(value);
+            return {
+                content: (diff != null && Math.abs(diff) >= 0.1) ? `${valStr}\n ` : valStr,
+                rawDiff: diff,
+                diffType: type
+            } as any;
+        };
 
         // Table configuration
-        const head = [['Data', 'Peso (kg)', 'IMC', 'Gordura (%)', 'Músculo (%)', 'TMB (Kcal)', 'Visceral', 'Glicemia (mg/dL)']];
+        const head = [['Data', 'Peso (kg)', 'IMC', 'Gordura (%)', 'Músculo (%)', 'TMB (Kcal)', 'Visceral', 'Glicemia']];
         const tableData = processedData.map(checkIn => [
             formatDate(checkIn.date),
-            checkIn.weight.toFixed(1),
-            checkIn.imc.toFixed(1),
-            checkIn.bodyFat.toFixed(1),
-            checkIn.muscleMass.toFixed(1),
-            checkIn.bmr,
-            checkIn.visceralFat,
-            checkIn.glucose || '-'
+            formatWithDiff(checkIn.weight, checkIn.delta?.weight, 'inverse'),
+            formatWithDiff(checkIn.imc, checkIn.delta?.imc, 'inverse'),
+            formatWithDiff(checkIn.bodyFat, checkIn.delta?.bodyFat, 'inverse'),
+            formatWithDiff(checkIn.muscleMass, checkIn.delta?.muscleMass, 'standard'),
+            formatWithDiff(checkIn.bmr, checkIn.delta?.bmr, 'standard'),
+            formatWithDiff(checkIn.visceralFat, checkIn.delta?.visceralFat, 'inverse'),
+            formatWithDiff(checkIn.glucose, checkIn.delta?.glucose, 'inverse')
         ]);
 
-        pdf.autoTable({
+        autoTable(pdf, {
             startY: yPos,
             head: head,
             body: tableData,
@@ -159,6 +182,7 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, on
                 textColor: [51, 65, 85], // slate-700
                 lineColor: [226, 232, 240], // slate-200
                 lineWidth: 0.1,
+                valign: 'middle'
             },
             headStyles: {
                 fillColor: [248, 250, 252], // slate-50
@@ -179,6 +203,38 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ checkIns, onEdit, on
             },
             alternateRowStyles: {
                 fillColor: [248, 250, 252] // slate-50
+            },
+            didDrawCell: (data) => {
+                if (data.row.section === 'body' && data.column.index > 0 && data.cell.raw) {
+                    const rawCellData = data.cell.raw as any;
+                    const diff = rawCellData.rawDiff;
+                    const type = rawCellData.diffType;
+                    
+                    if (diff != null && Math.abs(diff) >= 0.1) {
+                        const isPositive = diff > 0;
+                        const sign = isPositive ? '+' : '';
+                        const diffStr = `(${sign}${diff.toFixed(1)})`;
+                        
+                        let color: [number, number, number] = [148, 163, 184]; // slate-400
+                        if (type === 'inverse') {
+                            color = isPositive ? [244, 63, 94] : [16, 185, 129]; // rose-500 : emerald-500
+                        } else if (type === 'standard') {
+                            color = isPositive ? [16, 185, 129] : [244, 63, 94]; // emerald-500 : rose-500
+                        }
+
+                        const textX = data.cell.x + data.cell.width / 2;
+                        const paddingBottom = typeof data.cell.padding === 'object' ? (data.cell.padding as any).bottom || 2 : 2;
+                        const textY = data.cell.y + data.cell.height - paddingBottom - 0.5;
+
+                        data.doc.setFontSize(7);
+                        // Make font bold
+                        data.doc.setFont("helvetica", "bold");
+                        data.doc.setTextColor(color[0], color[1], color[2]);
+                        data.doc.text(diffStr, textX, textY, { align: 'center', baseline: 'bottom' });
+                        // Reverte fonte
+                        data.doc.setFont("helvetica", "normal");
+                    }
+                }
             }
         });
 
