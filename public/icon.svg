@@ -25,18 +25,7 @@
 
   <g filter="url(#n-shadow)">
     <!-- The white part of the N (left leg and inner curve) -->
-    <!-- It starts from bottom left, goes up to a rounded point, then curves down and right -->
-    <path d="M 120,400 
-             L 210,180
-             C 225,145 260,165 265,190
-             L 280,240
-             C 290,270 310,275 330,265
-             C 310,240 290,200 270,160
-             C 255,120 200,105 180,150
-             L 80,400 Z" 
-          fill="#ffffff" />
-          
-    <path d="M 140,370 L 225,185 C 235,160 260,160 270,195 L 300,285" fill="none" stroke="#ffffff" stroke-width="45" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M 140,370 L 225,185 C 235,160 260,160 270,195 L 300,285" fill="none" stroke="#ffffff" stroke-width="48" stroke-linecap="round" stroke-linejoin="round" />
 
     <!-- The cyan part of the N (checkmark shape on the right) -->
     <path d="M 215,250 C 240,350 280,350 310,310 L 410,130" fill="none" stroke="#00b4d8" stroke-width="48" stroke-linecap="round" stroke-linejoin="round" />
@@ -49,27 +38,8 @@
   <path d="M 100,490 Q 256,430 450,450" fill="none" stroke="url(#swooshGrad)" stroke-width="3" />
   <path d="M 150,510 Q 256,450 350,470" fill="none" stroke="url(#swooshGrad)" stroke-width="1.5" />
 
-  <!-- Text "NutriVida" -->
-  <!-- Note: Trying to match the font as close as possible with standard system-ui sans-serif -->
-  <text x="256" y="455" font-family="system-ui, -apple-system, sans-serif" font-weight="600" font-size="48" fill="#ffffff" text-anchor="middle" letter-spacing="-0.5">
-    <tspan>N</tspan>
-    <tspan dx="-1">utri</tspan>
-    <tspan dx="-1">V</tspan>
-    <tspan dx="-1">ida</tspan>
-  </text>
-  
   <!-- Add subtle shadow to text -->
-  <text x="258" y="457" font-family="system-ui, -apple-system, sans-serif" font-weight="600" font-size="48" fill="#000000" fill-opacity="0.3" text-anchor="middle" letter-spacing="-0.5" transform="translate(0,0) scale(1,1)" style="mix-blend-mode: multiply;">
-    <tspan>N</tspan>
-    <tspan dx="-1">utri</tspan>
-    <tspan dx="-1">V</tspan>
-    <tspan dx="-1">ida</tspan>
-  </text>
-  <text x="256" y="455" font-family="system-ui, -apple-system, sans-serif" font-weight="600" font-size="48" fill="#ffffff" text-anchor="middle" letter-spacing="-0.5">
-    <tspan>N</tspan>
-    <tspan dx="-1">utri</tspan>
-    <tspan dx="-1">V</tspan>
-    <tspan dx="-1">ida</tspan>
-  </text>
+  <text x="258" y="457" font-family="system-ui, -apple-system, sans-serif" font-weight="600" font-size="48" fill="#000000" fill-opacity="0.3" text-anchor="middle" letter-spacing="-0.5" style="mix-blend-mode: multiply;">NutriVida</text>
+  <text x="256" y="455" font-family="system-ui, -apple-system, sans-serif" font-weight="600" font-size="48" fill="#ffffff" text-anchor="middle" letter-spacing="-0.5">NutriVida</text>
 
 </svg>
