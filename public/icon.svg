@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#024FA1"/>
+      <stop offset="100%" stop-color="#011645"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="100" fill="url(#bgGrad)"/>
+  
+  <g filter="url(#shadow)">
+    <!-- White Left part -->
+    <path d="M 140 370 L 210 180 C 220 150 250 150 270 180 L 290 220" fill="none" stroke="#ffffff" stroke-width="45" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Cyan Right part -->
+    <path d="M 215 250 C 225 350 260 350 280 300 L 365 140" fill="none" stroke="#00c8ff" stroke-width="46" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <text x="256" y="440" font-family="'Inter', 'Helvetica Neue', sans-serif" font-weight="600" font-size="44" fill="#ffffff" text-anchor="middle" letter-spacing="1">NutriVida</text>
+  
+  <path d="M 190 490 Q 256 450 380 470" fill="none" stroke="#00c8ff" stroke-width="1.5" opacity="0.6"/>
+</svg>
