@@ -15,7 +15,7 @@ import { AnamnesisForm } from './components/AnamnesisForm';
 import { AssessmentReport } from './components/AssessmentReport';
 import { LoginScreen } from './components/LoginScreen';
 import { CheckIn, ViewState, Patient, DietPlan as DietPlanType, PatientTab, Appointment, Nutritionist, Anamnesis } from './types';
-import { User, Activity, Utensils, FileText, LayoutDashboard, Stethoscope, Sun, Moon, LogOut, XCircle, AlertCircle, MessageSquare, ChefHat, BookOpen } from 'lucide-react';
+import { User, Activity, Utensils, FileText, LayoutDashboard, Stethoscope, Sun, Moon, LogOut, XCircle, AlertCircle, MessageSquare, ChefHat, BookOpen, Loader2 } from 'lucide-react';
 import { PatientProfile } from './components/PatientProfile';
 import { FeedbackList } from './components/FeedbackList';
 import { RecipeLibrary } from './components/RecipeLibrary';
@@ -857,8 +857,8 @@ const App: React.FC = () => {
   if (isLoadingSession) {
       return (
           <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
-              <div className="animate-spin text-blue-600 dark:text-blue-400">
-                  <Activity size={48} />
+              <div className="text-blue-600 dark:text-blue-400">
+                  <Loader2 size={48} className="animate-spin" />
               </div>
           </div>
       );
@@ -921,8 +921,8 @@ const App: React.FC = () => {
         {/* Loading Indicator for Data Fetching - Só aparece na primeira carga */}
         {(isLoadingData && !hasInitialFetch) && (
             <div className="fixed inset-0 bg-white/80 dark:bg-slate-950/80 z-50 flex flex-col items-center justify-center backdrop-blur-sm">
-                <div className="animate-spin text-blue-600 dark:text-blue-400 mb-4">
-                    <Activity size={48} />
+                <div className="text-blue-600 dark:text-blue-400 mb-4">
+                    <Loader2 size={48} className="animate-spin" />
                 </div>
                 <p className="text-slate-600 dark:text-slate-300 font-medium">Sincronizando com Supabase...</p>
                 {/* Opção de escape se demorar muito */}
@@ -967,8 +967,8 @@ const App: React.FC = () => {
                 {/* Special Header Content for Home View on Mobile */}
                 {currentView === 'home' ? (
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-600 rounded-lg text-white shadow-sm lg:hidden">
-                            <Activity size={24} />
+                        <div className="lg:hidden">
+                            <img src="/icon.svg" alt="NutriVida Logo" className="w-10 h-10 rounded-lg shadow-sm" />
                         </div>
                         <div>
                             <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">NutriVida</h1>

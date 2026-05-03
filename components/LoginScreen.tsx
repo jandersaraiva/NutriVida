@@ -77,8 +77,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onSignUp, isD
 
       <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 p-8 relative z-10 animate-in fade-in zoom-in duration-500">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl text-white mb-4 shadow-lg shadow-blue-500/30">
-            <Activity size={32} />
+          <div className="inline-flex items-center justify-center mb-4">
+            <img src="/icon.svg" alt="NutriVida Logo" className="w-16 h-16 rounded-2xl shadow-lg shadow-blue-500/20" />
           </div>
           <h1 className="text-3xl font-bold text-slate-800 dark:text-white mb-2 tracking-tight">
             {isSignUp ? 'Crie sua Conta' : 'Bem-vindo ao NutriVida'}

@@ -1,0 +1,22 @@
+{
+  "name": "NutriVida",
+  "short_name": "NutriVida",
+  "description": "Aplicativo para acompanhamento nutricional",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#024FA1",
+  "theme_color": "#024FA1",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192"
+    }
+  ]
+}

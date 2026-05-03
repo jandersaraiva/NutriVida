@@ -1,25 +1,75 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
+    <!-- Background Gradient -->
     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#024FA1"/>
-      <stop offset="100%" stop-color="#011645"/>
+      <stop offset="0%" stop-color="#0245a3" />
+      <stop offset="40%" stop-color="#012b7a" />
+      <stop offset="100%" stop-color="#001a52" />
     </linearGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000000" flood-opacity="0.3"/>
+
+    <!-- Shadow for the 3D effect of the N -->
+    <filter id="n-shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="8" dy="12" stdDeviation="10" flood-color="#000" flood-opacity="0.4" />
     </filter>
+
+    <!-- Glowing swoosh gradient -->
+    <linearGradient id="swooshGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00d2ff" stop-opacity="0" />
+      <stop offset="50%" stop-color="#00d2ff" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#00d2ff" stop-opacity="0" />
+    </linearGradient>
   </defs>
 
-  <rect width="512" height="512" rx="100" fill="url(#bgGrad)"/>
-  
-  <g filter="url(#shadow)">
-    <!-- White Left part -->
-    <path d="M 140 370 L 210 180 C 220 150 250 150 270 180 L 290 220" fill="none" stroke="#ffffff" stroke-width="45" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Background rounded rectangle -->
+  <rect width="512" height="512" rx="115" fill="url(#bgGrad)" />
+
+  <g filter="url(#n-shadow)">
+    <!-- The white part of the N (left leg and inner curve) -->
+    <!-- It starts from bottom left, goes up to a rounded point, then curves down and right -->
+    <path d="M 120,400 
+             L 210,180
+             C 225,145 260,165 265,190
+             L 280,240
+             C 290,270 310,275 330,265
+             C 310,240 290,200 270,160
+             C 255,120 200,105 180,150
+             L 80,400 Z" 
+          fill="#ffffff" />
+          
+    <path d="M 140,370 L 225,185 C 235,160 260,160 270,195 L 300,285" fill="none" stroke="#ffffff" stroke-width="45" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- The cyan part of the N (checkmark shape on the right) -->
+    <path d="M 215,250 C 240,350 280,350 310,310 L 410,130" fill="none" stroke="#00b4d8" stroke-width="48" stroke-linecap="round" stroke-linejoin="round" />
     
-    <!-- Cyan Right part -->
-    <path d="M 215 250 C 225 350 260 350 280 300 L 365 140" fill="none" stroke="#00c8ff" stroke-width="46" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Add some highlights to cyan part for 3D effect -->
+    <path d="M 215,250 C 240,350 280,350 310,310 L 410,130" fill="none" stroke="#48cae4" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" opacity="0.4" />
   </g>
 
-  <text x="256" y="440" font-family="'Inter', 'Helvetica Neue', sans-serif" font-weight="600" font-size="44" fill="#ffffff" text-anchor="middle" letter-spacing="1">NutriVida</text>
+  <!-- Glowing thin background line near the text -->
+  <path d="M 100,490 Q 256,430 450,450" fill="none" stroke="url(#swooshGrad)" stroke-width="3" />
+  <path d="M 150,510 Q 256,450 350,470" fill="none" stroke="url(#swooshGrad)" stroke-width="1.5" />
+
+  <!-- Text "NutriVida" -->
+  <!-- Note: Trying to match the font as close as possible with standard system-ui sans-serif -->
+  <text x="256" y="455" font-family="system-ui, -apple-system, sans-serif" font-weight="600" font-size="48" fill="#ffffff" text-anchor="middle" letter-spacing="-0.5">
+    <tspan>N</tspan>
+    <tspan dx="-1">utri</tspan>
+    <tspan dx="-1">V</tspan>
+    <tspan dx="-1">ida</tspan>
+  </text>
   
-  <path d="M 190 490 Q 256 450 380 470" fill="none" stroke="#00c8ff" stroke-width="1.5" opacity="0.6"/>
+  <!-- Add subtle shadow to text -->
+  <text x="258" y="457" font-family="system-ui, -apple-system, sans-serif" font-weight="600" font-size="48" fill="#000000" fill-opacity="0.3" text-anchor="middle" letter-spacing="-0.5" transform="translate(0,0) scale(1,1)" style="mix-blend-mode: multiply;">
+    <tspan>N</tspan>
+    <tspan dx="-1">utri</tspan>
+    <tspan dx="-1">V</tspan>
+    <tspan dx="-1">ida</tspan>
+  </text>
+  <text x="256" y="455" font-family="system-ui, -apple-system, sans-serif" font-weight="600" font-size="48" fill="#ffffff" text-anchor="middle" letter-spacing="-0.5">
+    <tspan>N</tspan>
+    <tspan dx="-1">utri</tspan>
+    <tspan dx="-1">V</tspan>
+    <tspan dx="-1">ida</tspan>
+  </text>
+
 </svg>

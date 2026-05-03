@@ -35,9 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, isD
         <div>
           <div className="h-20 flex items-center px-6 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-600 rounded-lg text-white shadow-lg shadow-blue-500/30">
-                <Activity size={24} />
-              </div>
+              <img src="/icon.svg" alt="NutriVida Logo" className="w-10 h-10 rounded-lg shadow-sm" />
               <span className="font-bold text-xl text-slate-800 dark:text-white tracking-tight">NutriVida</span>
             </div>
           </div>
